@@ -28,7 +28,7 @@ import {
 
 export const Route = createFileRoute("/competitors")({
   head: () => ({ meta: [{ title: "Concurrentie — ZoetBezorgen Social" }] }),
-  component: Competitors;
+  component: Competitors,
 });
 
 function nf(n: number) {
