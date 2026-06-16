@@ -28,12 +28,11 @@ export function PlatformIcon({
   const color = platformColorVar(platform);
   return (
     <span
-      className="inline-flex items-center justify-center rounded-lg"
+      className="inline-flex shrink-0 items-center justify-center rounded-lg shadow-sm"
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, color-mix(in oklab, ${color} 90%, white), color-mix(in oklab, ${color} 70%, black))`,
-        boxShadow: `0 4px 12px -6px ${color}`,
+        backgroundColor: color,
       }}
       title={platformLabel(platform)}
       aria-label={platformLabel(platform)}
