@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { PlatformIcon } from "@/components/platform-icon";
+import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +71,11 @@ function Dashboard() {
       {/* Per-platform tegels */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {accounts.map((a) => (
-          <Card key={a.platform} className="bg-card">
+          <Card
+            key={a.platform}
+            className="platform-tint overflow-hidden border-2"
+            style={platformTintStyle(a.platform)}
+          >
             <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
               <PlatformIcon platform={a.platform} />
               <div>
