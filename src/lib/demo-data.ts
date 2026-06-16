@@ -13,7 +13,7 @@ export const PLATFORMS: { id: Platform; label: string }[] = [
 export const platformLabel = (p: Platform) =>
   PLATFORMS.find((x) => x.id === p)?.label ?? p;
 
-export const platformColorVar = (p: Platform) => `var(--color-platform-${p})`;
+export const platformColorVar = (p: Platform) => `var(--platform-${p})`;
 
 export type AccountStats = {
   platform: Platform;
