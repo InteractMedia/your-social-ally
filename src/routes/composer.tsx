@@ -1,8 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Hash, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Brain, CheckCircle2, Hash, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
+import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/composer")({
@@ -44,9 +45,11 @@ function Composer() {
     | "ideas" | "rewrite" | "hashtags" | "shorter" | "longer"
     | "adapt_competitor" | "reply_suggestion";
 
+  const learnings = useMemo(() => computeLearnings(selected[0]), [selected]);
+
   const handleAI = (action: AIAction) => {
     mutation.mutate(
-      { data: { action, content, platform: selected[0] } },
+      { data: { action, content, platform: selected[0], learnings: learnings.summary } },
       {
         onSuccess: ({ output }) => {
           if (action === "ideas") {
@@ -62,6 +65,27 @@ function Composer() {
     );
   };
 
+  const markAsPosted = () => {
+    if (!content.trim() || selected.length === 0) {
+      toast.error("Schrijf eerst een post en kies een platform.");
+      return;
+    }
+    for (const p of selected) {
+      recordPostResult({
+        platform: p,
+        caption: content,
+        hookPattern: "Eigen post",
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        reach: 0,
+        engagementRate: 0,
+        postedAt: new Date().toISOString(),
+      });
+    }
+    toast.success("Geregistreerd — vul later de stats aan om de AI te laten leren.");
+  };
+
   return (
     <AppShell>
       <PageHeader
@@ -71,6 +95,10 @@ function Composer() {
           <>
             <Button variant="outline" size="sm" onClick={() => setContent("")}>
               Wissen
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={markAsPosted}>
+              <CheckCircle2 className="h-4 w-4" />
+              Markeer als gepost
             </Button>
             <Button size="sm" className="gap-1.5">
               <Send className="h-4 w-4" />
@@ -155,6 +183,31 @@ function Composer() {
         </div>
 
         <div className="space-y-4">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Brain className="h-4 w-4 text-primary" /> Wat eerder voor jou werkte
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs">
+              <p className="text-muted-foreground">{learnings.summary}</p>
+              {learnings.hookRanking.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top hooks</div>
+                  {learnings.hookRanking.slice(0, 4).map((h) => (
+                    <div key={h.hook} className="flex items-center justify-between gap-2">
+                      <span className="truncate">{h.hook}</span>
+                      <Badge variant="outline" className="shrink-0">{h.avgEngagement.toFixed(1)}%</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="pt-1 text-[11px] text-muted-foreground">
+                Wordt automatisch meegestuurd aan de AI bij elke suggestie.
+              </p>
+            </CardContent>
+          </Card>
+
           <h3 className="text-sm font-medium text-muted-foreground">Live preview</h3>
           {selected.length === 0 && (
             <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
