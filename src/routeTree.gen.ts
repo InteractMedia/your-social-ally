@@ -9,13 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposerRouteImport } from './routes/composer'
 import { Route as CompetitorsRouteImport } from './routes/competitors'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
+import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 
+const TrendsRoute = TrendsRouteImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -46,31 +54,49 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompetitorsIndexRoute = CompetitorsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CompetitorsRoute,
+} as any)
+const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CompetitorsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/competitors': typeof CompetitorsRoute
+  '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
+  '/trends': typeof TrendsRoute
+  '/competitors/$id': typeof CompetitorsIdRoute
+  '/competitors/': typeof CompetitorsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/competitors': typeof CompetitorsRoute
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
+  '/trends': typeof TrendsRoute
+  '/competitors/$id': typeof CompetitorsIdRoute
+  '/competitors': typeof CompetitorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/competitors': typeof CompetitorsRoute
+  '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
+  '/trends': typeof TrendsRoute
+  '/competitors/$id': typeof CompetitorsIdRoute
+  '/competitors/': typeof CompetitorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +107,19 @@ export interface FileRouteTypes {
     | '/composer'
     | '/inbox'
     | '/settings'
+    | '/trends'
+    | '/competitors/$id'
+    | '/competitors/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar' | '/competitors' | '/composer' | '/inbox' | '/settings'
+  to:
+    | '/'
+    | '/calendar'
+    | '/composer'
+    | '/inbox'
+    | '/settings'
+    | '/trends'
+    | '/competitors/$id'
+    | '/competitors'
   id:
     | '__root__'
     | '/'
@@ -91,19 +128,30 @@ export interface FileRouteTypes {
     | '/composer'
     | '/inbox'
     | '/settings'
+    | '/trends'
+    | '/competitors/$id'
+    | '/competitors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
-  CompetitorsRoute: typeof CompetitorsRoute
+  CompetitorsRoute: typeof CompetitorsRouteWithChildren
   ComposerRoute: typeof ComposerRoute
   InboxRoute: typeof InboxRoute
   SettingsRoute: typeof SettingsRoute
+  TrendsRoute: typeof TrendsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trends': {
+      id: '/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof TrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -146,16 +194,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/competitors/': {
+      id: '/competitors/'
+      path: '/'
+      fullPath: '/competitors/'
+      preLoaderRoute: typeof CompetitorsIndexRouteImport
+      parentRoute: typeof CompetitorsRoute
+    }
+    '/competitors/$id': {
+      id: '/competitors/$id'
+      path: '/$id'
+      fullPath: '/competitors/$id'
+      preLoaderRoute: typeof CompetitorsIdRouteImport
+      parentRoute: typeof CompetitorsRoute
+    }
   }
 }
+
+interface CompetitorsRouteChildren {
+  CompetitorsIdRoute: typeof CompetitorsIdRoute
+  CompetitorsIndexRoute: typeof CompetitorsIndexRoute
+}
+
+const CompetitorsRouteChildren: CompetitorsRouteChildren = {
+  CompetitorsIdRoute: CompetitorsIdRoute,
+  CompetitorsIndexRoute: CompetitorsIndexRoute,
+}
+
+const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
+  CompetitorsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
-  CompetitorsRoute: CompetitorsRoute,
+  CompetitorsRoute: CompetitorsRouteWithChildren,
   ComposerRoute: ComposerRoute,
   InboxRoute: InboxRoute,
   SettingsRoute: SettingsRoute,
+  TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
