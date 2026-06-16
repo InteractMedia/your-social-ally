@@ -77,20 +77,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ZoetBezorgen Social — social dashboard voor de bakkerij" },
+      {
+        name: "description",
+        content:
+          "Het social-cockpit van ZoetBezorgen: stats, AI post composer, kalender, concurrentie en inbox in één dashboard.",
+      },
+      { property: "og:title", content: "ZoetBezorgen Social" },
+      {
+        property: "og:description",
+        content:
+          "Stats, AI posts, kalender, concurrentie-analyse en inbox voor TikTok, LinkedIn, Instagram, Facebook en YouTube.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/__l5e/assets-v1/12dc59de-84e5-49f8-bfd4-ab6a3ef108ec/logo-zoetbezorgen.avif" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/avif", href: "/__l5e/assets-v1/12dc59de-84e5-49f8-bfd4-ab6a3ef108ec/logo-zoetbezorgen.avif" },
     ],
   }),
   shellComponent: RootShell,
