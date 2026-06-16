@@ -94,15 +94,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="m-3 rounded-lg border border-sidebar-border bg-sidebar-accent/50 p-3 text-xs">
-          <div className="flex items-center gap-2 font-medium text-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Demo data actief
+        <div className="m-3 space-y-2">
+          <ThemeToggle />
+          <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/50 p-3 text-xs">
+            <div className="flex items-center gap-2 font-medium text-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Demo data actief
+            </div>
+            <p className="mt-1 text-muted-foreground">
+              TikTok & LinkedIn live koppelen in instellingen.
+            </p>
           </div>
-          <p className="mt-1 text-muted-foreground">
-            TikTok & LinkedIn live koppelen in instellingen.
-          </p>
         </div>
+
       </aside>
 
       <main className="flex-1 overflow-x-hidden">
