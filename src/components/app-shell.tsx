@@ -8,11 +8,39 @@ import {
   Settings,
   Sparkles,
   TrendingUp,
+  Moon,
+  Sun,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import logoAsset from "@/assets/logo-zoetbezorgen.avif.asset.json";
 import { cn } from "@/lib/utils";
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    const isDark = stored ? stored === "dark" : false;
+    setDark(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, []);
+  const toggle = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
+  return (
+    <button
+      onClick={toggle}
+      className="flex w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-xs font-medium text-foreground hover:bg-sidebar-accent"
+    >
+      {dark ? <Sun className="h-3.5 w-3.5 text-warning" /> : <Moon className="h-3.5 w-3.5 text-primary" />}
+      {dark ? "Light mode" : "Dark mode"}
+    </button>
+  );
+}
+
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
