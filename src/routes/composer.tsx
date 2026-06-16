@@ -36,10 +36,11 @@ function Composer() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const toggle = (p: Platform) =>
-    setSelected((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
+  type AIAction =
+    | "ideas" | "rewrite" | "hashtags" | "shorter" | "longer"
+    | "adapt_competitor" | "reply_suggestion";
 
-  const handleAI = (action: Parameters<typeof generateAI>[0]["data"]["action"]) => {
+  const handleAI = (action: AIAction) => {
     mutation.mutate(
       { data: { action, content, platform: selected[0] } },
       {
