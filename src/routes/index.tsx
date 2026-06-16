@@ -160,7 +160,8 @@ function Dashboard() {
             {topPosts.map((p) => (
               <div
                 key={p.id}
-                className="flex gap-3 rounded-md border border-border bg-surface p-3"
+                className="platform-tint flex gap-3 rounded-lg border-l-4 p-3"
+                style={platformTintStyle(p.platform)}
               >
                 <PlatformIcon platform={p.platform} />
                 <div className="min-w-0 flex-1">
