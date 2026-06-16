@@ -96,6 +96,10 @@ function Composer() {
             <Button variant="outline" size="sm" onClick={() => setContent("")}>
               Wissen
             </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={markAsPosted}>
+              <CheckCircle2 className="h-4 w-4" />
+              Markeer als gepost
+            </Button>
             <Button size="sm" className="gap-1.5">
               <Send className="h-4 w-4" />
               Inplannen
@@ -179,6 +183,31 @@ function Composer() {
         </div>
 
         <div className="space-y-4">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Brain className="h-4 w-4 text-primary" /> Wat eerder voor jou werkte
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs">
+              <p className="text-muted-foreground">{learnings.summary}</p>
+              {learnings.hookRanking.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top hooks</div>
+                  {learnings.hookRanking.slice(0, 4).map((h) => (
+                    <div key={h.hook} className="flex items-center justify-between gap-2">
+                      <span className="truncate">{h.hook}</span>
+                      <Badge variant="outline" className="shrink-0">{h.avgEngagement.toFixed(1)}%</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="pt-1 text-[11px] text-muted-foreground">
+                Wordt automatisch meegestuurd aan de AI bij elke suggestie.
+              </p>
+            </CardContent>
+          </Card>
+
           <h3 className="text-sm font-medium text-muted-foreground">Live preview</h3>
           {selected.length === 0 && (
             <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
