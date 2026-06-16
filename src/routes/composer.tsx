@@ -1,8 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Hash, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Brain, CheckCircle2, Hash, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
+import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/composer")({
@@ -44,9 +45,11 @@ function Composer() {
     | "ideas" | "rewrite" | "hashtags" | "shorter" | "longer"
     | "adapt_competitor" | "reply_suggestion";
 
+  const learnings = useMemo(() => computeLearnings(selected[0]), [selected]);
+
   const handleAI = (action: AIAction) => {
     mutation.mutate(
-      { data: { action, content, platform: selected[0] } },
+      { data: { action, content, platform: selected[0], learnings: learnings.summary } },
       {
         onSuccess: ({ output }) => {
           if (action === "ideas") {
@@ -60,6 +63,27 @@ function Composer() {
         },
       },
     );
+  };
+
+  const markAsPosted = () => {
+    if (!content.trim() || selected.length === 0) {
+      toast.error("Schrijf eerst een post en kies een platform.");
+      return;
+    }
+    for (const p of selected) {
+      recordPostResult({
+        platform: p,
+        caption: content,
+        hookPattern: "Eigen post",
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        reach: 0,
+        engagementRate: 0,
+        postedAt: new Date().toISOString(),
+      });
+    }
+    toast.success("Geregistreerd — vul later de stats aan om de AI te laten leren.");
   };
 
   return (
