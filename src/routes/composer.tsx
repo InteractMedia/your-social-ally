@@ -6,6 +6,7 @@ import { Brain, CheckCircle2, Hash, Loader2, Maximize2, Minimize2, RefreshCcw, S
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon } from "@/components/platform-icon";
+import { MediaPicker, type MediaItem } from "@/components/media-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ function Composer() {
     : "";
 
   const [content, setContent] = useState(initial);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [selected, setSelected] = useState<Platform[]>(["tiktok", "instagram"]);
   const fn = useServerFn(generateAI);
 
@@ -152,6 +154,13 @@ function Composer() {
                 className="resize-none bg-surface text-base"
               />
 
+              <div>
+                <div className="mb-2 text-xs font-medium text-muted-foreground">Afbeeldingen</div>
+                <MediaPicker value={media} onChange={setMedia} max={4} />
+              </div>
+
+
+
               <div className="flex flex-wrap gap-2">
                 <AIButton onClick={() => handleAI("ideas")} loading={mutation.isPending}>
                   <Sparkles className="h-3.5 w-3.5" /> Genereer ideeën
@@ -215,7 +224,7 @@ function Composer() {
             </div>
           )}
           {selected.map((p) => (
-            <Preview key={p} platform={p} content={content} />
+            <Preview key={p} platform={p} content={content} media={media} />
           ))}
         </div>
       </div>
@@ -239,7 +248,7 @@ function AIButton({
   );
 }
 
-function Preview({ platform, content }: { platform: Platform; content: string }) {
+function Preview({ platform, content, media }: { platform: Platform; content: string; media: MediaItem[] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
@@ -254,7 +263,31 @@ function Preview({ platform, content }: { platform: Platform; content: string })
         <p className="whitespace-pre-wrap text-sm leading-relaxed">
           {content || <span className="text-muted-foreground">Je bericht verschijnt hier…</span>}
         </p>
-        <div className="mt-4 h-40 rounded-md border border-dashed border-border bg-surface-2" />
+        {media.length > 0 ? (
+          <div
+            className={cn(
+              "mt-4 grid gap-1 overflow-hidden rounded-md",
+              media.length === 1 && "grid-cols-1",
+              media.length === 2 && "grid-cols-2",
+              media.length >= 3 && "grid-cols-2",
+            )}
+          >
+            {media.map((m, i) => (
+              <img
+                key={m.path}
+                src={m.url}
+                alt=""
+                className={cn(
+                  "h-full w-full object-cover",
+                  media.length === 1 ? "aspect-square" : "aspect-square",
+                  media.length === 3 && i === 0 && "row-span-2 aspect-auto",
+                )}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 h-40 rounded-md border border-dashed border-border bg-surface-2" />
+        )}
       </CardContent>
     </Card>
   );
