@@ -7,6 +7,7 @@ import {
   Inbox,
   Settings,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -17,6 +18,7 @@ const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/composer", label: "Post Composer", icon: PenSquare },
   { to: "/calendar", label: "Kalender", icon: CalendarDays },
+  { to: "/trends", label: "Trends", icon: TrendingUp },
   { to: "/competitors", label: "Concurrentie", icon: Users },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
