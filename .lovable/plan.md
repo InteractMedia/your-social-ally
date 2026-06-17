@@ -1,81 +1,80 @@
-## Doel
-Een **Ads-sectie** in ZoetBezorgen waar je:
-1. Stats van je eigen ads ziet (Meta, TikTok, LinkedIn, Google/YouTube)
-2. Concurrent-ads volgt (welke staan live, hoe vaak nieuw, thema's/hooks)
-3. Side-by-side jouw ads vs concurrent-ads vergelijkt
-4. Aanmaken/bewerken gebeurt in Ads Manager van het platform (read-only blijft binnen API-limieten zonder lange App Review)
+# Google Ads volledig beheer
 
-## Wat we wel/niet kunnen (eerlijk)
+Korte versie: Google Ads is het enige platform waar volledig beheer (incl. campagnes aanmaken) realistisch in deze app past. Meta/TikTok/LinkedIn blijven read-only + deeplink naar hun eigen Ads Manager. Google krijgt extra functionaliteit.
 
-| Functie | Mogelijk? |
-|---|---|
-| Eigen ad-stats lezen (CTR, CPM, spend, ROAS, impressies) | Ja, alle 4 platforms via OAuth + read-scope |
-| Eigen ads aanmaken/pauzeren in-app | Niet in v1 — vereist write-scope + App Review (1–3 wkn Meta, streng LinkedIn). Knop "Open in Ads Manager" volstaat |
-| Concurrent live ads (creatives + tekst + looptijd + platforms) | Ja, **Meta Ad Library** (publiek, geen login) + **TikTok Creative Center** |
-| Concurrent CTR/spend/ROAS | Nee — die data is privé. Alleen spend-range voor politiek/issue ads |
-| LinkedIn Ad Library | Beperkt — alleen recent + EU verplichte transparantie |
-| Google Ads Transparency Center | Ja, scrape-/API-light beschikbaar |
+We bouwen in twee fases. Fase 1 is direct te bouwen, Fase 2 vereist een Google Developer Token (jij vraagt aan, ~1–3 dagen).
 
-## Bouwplan in 3 fases
+---
 
-### Fase 1 — UI + demo-data (nu bouwen, geen API's nodig)
-Volledige module met realistische mock-data zodat je flow en waarde kunt valideren.
+## Fase 1 — Volledige UI met demo-data (nu te bouwen)
 
-**Nieuwe routes:**
-- `/ads` — dashboard overzicht (alle platforms samen)
-- `/ads/$platform` — per platform tab (meta/tiktok/linkedin/google)
-- `/ads/$id` — ad-detail met stats + creative preview
-- `/ads/compare` — side-by-side jouw ads vs concurrent
+Werkende UI met realistische mock-campagnes. Zo zie je meteen of de flow klopt, en we kunnen later 1-op-1 de demo-laag vervangen door echte Google Ads API-calls.
 
-**Componenten:**
-- `AdsOverviewCards` — totaal spend, gem. CTR, beste ad, ROAS per platform
-- `AdsTable` — sorteerbaar (spend, CTR, CPM, conversies, looptijd)
-- `AdCreativePreview` — toont image/video + copy + CTA, zoals composer-preview
-- `CompetitorAdsFeed` — masonry-grid van concurrent creatives met "actief sinds X dagen" + frequentie-badge
-- `AdComparePanel` — twee kolommen: jouw ad ↔ concurrent-ad, met AI-analyse (hook, tone, CTA, kleurpalet, format)
-- `AdThemesCloud` — terugkerende thema's/hooks die concurrenten gebruiken (al deels in `competitors.$id.tsx`, hier uitbreiden naar ads-specifiek)
+### Nieuwe routes
 
-**Data-laag:** uitbreiden in `src/lib/demo-data.ts` met `demoAds[]` en `demoCompetitorAds[]` (incl. velden: platform, creative_url, copy, cta, status, started_at, impressions, ctr, spend, conversions, themes[]).
+- `/ads/google` — krijgt extra knoppen (Pauzeer/Activeer, Bewerk budget, Bewerk ad-tekst, **+ Nieuwe campagne**)
+- `/ads/google/$campaignId` — campagne-detail: ad groups, ads, keywords, stats per niveau
+- `/ads/google/$campaignId/edit` — bewerk budget, bod-strategie, geo, schema
+- `/ads/google/new` — 6-stappen wizard:
+  1. Doel (Sales / Leads / Website traffic)
+  2. Campagne-naam + dagbudget + bod-strategie
+  3. Geo + talen + schema
+  4. Ad group + keywords (met suggesties uit demo keyword planner)
+  5. Responsive Search Ad (15 headlines, 4 descriptions, sitelinks)
+  6. Review + "Aanmaken" knop
 
-**App-shell:** "Ads" menu-item naast Concurrenten.
+### Nieuwe componenten (in `src/components/ads/google/`)
 
-### Fase 2 — Concurrent-ads echt live (zonder OAuth, geen review nodig)
-Server functions die publieke libraries scrapen/API'en:
-- `getMetaAdLibraryAds(competitorPage)` → Meta Ad Library API (publiek, alleen Page-ID nodig)
-- `getTikTokTopAds(keyword/brand)` → Creative Center
-- `getGoogleAdsTransparency(advertiser)` → Transparency Center
+- `CampaignTable.tsx` — lijst met inline pauzeer/activeer toggle
+- `CampaignWizard.tsx` — multi-step form (react-hook-form)
+- `KeywordPlannerPanel.tsx` — suggesties + match types (broad/phrase/exact)
+- `ResponsiveSearchAdEditor.tsx` — live preview van Google SERP-ad
+- `BudgetBidEditor.tsx`
+- `AdGroupList.tsx`
 
-Resultaten cachen in nieuwe tabel `competitor_ads` (RLS: alleen eigen rijen).
+### Data-laag
 
-### Fase 3 — Eigen ad-stats via OAuth-connectors (later)
-Per platform een connector koppelen:
-- **Meta**: connector → `ads_read` scope → `/act_{id}/insights` endpoint
-- **TikTok Ads**: Marketing API connector
-- **LinkedIn Ads**: Marketing Developer Platform (toegang aanvragen, kan afgewezen worden — duidelijk communiceren)
-- **Google Ads**: Google Ads API connector + developer token
+Uitbreiding van `src/lib/demo-ads.ts`:
+- `demoGoogleCampaigns[]` — met ad groups, ads, keywords, dag-stats
+- `demoKeywordSuggestions[]` — voor de planner
+- Lokale mutaties via Zustand store `useGoogleAdsStore` (zodat pauzeer/budget-wijzigingen in de UI persistent voelen tijdens de sessie)
 
-Stats synchroniseren naar tabel `ad_stats` (dagelijks via cron). Alleen lezen, geen schrijven → snelste route naar productie.
+### Andere platforms
 
-Per ad een knop "Bewerk in [Platform] Ads Manager" die deeplinkt — gebruiker doet edits buiten de app.
+Geen wijziging aan Meta/TikTok/LinkedIn-views in Fase 1. Ze blijven read-only stats + creative-preview. Wel toevoegen: knop "Bewerk in [Platform] Ads Manager" → deeplink naar die externe omgeving.
 
-## Technische details
-- **Database** (Fase 2/3): `competitor_ads`, `ad_accounts`, `ads`, `ad_stats` — allemaal met RLS op `user_id` + GRANTs voor `authenticated`/`service_role`.
-- **AI-analyse** (compare-panel): bestaande `ai.functions.ts` uitbreiden met `analyzeAdPair(myAd, theirAd)` → hook/tone/CTA/format-verschil. Lovable AI Gateway, geen extra key.
-- **Caching**: concurrent-ads max 1× per dag refreshen per concurrent (rate-limits respecteren).
-- **Feedback-loop**: bestaande `feedback-loop.ts` koppelen: ads met hoogste CTR → suggesties voor composer ("dit hook-format presteert").
+---
 
-## Wat ik nu ga bouwen (na akkoord)
-**Alleen Fase 1**: complete UI + demo-data, zodat je de module kunt ervaren en feedback geven vóór we OAuth/API's aansluiten. Fase 2 en 3 doen we daarna in aparte rondes.
+## Fase 2 — Echte Google Ads API (na deze fase)
 
-## Bestanden die wijzigen (Fase 1)
-- `src/routes/ads.tsx` (layout)
-- `src/routes/ads.index.tsx` (dashboard)
-- `src/routes/ads.$platform.tsx`
-- `src/routes/ads.$id.tsx`
-- `src/routes/ads.compare.tsx`
-- `src/components/ads/` (nieuwe folder: AdsOverviewCards, AdsTable, AdCreativePreview, CompetitorAdsFeed, AdComparePanel)
-- `src/lib/demo-data.ts` (demo ads toevoegen)
-- `src/components/app-shell.tsx` (menu-item)
-- `src/routeTree.gen.ts` (auto-gen)
+Volgorde van werk wanneer je groen licht geeft:
 
-Akkoord op Fase 1? Dan zet ik 'm in elkaar.
+1. **Developer Token aanvragen** (jij doet dit bij Google, ik geef instructies)
+2. **OAuth-flow** — Google login met `https://www.googleapis.com/auth/adwords` scope
+3. **Secrets** opslaan via `add_secret`:
+   - `GOOGLE_ADS_DEVELOPER_TOKEN`
+   - `GOOGLE_OAUTH_CLIENT_ID` + `GOOGLE_OAUTH_CLIENT_SECRET`
+4. **Tabellen** (Lovable Cloud):
+   - `google_ads_connections` (user_id, refresh_token, customer_id) met RLS
+5. **Server functions** (`src/lib/google-ads.functions.ts`):
+   - `listCampaigns`, `pauseCampaign`, `updateBudget`, `updateAdText`, `createCampaign`, `getKeywordIdeas`, `getStats`
+   - Allemaal achter `requireSupabaseAuth`
+6. Demo-laag in UI vervangen door echte server-function calls (1-op-1 mapping qua types)
+
+---
+
+## Wat ik **nu** ga bouwen (alleen Fase 1)
+
+Files:
+- `src/lib/demo-ads.ts` — uitbreiden met Google-data
+- `src/lib/google-ads-store.ts` — Zustand store voor lokale mutaties
+- `src/routes/ads.google.tsx` — vervangt huidige generieke `ads.$platform.tsx` view voor Google (laatste blijft bestaan voor andere platforms)
+- `src/routes/ads.google.new.tsx` — wizard
+- `src/routes/ads.google.$campaignId.tsx` — detail
+- `src/routes/ads.google.$campaignId.edit.tsx` — bewerken
+- `src/components/ads/google/` — nieuwe folder met 6 componenten hierboven
+- Update `src/components/app-shell.tsx` — submenu onder "Ads" met Google highlight
+
+Geen schemawijzigingen, geen secrets, geen API-calls in deze fase — puur frontend + demo-data.
+
+Akkoord? Dan bouw ik dit in één ronde.
