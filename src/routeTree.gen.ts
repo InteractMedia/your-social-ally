@@ -15,9 +15,13 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposerRouteImport } from './routes/composer'
 import { Route as CompetitorsRouteImport } from './routes/competitors'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
+import { Route as AdsIndexRouteImport } from './routes/ads.index'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
+import { Route as AdsCompareRouteImport } from './routes/ads.compare'
+import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
 
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
@@ -49,6 +53,11 @@ const CalendarRoute = CalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdsRoute = AdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -59,21 +68,40 @@ const CompetitorsIndexRoute = CompetitorsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CompetitorsRoute,
 } as any)
+const AdsIndexRoute = AdsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdsRoute,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => CompetitorsRoute,
 } as any)
+const AdsCompareRoute = AdsCompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => AdsRoute,
+} as any)
+const AdsPlatformRoute = AdsPlatformRouteImport.update({
+  id: '/$platform',
+  path: '/$platform',
+  getParentRoute: () => AdsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ads': typeof AdsRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
+  '/ads/$platform': typeof AdsPlatformRoute
+  '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -83,32 +111,43 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
+  '/ads/$platform': typeof AdsPlatformRoute
+  '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ads': typeof AdsRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
+  '/ads/$platform': typeof AdsPlatformRoute
+  '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ads'
     | '/calendar'
     | '/competitors'
     | '/composer'
     | '/inbox'
     | '/settings'
     | '/trends'
+    | '/ads/$platform'
+    | '/ads/compare'
     | '/competitors/$id'
+    | '/ads/'
     | '/competitors/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -118,23 +157,31 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/settings'
     | '/trends'
+    | '/ads/$platform'
+    | '/ads/compare'
     | '/competitors/$id'
+    | '/ads'
     | '/competitors'
   id:
     | '__root__'
     | '/'
+    | '/ads'
     | '/calendar'
     | '/competitors'
     | '/composer'
     | '/inbox'
     | '/settings'
     | '/trends'
+    | '/ads/$platform'
+    | '/ads/compare'
     | '/competitors/$id'
+    | '/ads/'
     | '/competitors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdsRoute: typeof AdsRouteWithChildren
   CalendarRoute: typeof CalendarRoute
   CompetitorsRoute: typeof CompetitorsRouteWithChildren
   ComposerRoute: typeof ComposerRoute
@@ -187,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ads': {
+      id: '/ads'
+      path: '/ads'
+      fullPath: '/ads'
+      preLoaderRoute: typeof AdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -201,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitorsIndexRouteImport
       parentRoute: typeof CompetitorsRoute
     }
+    '/ads/': {
+      id: '/ads/'
+      path: '/'
+      fullPath: '/ads/'
+      preLoaderRoute: typeof AdsIndexRouteImport
+      parentRoute: typeof AdsRoute
+    }
     '/competitors/$id': {
       id: '/competitors/$id'
       path: '/$id'
@@ -208,8 +269,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitorsIdRouteImport
       parentRoute: typeof CompetitorsRoute
     }
+    '/ads/compare': {
+      id: '/ads/compare'
+      path: '/compare'
+      fullPath: '/ads/compare'
+      preLoaderRoute: typeof AdsCompareRouteImport
+      parentRoute: typeof AdsRoute
+    }
+    '/ads/$platform': {
+      id: '/ads/$platform'
+      path: '/$platform'
+      fullPath: '/ads/$platform'
+      preLoaderRoute: typeof AdsPlatformRouteImport
+      parentRoute: typeof AdsRoute
+    }
   }
 }
+
+interface AdsRouteChildren {
+  AdsPlatformRoute: typeof AdsPlatformRoute
+  AdsCompareRoute: typeof AdsCompareRoute
+  AdsIndexRoute: typeof AdsIndexRoute
+}
+
+const AdsRouteChildren: AdsRouteChildren = {
+  AdsPlatformRoute: AdsPlatformRoute,
+  AdsCompareRoute: AdsCompareRoute,
+  AdsIndexRoute: AdsIndexRoute,
+}
+
+const AdsRouteWithChildren = AdsRoute._addFileChildren(AdsRouteChildren)
 
 interface CompetitorsRouteChildren {
   CompetitorsIdRoute: typeof CompetitorsIdRoute
@@ -227,6 +316,7 @@ const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdsRoute: AdsRouteWithChildren,
   CalendarRoute: CalendarRoute,
   CompetitorsRoute: CompetitorsRouteWithChildren,
   ComposerRoute: ComposerRoute,
