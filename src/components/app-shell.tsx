@@ -8,6 +8,7 @@ import {
   Settings,
   Sparkles,
   TrendingUp,
+  Megaphone,
   Moon,
   Sun,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const nav = [
   { to: "/calendar", label: "Kalender", icon: CalendarDays },
   { to: "/trends", label: "Trends", icon: TrendingUp },
   { to: "/competitors", label: "Concurrentie", icon: Users },
+  { to: "/ads", label: "Ads", icon: Megaphone },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
 ] as const;
