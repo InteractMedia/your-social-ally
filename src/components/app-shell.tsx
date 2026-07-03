@@ -12,11 +12,30 @@ import {
   Megaphone,
   Moon,
   Sun,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import logoAsset from "@/assets/logo-zoetbezorgen.avif.asset.json";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+function SignOutButton() {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        setBusy(true);
+        await supabase.auth.signOut();
+      }}
+      disabled={busy}
+      className="flex w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-xs font-medium text-foreground hover:bg-sidebar-accent"
+    >
+      <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
+      Uitloggen
+    </button>
+  );
+}
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -100,6 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="m-3 space-y-2">
           <ThemeToggle />
+          <SignOutButton />
           <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/50 p-3 text-xs">
             <div className="flex items-center gap-2 font-medium text-foreground">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
