@@ -106,7 +106,11 @@ function Settings() {
               {accounts
                 .filter((a) => a.connection === "manual")
                 .map((a) => (
-                  <div key={a.platform} className="rounded-md border border-border bg-surface p-3">
+                  <div
+                    key={a.platform}
+                    className="platform-row rounded-md border p-3"
+                    style={platformTintStyle(a.platform)}
+                  >
                     <div className="mb-2 flex items-center gap-2">
                       <PlatformIcon platform={a.platform} />
                       <span className="text-sm font-medium">{platformLabel(a.platform)}</span>
