@@ -77,13 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ZoetBezorgen Social — social dashboard voor de bakkerij" },
+      { title: "Dashboard — ZoetBezorgen Social" },
       {
         name: "description",
         content:
           "Het social-cockpit van ZoetBezorgen: stats, AI post composer, kalender, concurrentie en inbox in één dashboard.",
       },
-      { property: "og:title", content: "ZoetBezorgen Social" },
+      { property: "og:title", content: "Dashboard — ZoetBezorgen Social" },
       {
         property: "og:description",
         content:
@@ -92,6 +92,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/__l5e/assets-v1/12dc59de-84e5-49f8-bfd4-ab6a3ef108ec/logo-zoetbezorgen.avif" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Dashboard — ZoetBezorgen Social" },
+      { name: "description", content: "Overzicht van je social media performance over alle platformen." },
+      { property: "og:description", content: "Overzicht van je social media performance over alle platformen." },
+      { name: "twitter:description", content: "Overzicht van je social media performance over alle platformen." },
+      { name: "twitter:image", content: "/__l5e/assets-v1/12dc59de-84e5-49f8-bfd4-ab6a3ef108ec/logo-zoetbezorgen.avif" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
