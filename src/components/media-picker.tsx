@@ -72,10 +72,11 @@ export function MediaPicker({
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
+      const folder = await getUserFolder();
       const uploaded: MediaItem[] = [];
       for (const file of Array.from(files)) {
         const ext = file.name.split(".").pop() || "bin";
-        const path = `${FOLDER}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error } = await supabase.storage
           .from(BUCKET)
           .upload(path, file, { contentType: file.type, upsert: false });
