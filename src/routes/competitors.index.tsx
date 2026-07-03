@@ -44,7 +44,8 @@ function CompetitorsIndex() {
               key={c.id}
               to="/competitors/$id"
               params={{ id: c.id }}
-              className="group rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/40"
+              className="platform-row group rounded-lg border p-5 transition-colors hover:border-primary/40"
+              style={platformTintStyle(c.primaryPlatform)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
