@@ -12,6 +12,10 @@ const ActionEnum = z.enum([
   "reply_suggestion",
   "trend_hook",
   "competitor_channel_insight",
+  // Nieuw voor groei-stack
+  "classify_comment",
+  "hooks_ab",
+  "hashtag_tiers",
 ]);
 
 const Input = z.object({
@@ -49,11 +53,17 @@ function buildPrompt(data: z.infer<typeof Input>) {
     case "adapt_competitor":
       return `Een concurrent plaatste deze succesvolle post:\n"""${data.context ?? ""}"""\n\nMaak hier 3 varianten van in onze tone of voice${p}. Nummer ze: 1) in onze stem, 2) gedurfder, 3) veiliger. Eén korte alinea per variant.${L}`;
     case "reply_suggestion":
-      return `Iemand reageerde met:\n"""${data.context ?? ""}"""\n\nOp onze post: "${data.content}".\nGeef 3 korte antwoordsuggesties, vriendelijk en behulpzaam. Nummer ze 1) warm, 2) zakelijk, 3) speels.`;
+      return `Iemand reageerde met:\n"""${data.context ?? ""}"""\n\nOp onze post: "${data.content}".\nGeef 3 korte antwoordsuggesties, vriendelijk en behulpzaam. Nummer ze 1) warm, 2) zakelijk, 3) speels. Elke suggestie op één regel, geen extra uitleg.`;
     case "trend_hook":
       return `Haak in op deze trend in de snoep/chocolade-markt:\n"""${data.context ?? ""}"""\n\nMaak voor ZoetBezorgen${p}:\n1) Een concept-idee (één zin, hoe sluiten wij hier authentiek op aan)\n2) Een hook / openingsregel\n3) Een complete post-tekst klaar voor publicatie\n4) 6 relevante hashtags\n\nMaak het concreet voor onze bakkerij, niet generiek.${L}`;
     case "competitor_channel_insight":
       return `Analyseer hoe deze concurrent het doet op ${p.trim() || "dit kanaal"}:\n"""${data.context ?? ""}"""\n\nGeef:\n1) Wat werkt voor hen (3 bullets, concreet)\n2) Wat kunnen wij overnemen (2 bullets)\n3) Eén concreet post-idee dat wij morgen kunnen maken om hier tegenin te gaan of op in te haken.${L}`;
+    case "classify_comment":
+      return `Classificeer deze inkomende comment/DM voor een social media manager:\n"""${data.context ?? ""}"""\n\nContext: post over "${data.content}".\n\nAntwoord ALLEEN met geldige JSON in exact dit formaat, geen markdown, geen uitleg:\n{"priority":"high"|"medium"|"low","intent":"question"|"complaint"|"purchase_intent"|"praise"|"spam"|"other","sentiment":"positive"|"neutral"|"negative","suggestedAction":"korte NL zin (max 8 woorden) wat te doen"}\n\nRegels: purchase_intent = "high"; klacht = "high"; vraag = "medium"; lof = "low".`;
+    case "hooks_ab":
+      return `Genereer 3 verschillende openingszinnen (hooks) voor deze post${p}. Elke hook in een andere stijl:\n1) Vraag-hook (nieuwsgierigheid triggeren)\n2) Statement-hook (bold uitspraak)\n3) Cijfer-hook (concreet getal)\n\nDe post gaat over: "${data.content || "geen thema opgegeven — bedenk zelf"}"\n\nAntwoord ALLEEN met geldige JSON, geen markdown:\n{"hooks":[{"style":"vraag","text":"..."},{"style":"statement","text":"..."},{"style":"cijfer","text":"..."}]}\n\nMax 12 woorden per hook. Nederlands. Onze tone: warm, speels, bakkerij-trots.${L}`;
+    case "hashtag_tiers":
+      return `Genereer 12 hashtags${p} in 3 tiers voor deze post: "${data.content || "bakkerij content"}".\n\nAntwoord ALLEEN met geldige JSON, geen markdown:\n{"tiers":{"high":[{"tag":"#voorbeeld","volume":150000},{"tag":"...","volume":...},{"tag":"...","volume":...}],"mid":[{"tag":"...","volume":45000},{"tag":"...","volume":...},{"tag":"...","volume":...},{"tag":"...","volume":...},{"tag":"...","volume":...}],"niche":[{"tag":"...","volume":4500},{"tag":"...","volume":...},{"tag":"...","volume":...},{"tag":"...","volume":...}]}}\n\nRegels:\n- high: 3 hashtags met volume >100000 (breed bereik)\n- mid: 5 hashtags met volume 10000-100000 (sweet spot)\n- niche: 4 hashtags met volume <10000 (hoge conversie, specifiek voor bakkerij/Nederland)\n- Volume is een schatting; wees realistisch.`;
   }
 }
 
