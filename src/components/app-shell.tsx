@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   PenSquare,
   CalendarDays,
+  Clock,
   Users,
   Inbox,
   Settings,
