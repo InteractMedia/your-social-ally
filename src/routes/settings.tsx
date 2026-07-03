@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, Link2, Plug } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { PlatformIcon } from "@/components/platform-icon";
+import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +38,8 @@ function Settings() {
               return (
                 <div
                   key={p.id}
-                  className="flex items-center gap-3 rounded-md border border-border bg-surface p-3"
+                  className="platform-row flex items-center gap-3 rounded-md border p-3"
+                  style={platformTintStyle(p.id)}
                 >
                   <PlatformIcon platform={p.id} />
                   <div className="flex-1">
@@ -105,7 +106,11 @@ function Settings() {
               {accounts
                 .filter((a) => a.connection === "manual")
                 .map((a) => (
-                  <div key={a.platform} className="rounded-md border border-border bg-surface p-3">
+                  <div
+                    key={a.platform}
+                    className="platform-row rounded-md border p-3"
+                    style={platformTintStyle(a.platform)}
+                  >
                     <div className="mb-2 flex items-center gap-2">
                       <PlatformIcon platform={a.platform} />
                       <span className="text-sm font-medium">{platformLabel(a.platform)}</span>

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Plus, TrendingUp } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { PlatformIcon } from "@/components/platform-icon";
+import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,7 +44,8 @@ function CompetitorsIndex() {
               key={c.id}
               to="/competitors/$id"
               params={{ id: c.id }}
-              className="group rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/40"
+              className="platform-row group rounded-lg border p-5 transition-colors hover:border-primary/40"
+              style={platformTintStyle(c.primaryPlatform)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -79,7 +80,12 @@ function CompetitorsIndex() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">Actief op:</span>
                 {channels.map((ch) => (
-                  <Badge key={ch.platform} variant="outline" className="gap-1">
+                  <Badge
+                    key={ch.platform}
+                    variant="outline"
+                    className="platform-badge gap-1"
+                    style={platformTintStyle(ch.platform)}
+                  >
                     <PlatformIcon platform={ch.platform} size={14} />
                     {platformLabel(ch.platform)}
                   </Badge>

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { PlatformIcon } from "@/components/platform-icon";
+import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -171,7 +171,12 @@ function CompetitorDetail() {
           <Tabs value={tab} onValueChange={(v) => setTab(v as Platform)}>
             <TabsList className="flex flex-wrap gap-1">
               {channels.map((ch) => (
-                <TabsTrigger key={ch.platform} value={ch.platform} className="gap-2">
+                <TabsTrigger
+                  key={ch.platform}
+                  value={ch.platform}
+                  className="platform-tab gap-2"
+                  style={platformTintStyle(ch.platform)}
+                >
                   <PlatformIcon platform={ch.platform} size={16} />
                   {platformLabel(ch.platform)}
                 </TabsTrigger>
