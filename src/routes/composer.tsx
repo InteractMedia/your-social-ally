@@ -7,6 +7,8 @@ import { Brain, CheckCircle2, Hash, Loader2, Maximize2, Minimize2, RefreshCcw, S
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon } from "@/components/platform-icon";
 import { MediaPicker, type MediaItem } from "@/components/media-picker";
+import { HookGeneratorPanel } from "@/components/composer/HookGeneratorPanel";
+import { HashtagOptimizerPanel } from "@/components/composer/HashtagOptimizerPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -216,6 +218,25 @@ function Composer() {
               </p>
             </CardContent>
           </Card>
+
+          <HookGeneratorPanel
+            content={content}
+            platform={selected[0]}
+            onSelect={(hook) => {
+              setContent((c) => {
+                const lines = c.split("\n");
+                if (lines.length === 0 || !lines[0].trim()) return hook + (c ? "\n" + c : "");
+                lines[0] = hook;
+                return lines.join("\n");
+              });
+            }}
+          />
+
+          <HashtagOptimizerPanel
+            content={content}
+            platform={selected[0]}
+            onAppend={(hashtags) => setContent((c) => `${c}${c ? "\n\n" : ""}${hashtags}`)}
+          />
 
           <h3 className="text-sm font-medium text-muted-foreground">Live preview</h3>
           {selected.length === 0 && (

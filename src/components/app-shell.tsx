@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   PenSquare,
   CalendarDays,
+  Clock,
   Users,
   Inbox,
   Settings,
@@ -46,6 +47,7 @@ function ThemeToggle() {
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/composer", label: "Post Composer", icon: PenSquare },
+  { to: "/schedule", label: "Beste posttijd", icon: Clock },
   { to: "/calendar", label: "Kalender", icon: CalendarDays },
   { to: "/trends", label: "Trends", icon: TrendingUp },
   { to: "/competitors", label: "Concurrentie", icon: Users },
