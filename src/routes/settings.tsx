@@ -38,7 +38,8 @@ function Settings() {
               return (
                 <div
                   key={p.id}
-                  className="flex items-center gap-3 rounded-md border border-border bg-surface p-3"
+                  className="platform-row flex items-center gap-3 rounded-md border p-3"
+                  style={platformTintStyle(p.id)}
                 >
                   <PlatformIcon platform={p.id} />
                   <div className="flex-1">
