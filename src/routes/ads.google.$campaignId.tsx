@@ -71,6 +71,13 @@ function CampaignDetail() {
           <Field label="Dagbudget" value={formatEUR(campaign.dailyBudget)} />
           <Field label="Bod-strategie" value={campaign.bidStrategy + (campaign.targetCpa ? ` (€${campaign.targetCpa})` : "")} />
           <Field label="Geo" value={campaign.geo.join(", ")} />
+          <Field label="Talen" value={campaign.languages.join(", ")} />
+          <Field label="Apparaten" value={(campaign.devices ?? ["desktop", "mobile", "tablet"]).join(", ")} />
+          <Field label="Schema" value={campaign.schedule === "business-hours" ? "Werkdagen 08:00–20:00" : "Altijd (24/7)"} />
+          <Field
+            label="Periode"
+            value={campaign.startDate ? `${campaign.startDate}${campaign.endDate ? ` → ${campaign.endDate}` : " → doorlopend"}` : new Date(campaign.startedAt).toISOString().slice(0, 10)}
+          />
         </div>
       </Card>
 
@@ -90,12 +97,37 @@ function CampaignDetail() {
             {g.keywords.length > 0 && (
               <div className="mb-4">
                 <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Keywords</div>
+                <div className="overflow-hidden rounded-md border border-border">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Keyword</th>
+                        <th className="px-3 py-2 text-left font-medium">Match</th>
+                        <th className="px-3 py-2 text-right font-medium">CPC</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {g.keywords.map((k) => (
+                        <tr key={`${k.text}-${k.match}`} className="border-t border-border">
+                          <td className="px-3 py-2">{k.text}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{matchSymbol(k.match)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">€{k.cpc.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {g.negatives && g.negatives.length > 0 && (
+              <div className="mb-4">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Negatieve keywords</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {g.keywords.map((k) => (
-                    <Badge key={k.text} variant="outline" className="text-xs">
-                      <span className="mr-1.5 text-[10px] text-muted-foreground">{matchSymbol(k.match)}</span>
-                      {k.text}
-                      <span className="ml-1.5 text-[10px] text-muted-foreground tabular-nums">€{k.cpc.toFixed(2)}</span>
+                  {g.negatives.map((n) => (
+                    <Badge key={`${n.text}-${n.match}`} variant="outline" className="text-xs">
+                      <span className="mr-1.5 text-[10px] text-muted-foreground">{matchSymbol(n.match)}</span>
+                      {n.text}
                     </Badge>
                   ))}
                 </div>

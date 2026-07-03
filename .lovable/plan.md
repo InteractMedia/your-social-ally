@@ -1,86 +1,42 @@
-# Plan — Legitieme groei-stack (3 features)
+## Doel
+De 6-staps Google Ads campagne wizard bestaat al op `/ads/google/new` maar mist per-keyword match types en een paar aanmaak-details. Deze plan maakt de wizard volledig productie-waardig (nog steeds Fase 1 in-memory demo).
 
-Alle drie de features, frontend-first met demo-data + al bestaande Lovable AI Gateway voor de AI-onderdelen. **Geen** fake-engagement, alles binnen ToS van Meta/LinkedIn/TikTok/YouTube.
+## Wat er nu al staat
+`src/routes/ads.google.new.tsx` heeft de 6 stappen: Doel → Naam & budget → Targeting → Keywords → Advertentie → Review. Store en types in `src/lib/google-ads-store.ts` ondersteunen al `broad | phrase | exact` match, meerdere adGroups en volledige campagne-structuur.
 
-## Feature 1 — Beste posttijd + auto-schedule
+## Wat ontbreekt / wordt toegevoegd
 
-**Pagina:** `/schedule` (nieuwe route) + widget op dashboard-home.
+**Stap 4 — Keywords (grootste uitbreiding)**
+- Match-type kiezer per keyword: chips `Broad` / `"Phrase"` / `[Exact]` naast elke geselecteerde keyword; default = phrase.
+- Vrije keyword-invoer: input + "Toevoegen" knop + parse van plak-lijst (regel per keyword, syntax `[woord]` = exact, `"woord"` = phrase, anders broad).
+- Negatieve keywords sectie: aparte lijst met eigen input, opgeslagen op ad group.
+- Geselecteerde-lijst wordt een tabel met kolommen keyword / match / geschatte CPC / verwijder-knop.
 
-Wat het doet:
-- **Heatmap** (7 dagen × 24 uur) per platform met engagement-index — kleur intensiteit toont wanneer jouw audience actief is
-- **"Top 3 slots deze week"** kaartjes met concrete tijden (bv. "di 19:30", "do 20:15", "za 11:00")
-- **Auto-schedule queue**: elke geplande post krijgt suggestie "publiceer op eerstvolgende piekslot" — met 1 klik overnemen
-- **Publicatie-timeline** (komende 14 dagen) met alle geplande posts, drag-to-reschedule
+**Stap 2 — Naam & budget**
+- Toevoegen: Start-datum en optionele eind-datum (date inputs).
+- Waarschuwing als dagbudget < aanbevolen (2× hoogste CPC × 10).
 
-Data:
-- Fase 1: `demoAudienceActivity` (7×24 grid per platform) in `src/lib/demo-schedule.ts`
-- Fase 2 (later): berekend uit echte post-history via platform-APIs
+**Stap 3 — Targeting**
+- Toevoegen: Device-targeting (Desktop/Mobile/Tablet checkboxes, default alle aan).
+- Ad-schedule preset: `Altijd` / `Werkdagen 08–20` / `Custom` (custom = simpele dag×uur grid, optioneel — als het te groot wordt vervalt custom).
 
-## Feature 2 — AI auto-reply op comments/DM's
+**Stap 5 — Advertentie**
+- Karakter-tellers per regel (headline 30, description 90), rood bij overschrijding, blokkeer Volgende.
+- Live preview van de Search-ad (headline1 · headline2 | url \n description).
 
-**Pagina:** Uitbreiding van bestaande `/inbox`.
+**Stap 6 — Review**
+- Volledige samenvatting inclusief nieuwe velden (match types tellen per type, negatives, schedule, devices).
+- Twee submit-knoppen: `Opslaan als concept` (status `concept`) en `Publiceer` (status `actief`).
 
-Wat het doet:
-- Elke comment/DM krijgt knop **"Genereer 3 antwoorden"**
-- AI (via bestaande `generateAI` server-fn, nieuwe action `reply_suggestion` — bestaat al!) levert 3 varianten: warm / zakelijk / speels
-- **"Snel goedkeuren"-modus**: knop "post variant 1" doet direct optimistisch UI-update (demo)
-- **Auto-flag** priority-comments: vraag, klacht, high-follower account, verkoopintentie — kleurbadge
-- **Reactietijd-teller** ("mediaan: 42 min — algoritme boost onder 1 uur")
-- **Bulk-modus**: verwerk 10 comments achter elkaar met keyboard shortcuts (1/2/3 = variant, S = skip)
+**Types & store**
+`GoogleAdGroup` uitbreiden met `negatives: { text; match }[]`. `GoogleCampaign` uitbreiden met `startDate`, `endDate?`, `devices: ("desktop"|"mobile"|"tablet")[]`, `schedule: "always" | "business-hours" | { day: number; from: string; to: string }[]`. Bestaande seed-data blijft werken door velden optioneel te maken met sensible defaults.
 
-Techniek:
-- `generateAI` action `reply_suggestion` bestaat al in `src/lib/ai.functions.ts` — hergebruiken
-- Priority-classificatie: nieuwe action `classify_comment` toevoegen (LLM returned JSON met `{priority, intent, sentiment}`)
-- Optimistic state via bestaande demo-inbox store
+## Bestanden
+- `src/routes/ads.google.new.tsx` — hoofd-refactor van de wizard-content, stepper blijft gelijk.
+- `src/lib/google-ads-store.ts` — types uitbreiden (optionele velden) + `create()` behoudt huidige contract.
+- `src/routes/ads.google.$campaignId.tsx` — detail-pagina toont nieuwe velden (match types kolom, negatives, schedule, devices) — read-only, geen edit-flow in deze scope.
 
-## Feature 3 — Hook A/B generator + hashtag-optimizer
-
-**Pagina:** Uitbreiding van bestaande `/composer`.
-
-Wat het doet:
-- **Hook A/B/C paneel** boven caption-input: knop "Genereer 3 hooks" → toont 3 openingsregels in verschillende stijlen (vraag / statement / cijfer-hook)
-- Elke hook toont **voorspelde performance-score** op basis van je learnings (bv. "vraag-hook: historisch +38% engagement")
-- Klik = vervangt eerste regel van caption
-- **Hashtag-optimizer** paneel: knop "Suggereer hashtags" → 12 hashtags in 3 tiers:
-  - 🔥 High-volume (>100k posts) — 3
-  - 📈 Mid-tier (10k-100k) — 5
-  - 🎯 Niche (<10k, hoge conversie) — 4
-- Elke hashtag toont mock reach/competition
-- **"Optimize this post"** master-knop: draait hook-gen + hashtag-gen + tone-check in één flow
-
-Techniek:
-- Nieuwe `generateAI` actions: `hooks_ab` (returns JSON array of 3 hooks + reasoning), `hashtag_tiers` (returns JSON met 3 tiers)
-- Score-berekening leunt op bestaande `computeLearnings()` in `src/lib/feedback-loop.ts`
-- UI: `<HookGeneratorPanel />` + `<HashtagOptimizerPanel />` in `src/components/composer/`
-
-## Nieuwe/gewijzigde files
-
-**Feature 1:**
-- `src/lib/demo-schedule.ts` (audience-activity data)
-- `src/routes/schedule.tsx`
-- `src/components/schedule/ActivityHeatmap.tsx`, `TopSlotsCards.tsx`, `PublicationTimeline.tsx`
-- `src/components/app-shell.tsx` — sidebar-item toevoegen
-
-**Feature 2:**
-- `src/lib/ai.functions.ts` — nieuwe action `classify_comment`
-- `src/routes/inbox.tsx` — uitbreiden met AI-reply knoppen, priority-badges, bulk-modus
-- `src/components/inbox/ReplyGenerator.tsx`, `PriorityBadge.tsx`, `BulkReviewBar.tsx`
-
-**Feature 3:**
-- `src/lib/ai.functions.ts` — nieuwe actions `hooks_ab`, `hashtag_tiers`
-- `src/components/composer/HookGeneratorPanel.tsx`, `HashtagOptimizerPanel.tsx`
-- `src/routes/composer.tsx` — panelen inpluggen
-
-## Buiten scope (Fase 2)
-
-- Echte publicatie naar Meta/LI/TikTok/YT (vereist Meta Graph API + LinkedIn Marketing API + TikTok Content Posting API — per platform apart approval traject, 2-6 weken)
-- Echte comment-inbox-sync (vereist webhook-integraties)
-- Persistente storage van scheduled posts (later Lovable Cloud tabel `scheduled_posts`)
-
-## Volgorde
-
-1. **Feature 3** (composer-panelen) — hergebruikt meeste bestaande code, snelste win
-2. **Feature 2** (auto-reply) — één nieuwe AI-action + inbox-UI-uitbreiding
-3. **Feature 1** (schedule) — meeste nieuwe UI (heatmap + timeline)
-
-Geen secrets, geen nieuwe DB-tabellen, geen platform-API-integraties in deze fase.
+## Buiten scope
+- Geen echte Google Ads API-koppeling (blijft Fase 2).
+- Geen bewerken van bestaande campagnes vanuit de wizard.
+- Geen A/B-ads binnen één ad group (blijft bij 1 responsive search ad).
