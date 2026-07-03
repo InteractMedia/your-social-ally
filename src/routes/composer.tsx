@@ -219,6 +219,25 @@ function Composer() {
             </CardContent>
           </Card>
 
+          <HookGeneratorPanel
+            content={content}
+            platform={selected[0]}
+            onSelect={(hook) => {
+              setContent((c) => {
+                const lines = c.split("\n");
+                if (lines.length === 0 || !lines[0].trim()) return hook + (c ? "\n" + c : "");
+                lines[0] = hook;
+                return lines.join("\n");
+              });
+            }}
+          />
+
+          <HashtagOptimizerPanel
+            content={content}
+            platform={selected[0]}
+            onAppend={(hashtags) => setContent((c) => `${c}${c ? "\n\n" : ""}${hashtags}`)}
+          />
+
           <h3 className="text-sm font-medium text-muted-foreground">Live preview</h3>
           {selected.length === 0 && (
             <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
