@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposerRouteImport } from './routes/composer'
 import { Route as CompetitorsRouteImport } from './routes/competitors'
@@ -35,6 +36,11 @@ const TrendsRoute = TrendsRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/schedule'
     | '/settings'
     | '/trends'
     | '/ads/$platform'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/composer'
     | '/inbox'
+    | '/schedule'
     | '/settings'
     | '/trends'
     | '/ads/$platform'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/schedule'
     | '/settings'
     | '/trends'
     | '/ads/$platform'
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   CompetitorsRoute: typeof CompetitorsRouteWithChildren
   ComposerRoute: typeof ComposerRoute
   InboxRoute: typeof InboxRoute
+  ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
 }
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -413,6 +433,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompetitorsRoute: CompetitorsRouteWithChildren,
   ComposerRoute: ComposerRoute,
   InboxRoute: InboxRoute,
+  ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
 }
