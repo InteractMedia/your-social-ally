@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const BUCKET = "post-media";
-const FOLDER = "library";
+
+async function getUserFolder(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("Je moet ingelogd zijn om media te beheren.");
+  return data.user.id;
+}
 
 export type MediaItem = {
   path: string;
