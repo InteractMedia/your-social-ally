@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Plus, TrendingUp } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { PlatformIcon } from "@/components/platform-icon";
+import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
