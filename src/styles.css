@@ -74,121 +74,109 @@
 :root {
   --radius: 0.9rem;
 
-  /* Canvas — warme, romige achtergrond zoals zoetbezorgen.nl */
-  --background: oklch(0.985 0.008 75);          /* warm wit / vanille */
-  --foreground: oklch(0.18 0.02 30);            /* diep warm zwart */
-  --surface: oklch(0.96 0.018 75);              /* zacht creme */
-  --surface-2: oklch(0.93 0.03 70);             /* warmer sand */
+  /* Neon Studio — diep warm zwart canvas met neon accenten */
+  --background: oklch(0.14 0.008 320);
+  --foreground: oklch(0.97 0.005 75);
+  --surface: oklch(0.18 0.012 320);
+  --surface-2: oklch(0.22 0.016 320);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 30);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 30);
+  --card: oklch(0.185 0.014 320);
+  --card-foreground: oklch(0.97 0.005 75);
+  --popover: oklch(0.19 0.014 320);
+  --popover-foreground: oklch(0.97 0.005 75);
 
-  /* Hot pink uit zoetbezorgen logo/CTA */
-  --primary: oklch(0.66 0.22 358);
-  --primary-foreground: oklch(0.99 0.005 0);
+  /* Neon hot pink #ff2d55 */
+  --primary: oklch(0.68 0.245 6);
+  --primary-foreground: oklch(0.14 0.008 320);
 
-  /* Mint/turquoise zoals de hero-cirkel */
-  --secondary: oklch(0.86 0.07 190);
-  --secondary-foreground: oklch(0.22 0.04 200);
+  /* Electric cyan #00f5d4 */
+  --secondary: oklch(0.88 0.18 175);
+  --secondary-foreground: oklch(0.14 0.02 200);
 
-  --muted: oklch(0.95 0.015 75);
-  --muted-foreground: oklch(0.45 0.025 40);
+  --muted: oklch(0.24 0.014 320);
+  --muted-foreground: oklch(0.72 0.02 320);
 
-  /* Vanille/sand voor zachte vlakken */
-  --accent: oklch(0.92 0.045 80);
-  --accent-foreground: oklch(0.22 0.04 50);
+  --accent: oklch(0.88 0.18 175);
+  --accent-foreground: oklch(0.14 0.02 200);
 
-  --destructive: oklch(0.62 0.22 25);
+  --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.99 0.01 80);
 
-  --success: oklch(0.7 0.16 155);
-  --success-foreground: oklch(0.18 0.04 155);
+  --success: oklch(0.78 0.2 165);
+  --success-foreground: oklch(0.14 0.04 165);
 
-  --warning: oklch(0.82 0.16 75);
-  --warning-foreground: oklch(0.22 0.04 75);
+  --warning: oklch(0.84 0.18 80);
+  --warning-foreground: oklch(0.2 0.04 75);
 
-  --border: oklch(0.18 0.02 30 / 10%);
-  --input: oklch(0.18 0.02 30 / 12%);
-  --ring: oklch(0.66 0.22 358 / 55%);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.245 6 / 60%);
 
-  /* Charts in snoepkleuren */
-  --chart-1: oklch(0.66 0.22 358); /* hot pink */
-  --chart-2: oklch(0.78 0.12 190); /* mint */
-  --chart-3: oklch(0.78 0.16 75);  /* honing/oranje */
-  --chart-4: oklch(0.62 0.18 145); /* gras-groen */
-  --chart-5: oklch(0.68 0.16 280); /* lavendel */
+  --chart-1: oklch(0.68 0.245 6);
+  --chart-2: oklch(0.85 0.18 175);
+  --chart-3: oklch(0.78 0.2 300);
+  --chart-4: oklch(0.82 0.2 85);
+  --chart-5: oklch(0.75 0.22 145);
 
-  /* Echte brand-kleuren van de socials */
-  --platform-tiktok: oklch(0.55 0.02 250);      /* TikTok zwart-blauw, accent komt van rood/cyaan icoon */
-  --platform-linkedin: oklch(0.5 0.13 250);     /* #0A66C2 */
-  --platform-instagram: oklch(0.62 0.21 18);    /* IG roze-oranje */
-  --platform-facebook: oklch(0.52 0.16 260);    /* #1877F2 */
-  --platform-youtube: oklch(0.6 0.24 25);       /* YT rood #FF0000 */
+  --platform-tiktok: oklch(0.85 0.18 175);
+  --platform-linkedin: oklch(0.62 0.16 250);
+  --platform-instagram: oklch(0.68 0.245 6);
+  --platform-facebook: oklch(0.6 0.18 260);
+  --platform-youtube: oklch(0.65 0.24 25);
 
-  /* Sidebar — zachte sand zodat 'm vrolijk aanvoelt */
-  --sidebar: oklch(0.97 0.025 75);
-  --sidebar-foreground: oklch(0.22 0.02 40);
-  --sidebar-primary: oklch(0.66 0.22 358);
-  --sidebar-primary-foreground: oklch(0.99 0.005 0);
-  --sidebar-accent: oklch(0.93 0.045 75);
-  --sidebar-accent-foreground: oklch(0.18 0.02 30);
-  --sidebar-border: oklch(0.18 0.02 30 / 8%);
-  --sidebar-ring: oklch(0.66 0.22 358 / 55%);
+  --sidebar: oklch(0.12 0.008 320);
+  --sidebar-foreground: oklch(0.94 0.005 75);
+  --sidebar-primary: oklch(0.68 0.245 6);
+  --sidebar-primary-foreground: oklch(0.14 0.008 320);
+  --sidebar-accent: oklch(0.22 0.02 350);
+  --sidebar-accent-foreground: oklch(0.97 0.005 75);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.68 0.245 6 / 60%);
+
+  --gradient-neon: linear-gradient(135deg, oklch(0.68 0.245 6), oklch(0.85 0.18 175));
+  --shadow-glow-pink: 0 0 24px oklch(0.68 0.245 6 / 45%), 0 0 60px oklch(0.68 0.245 6 / 20%);
+  --shadow-glow-cyan: 0 0 24px oklch(0.85 0.18 175 / 45%), 0 0 60px oklch(0.85 0.18 175 / 20%);
 }
 
 .dark {
-  /* Donker, warm zoet — behoud van pink/mint accenten */
-  --background: oklch(0.16 0.015 320);
-  --foreground: oklch(0.96 0.01 75);
-  --surface: oklch(0.2 0.02 320);
-  --surface-2: oklch(0.24 0.025 320);
-
-  --card: oklch(0.21 0.022 320);
-  --card-foreground: oklch(0.96 0.01 75);
-  --popover: oklch(0.21 0.022 320);
-  --popover-foreground: oklch(0.96 0.01 75);
-
-  --primary: oklch(0.72 0.22 358);
-  --primary-foreground: oklch(0.16 0.02 320);
-
-  --secondary: oklch(0.45 0.08 190);
-  --secondary-foreground: oklch(0.98 0.01 190);
-
-  --muted: oklch(0.26 0.02 320);
-  --muted-foreground: oklch(0.75 0.02 75);
-
-  --accent: oklch(0.32 0.05 350);
-  --accent-foreground: oklch(0.97 0.01 75);
-
-  --destructive: oklch(0.62 0.22 25);
+  --background: oklch(0.14 0.008 320);
+  --foreground: oklch(0.97 0.005 75);
+  --surface: oklch(0.18 0.012 320);
+  --surface-2: oklch(0.22 0.016 320);
+  --card: oklch(0.185 0.014 320);
+  --card-foreground: oklch(0.97 0.005 75);
+  --popover: oklch(0.19 0.014 320);
+  --popover-foreground: oklch(0.97 0.005 75);
+  --primary: oklch(0.68 0.245 6);
+  --primary-foreground: oklch(0.14 0.008 320);
+  --secondary: oklch(0.88 0.18 175);
+  --secondary-foreground: oklch(0.14 0.02 200);
+  --muted: oklch(0.24 0.014 320);
+  --muted-foreground: oklch(0.72 0.02 320);
+  --accent: oklch(0.88 0.18 175);
+  --accent-foreground: oklch(0.14 0.02 200);
+  --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.99 0.01 80);
-
-  --success: oklch(0.72 0.16 155);
-  --success-foreground: oklch(0.15 0.04 155);
-
-  --warning: oklch(0.82 0.16 75);
+  --success: oklch(0.78 0.2 165);
+  --success-foreground: oklch(0.14 0.04 165);
+  --warning: oklch(0.84 0.18 80);
   --warning-foreground: oklch(0.2 0.04 75);
-
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.72 0.22 358 / 60%);
-
-  --chart-1: oklch(0.72 0.22 358);
-  --chart-2: oklch(0.78 0.12 190);
-  --chart-3: oklch(0.78 0.16 75);
-  --chart-4: oklch(0.7 0.18 145);
-  --chart-5: oklch(0.72 0.16 280);
-
-  --sidebar: oklch(0.18 0.02 320);
-  --sidebar-foreground: oklch(0.92 0.01 75);
-  --sidebar-primary: oklch(0.72 0.22 358);
-  --sidebar-primary-foreground: oklch(0.16 0.02 320);
-  --sidebar-accent: oklch(0.26 0.03 350);
-  --sidebar-accent-foreground: oklch(0.96 0.01 75);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.72 0.22 358 / 60%);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.245 6 / 60%);
+  --chart-1: oklch(0.68 0.245 6);
+  --chart-2: oklch(0.85 0.18 175);
+  --chart-3: oklch(0.78 0.2 300);
+  --chart-4: oklch(0.82 0.2 85);
+  --chart-5: oklch(0.75 0.22 145);
+  --sidebar: oklch(0.12 0.008 320);
+  --sidebar-foreground: oklch(0.94 0.005 75);
+  --sidebar-primary: oklch(0.68 0.245 6);
+  --sidebar-primary-foreground: oklch(0.14 0.008 320);
+  --sidebar-accent: oklch(0.22 0.02 350);
+  --sidebar-accent-foreground: oklch(0.97 0.005 75);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.68 0.245 6 / 60%);
 }
 
 @layer base {
@@ -204,12 +192,28 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
   }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 60% 45% at 12% 8%, oklch(0.68 0.245 6 / 18%), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 92% 100%, oklch(0.85 0.18 175 / 14%), transparent 60%);
+    background-attachment: fixed;
+  }
 }
 
-/* Platform tinten — gebruik als bg/border in cards/tabellen.
- * Voorbeeld: <div class="platform-tint" data-platform="instagram"> ... </div>
- */
 @utility platform-tint {
-  background: color-mix(in oklab, var(--platform-color, var(--primary)) 10%, var(--card));
-  border-color: color-mix(in oklab, var(--platform-color, var(--primary)) 35%, transparent);
+  background: color-mix(in oklab, var(--platform-color, var(--primary)) 14%, var(--card));
+  border-color: color-mix(in oklab, var(--platform-color, var(--primary)) 45%, transparent);
+}
+
+@utility glow-pink {
+  box-shadow: var(--shadow-glow-pink);
+}
+
+@utility glow-cyan {
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+@utility gradient-neon {
+  background-image: var(--gradient-neon);
 }
