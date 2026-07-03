@@ -80,7 +80,12 @@ function CompetitorsIndex() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">Actief op:</span>
                 {channels.map((ch) => (
-                  <Badge key={ch.platform} variant="outline" className="gap-1">
+                  <Badge
+                    key={ch.platform}
+                    variant="outline"
+                    className="platform-badge gap-1"
+                    style={platformTintStyle(ch.platform)}
+                  >
                     <PlatformIcon platform={ch.platform} size={14} />
                     {platformLabel(ch.platform)}
                   </Badge>
