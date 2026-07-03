@@ -119,11 +119,12 @@
   --chart-4: oklch(0.68 0.18 300);   /* magenta-violet */
   --chart-5: oklch(0.82 0.15 90);    /* honey */
 
-  --platform-tiktok: oklch(0.55 0.02 250);
-  --platform-linkedin: oklch(0.5 0.13 250);
-  --platform-instagram: oklch(0.63 0.22 350);
-  --platform-facebook: oklch(0.52 0.16 260);
-  --platform-youtube: oklch(0.62 0.24 25);
+  /* True brand colors */
+  --platform-tiktok: #fe2c55;
+  --platform-linkedin: #0a66c2;
+  --platform-instagram: #e4405f;
+  --platform-facebook: #1877f2;
+  --platform-youtube: #ff0000;
 
   --sidebar: oklch(0.97 0.022 65);
   --sidebar-foreground: oklch(0.22 0.02 40);
