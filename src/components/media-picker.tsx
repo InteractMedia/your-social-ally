@@ -43,15 +43,16 @@ export function MediaPicker({
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const folder = await getUserFolder();
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .list(FOLDER, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+        .list(folder, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
       if (error) throw error;
       const items = await Promise.all(
         (data ?? [])
           .filter((f) => f.name && !f.name.startsWith("."))
           .map(async (f) => {
-            const path = `${FOLDER}/${f.name}`;
+            const path = `${folder}/${f.name}`;
             return { path, url: await signUrl(path) };
           }),
       );
