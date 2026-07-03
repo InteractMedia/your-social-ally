@@ -1,42 +1,30 @@
-## Doel
-De 6-staps Google Ads campagne wizard bestaat al op `/ads/google/new` maar mist per-keyword match types en een paar aanmaak-details. Deze plan maakt de wizard volledig productie-waardig (nog steeds Fase 1 in-memory demo).
+# Neon Studio — Full App Restyling
 
-## Wat er nu al staat
-`src/routes/ads.google.new.tsx` heeft de 6 stappen: Doel → Naam & budget → Targeting → Keywords → Advertentie → Review. Store en types in `src/lib/google-ads-store.ts` ondersteunen al `broad | phrase | exact` match, meerdere adGroups en volledige campagne-structuur.
+Ik pas stijl B (Neon Studio) toe op de hele app-layout via de design tokens in `src/styles.css`, zodat elk scherm (Dashboard, Ads, Google Ads Stats, etc.) direct meegaat zonder per-component herwerk.
 
-## Wat ontbreekt / wordt toegevoegd
+## Visuele richting
 
-**Stap 4 — Keywords (grootste uitbreiding)**
-- Match-type kiezer per keyword: chips `Broad` / `"Phrase"` / `[Exact]` naast elke geselecteerde keyword; default = phrase.
-- Vrije keyword-invoer: input + "Toevoegen" knop + parse van plak-lijst (regel per keyword, syntax `[woord]` = exact, `"woord"` = phrase, anders broad).
-- Negatieve keywords sectie: aparte lijst met eigen input, opgeslagen op ad group.
-- Geselecteerde-lijst wordt een tabel met kolommen keyword / match / geschatte CPC / verwijder-knop.
+- **Achtergrond:** diep warm zwart `#0f0f0f`, met subtiele donkere surface `#181818` voor cards.
+- **Accenten:** neon pink `#ff2d55` (primary) en electric cyan `#00f5d4` (secondary/accent).
+- **Tekst:** off-white `#f5f5f7` voor headings, muted `#a1a1aa` voor secundair.
+- **Borders:** semi-transparant wit `rgba(255,255,255,0.08)`, bij hover neon glow.
+- **Shadows/Glow:** `0 0 24px rgba(255,45,85,0.35)` op primary buttons en KPI-highlights.
+- **Typography:** iets condensed / bold voor grote KPI-getallen (via bestaande font-stack, `font-black tracking-tight`).
+- **Gradients:** `linear-gradient(135deg, #ff2d55, #00f5d4)` als accent op hero-elementen, KPI-toppers en active states.
 
-**Stap 2 — Naam & budget**
-- Toevoegen: Start-datum en optionele eind-datum (date inputs).
-- Waarschuwing als dagbudget < aanbevolen (2× hoogste CPC × 10).
+## Wijzigingen
 
-**Stap 3 — Targeting**
-- Toevoegen: Device-targeting (Desktop/Mobile/Tablet checkboxes, default alle aan).
-- Ad-schedule preset: `Altijd` / `Werkdagen 08–20` / `Custom` (custom = simpele dag×uur grid, optioneel — als het te groot wordt vervalt custom).
-
-**Stap 5 — Advertentie**
-- Karakter-tellers per regel (headline 30, description 90), rood bij overschrijding, blokkeer Volgende.
-- Live preview van de Search-ad (headline1 · headline2 | url \n description).
-
-**Stap 6 — Review**
-- Volledige samenvatting inclusief nieuwe velden (match types tellen per type, negatives, schedule, devices).
-- Twee submit-knoppen: `Opslaan als concept` (status `concept`) en `Publiceer` (status `actief`).
-
-**Types & store**
-`GoogleAdGroup` uitbreiden met `negatives: { text; match }[]`. `GoogleCampaign` uitbreiden met `startDate`, `endDate?`, `devices: ("desktop"|"mobile"|"tablet")[]`, `schedule: "always" | "business-hours" | { day: number; from: string; to: string }[]`. Bestaande seed-data blijft werken door velden optioneel te maken met sensible defaults.
-
-## Bestanden
-- `src/routes/ads.google.new.tsx` — hoofd-refactor van de wizard-content, stepper blijft gelijk.
-- `src/lib/google-ads-store.ts` — types uitbreiden (optionele velden) + `create()` behoudt huidige contract.
-- `src/routes/ads.google.$campaignId.tsx` — detail-pagina toont nieuwe velden (match types kolom, negatives, schedule, devices) — read-only, geen edit-flow in deze scope.
+1. **`src/styles.css`** — herdefinieer alle semantic tokens (background, foreground, card, primary, secondary, accent, muted, border, ring) naar de neon-donkerpalet in `oklch`, inclusief nieuwe tokens:
+   - `--gradient-neon`, `--shadow-glow-pink`, `--shadow-glow-cyan`.
+   - Forceer dark als default (root krijgt de dark waarden).
+2. **`src/routes/__root.tsx`** — zet `<body>` op `bg-background text-foreground` en voeg een subtiele radial gradient overlay toe (pink/cyan glow blobs, low opacity) achter de content.
+3. **Sidebar/Nav (indien aanwezig in layout)** — actieve items krijgen neon-pink underline/glow; icons in cyan bij hover.
+4. **Cards & KPI blocks (globale klassen, niet per-component)** — via tokens al gedekt; check dat `Card`/`Button` variants het nieuwe primary + glow shadow overnemen.
+5. **Charts (Google Ads Stats)** — recharts kleuren omschakelen naar `hsl(var(--primary))` en `hsl(var(--accent))` via bestaande wrapper, zonder logica te wijzigen.
 
 ## Buiten scope
-- Geen echte Google Ads API-koppeling (blijft Fase 2).
-- Geen bewerken van bestaande campagnes vanuit de wizard.
-- Geen A/B-ads binnen één ad group (blijft bij 1 responsive search ad).
+
+- Geen wijziging aan data, routes, forms of business logic.
+- Geen nieuwe pagina's of componenten — puur visual/token layer.
+
+Na akkoord bouw ik dit in één batch, dan zie je de hele app in Neon Studio-stijl in de preview.
