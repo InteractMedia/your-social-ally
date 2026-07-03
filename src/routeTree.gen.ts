@@ -25,6 +25,7 @@ import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
 import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
 import { Route as AdsGoogleIndexRouteImport } from './routes/ads.google.index'
+import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
 
@@ -108,6 +109,11 @@ const AdsGoogleIndexRoute = AdsGoogleIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
+const AdsGoogleStatsRoute = AdsGoogleStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AdsGoogleRoute,
+} as any)
 const AdsGoogleNewRoute = AdsGoogleNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
+  '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
 }
 export interface FileRoutesByTo {
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/competitors': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
+  '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/ads/google': typeof AdsGoogleIndexRoute
 }
 export interface FileRoutesById {
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
+  '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
 }
 export interface FileRouteTypes {
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/ads/google/$campaignId'
     | '/ads/google/new'
+    | '/ads/google/stats'
     | '/ads/google/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/ads/google/$campaignId'
     | '/ads/google/new'
+    | '/ads/google/stats'
     | '/ads/google'
   id:
     | '__root__'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/ads/google/$campaignId'
     | '/ads/google/new'
+    | '/ads/google/stats'
     | '/ads/google/'
   fileRoutesById: FileRoutesById
 }
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleIndexRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
+    '/ads/google/stats': {
+      id: '/ads/google/stats'
+      path: '/stats'
+      fullPath: '/ads/google/stats'
+      preLoaderRoute: typeof AdsGoogleStatsRouteImport
+      parentRoute: typeof AdsGoogleRoute
+    }
     '/ads/google/new': {
       id: '/ads/google/new'
       path: '/new'
@@ -383,12 +402,14 @@ declare module '@tanstack/react-router' {
 interface AdsGoogleRouteChildren {
   AdsGoogleCampaignIdRoute: typeof AdsGoogleCampaignIdRoute
   AdsGoogleNewRoute: typeof AdsGoogleNewRoute
+  AdsGoogleStatsRoute: typeof AdsGoogleStatsRoute
   AdsGoogleIndexRoute: typeof AdsGoogleIndexRoute
 }
 
 const AdsGoogleRouteChildren: AdsGoogleRouteChildren = {
   AdsGoogleCampaignIdRoute: AdsGoogleCampaignIdRoute,
   AdsGoogleNewRoute: AdsGoogleNewRoute,
+  AdsGoogleStatsRoute: AdsGoogleStatsRoute,
   AdsGoogleIndexRoute: AdsGoogleIndexRoute,
 }
 

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, Pause, Play, Plus, Settings2 } from "lucide-react";
+import { ArrowLeft, BarChart3, ExternalLink, Pause, Play, Plus, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -53,6 +53,9 @@ function GoogleAdsIndex() {
           <>
             <Button asChild variant="ghost" size="sm">
               <Link to="/ads"><ArrowLeft className="mr-1 h-4 w-4" /> Alle platforms</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/ads/google/stats"><BarChart3 className="mr-1.5 h-4 w-4" /> Statistieken</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <a href="https://ads.google.com" target="_blank" rel="noreferrer">
