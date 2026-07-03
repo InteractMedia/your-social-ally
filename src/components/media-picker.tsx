@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const BUCKET = "post-media";
-const FOLDER = "library";
+
+async function getUserFolder(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("Je moet ingelogd zijn om media te beheren.");
+  return data.user.id;
+}
 
 export type MediaItem = {
   path: string;
@@ -38,15 +43,16 @@ export function MediaPicker({
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const folder = await getUserFolder();
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .list(FOLDER, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+        .list(folder, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
       if (error) throw error;
       const items = await Promise.all(
         (data ?? [])
           .filter((f) => f.name && !f.name.startsWith("."))
           .map(async (f) => {
-            const path = `${FOLDER}/${f.name}`;
+            const path = `${folder}/${f.name}`;
             return { path, url: await signUrl(path) };
           }),
       );
@@ -66,10 +72,11 @@ export function MediaPicker({
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
+      const folder = await getUserFolder();
       const uploaded: MediaItem[] = [];
       for (const file of Array.from(files)) {
         const ext = file.name.split(".").pop() || "bin";
-        const path = `${FOLDER}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error } = await supabase.storage
           .from(BUCKET)
           .upload(path, file, { contentType: file.type, upsert: false });
