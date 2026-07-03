@@ -2,10 +2,15 @@
 // Vervangt later door echte server-function calls (Fase 2).
 import { useSyncExternalStore } from "react";
 
+export type MatchType = "broad" | "phrase" | "exact";
+export type Device = "desktop" | "mobile" | "tablet";
+export type SchedulePreset = "always" | "business-hours";
+
 export type GoogleAdGroup = {
   id: string;
   name: string;
-  keywords: { text: string; match: "broad" | "phrase" | "exact"; cpc: number }[];
+  keywords: { text: string; match: MatchType; cpc: number }[];
+  negatives?: { text: string; match: MatchType }[];
   ads: {
     id: string;
     headlines: string[];   // tot 15
@@ -31,6 +36,10 @@ export type GoogleCampaign = {
   languages: string[]; // ["Nederlands"]
   type: "Search" | "Performance Max" | "YouTube" | "Shopping";
   startedAt: string;
+  startDate?: string;   // ISO date (yyyy-mm-dd)
+  endDate?: string;     // ISO date, optioneel
+  devices?: Device[];   // default alle drie
+  schedule?: SchedulePreset;
   adGroups: GoogleAdGroup[];
 };
 
