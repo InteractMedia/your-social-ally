@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Link2, Plug } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Check, Link2, Loader2, Plug } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
@@ -10,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
+import { getLinkedInProfile } from "@/lib/linkedin.functions";
+
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Instellingen — ZoetBezorgen Social" }] }),
