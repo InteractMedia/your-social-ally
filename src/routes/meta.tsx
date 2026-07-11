@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/settings/meta")({
+export const Route = createFileRoute("/meta")({
   head: () => ({
     meta: [{ title: "Meta koppeling — ZoetBezorgen Social" }],
   }),

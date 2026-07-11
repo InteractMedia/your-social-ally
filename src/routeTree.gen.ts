@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as MetaRouteImport } from './routes/meta'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposerRouteImport } from './routes/composer'
 import { Route as CompetitorsRouteImport } from './routes/competitors'
@@ -20,7 +21,6 @@ import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
-import { Route as SettingsMetaRouteImport } from './routes/settings.meta'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
@@ -43,6 +43,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetaRoute = MetaRouteImport.update({
+  id: '/meta',
+  path: '/meta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -84,11 +89,6 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdsRoute,
-} as any)
-const SettingsMetaRoute = SettingsMetaRouteImport.update({
-  id: '/meta',
-  path: '/meta',
-  getParentRoute: () => SettingsRoute,
 } as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
@@ -138,14 +138,14 @@ export interface FileRoutesByFullPath {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
-  '/settings/meta': typeof SettingsMetaRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -158,13 +158,13 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
-  '/settings/meta': typeof SettingsMetaRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -180,14 +180,14 @@ export interface FileRoutesById {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
-  '/settings/meta': typeof SettingsMetaRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -204,6 +204,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/meta'
     | '/schedule'
     | '/settings'
     | '/trends'
@@ -211,7 +212,6 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
-    | '/settings/meta'
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
@@ -224,13 +224,13 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/composer'
     | '/inbox'
+    | '/meta'
     | '/schedule'
     | '/settings'
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
     | '/competitors/$id'
-    | '/settings/meta'
     | '/ads'
     | '/competitors'
     | '/ads/google/$campaignId'
@@ -245,6 +245,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/meta'
     | '/schedule'
     | '/settings'
     | '/trends'
@@ -252,7 +253,6 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
-    | '/settings/meta'
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
@@ -268,8 +268,9 @@ export interface RootRouteChildren {
   CompetitorsRoute: typeof CompetitorsRouteWithChildren
   ComposerRoute: typeof ComposerRoute
   InboxRoute: typeof InboxRoute
+  MetaRoute: typeof MetaRoute
   ScheduleRoute: typeof ScheduleRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
 }
 
@@ -294,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/schedule'
       fullPath: '/schedule'
       preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meta': {
+      id: '/meta'
+      path: '/meta'
+      fullPath: '/meta'
+      preLoaderRoute: typeof MetaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -351,13 +359,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
-    }
-    '/settings/meta': {
-      id: '/settings/meta'
-      path: '/meta'
-      fullPath: '/settings/meta'
-      preLoaderRoute: typeof SettingsMetaRouteImport
-      parentRoute: typeof SettingsRoute
     }
     '/competitors/$id': {
       id: '/competitors/$id'
@@ -466,18 +467,6 @@ const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
   CompetitorsRouteChildren,
 )
 
-interface SettingsRouteChildren {
-  SettingsMetaRoute: typeof SettingsMetaRoute
-}
-
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsMetaRoute: SettingsMetaRoute,
-}
-
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdsRoute: AdsRouteWithChildren,
@@ -485,8 +474,9 @@ const rootRouteChildren: RootRouteChildren = {
   CompetitorsRoute: CompetitorsRouteWithChildren,
   ComposerRoute: ComposerRoute,
   InboxRoute: InboxRoute,
+  MetaRoute: MetaRoute,
   ScheduleRoute: ScheduleRoute,
-  SettingsRoute: SettingsRouteWithChildren,
+  SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
