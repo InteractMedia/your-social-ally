@@ -10,6 +10,7 @@ import { PlatformIcon } from "@/components/platform-icon";
 import { MediaPicker, type MediaItem } from "@/components/media-picker";
 import { HookGeneratorPanel } from "@/components/composer/HookGeneratorPanel";
 import { HashtagOptimizerPanel } from "@/components/composer/HashtagOptimizerPanel";
+import { ManualMetaPanel } from "@/components/composer/ManualMetaPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
