@@ -38,6 +38,7 @@ function Settings() {
           <CardContent className="space-y-3">
             {PLATFORMS.map((p) => {
               const acc = accounts.find((a) => a.platform === p.id);
+              if (p.id === "linkedin") return <LinkedInRow key={p.id} />;
               const live = acc?.connection === "api";
               return (
                 <div
@@ -66,10 +67,11 @@ function Settings() {
               );
             })}
             <p className="text-xs text-muted-foreground">
-              TikTok &amp; LinkedIn kunnen we direct via Lovable connectoren koppelen.
-              Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
+              LinkedIn is nu echt gekoppeld via de Lovable connector (persoonlijk account). Company-page publicatie vereist LinkedIn's Marketing Developer Program — vraag dit aan als admin van de bedrijfspagina.
+              TikTok kunnen we via Lovable connectoren koppelen. Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
             </p>
           </CardContent>
+
         </Card>
 
         <Card>
