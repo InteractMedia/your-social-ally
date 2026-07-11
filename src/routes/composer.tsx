@@ -2,7 +2,8 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Brain, CheckCircle2, Hash, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+import { Brain, CheckCircle2, Hash, Linkedin, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -15,9 +16,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
+import { publishLinkedInPost } from "@/lib/linkedin.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
 import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/composer")({
   head: () => ({ meta: [{ title: "Post Composer — ZoetBezorgen Social" }] }),
@@ -35,11 +38,19 @@ function Composer() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [selected, setSelected] = useState<Platform[]>(["tiktok", "instagram"]);
   const fn = useServerFn(generateAI);
+  const publishLI = useServerFn(publishLinkedInPost);
 
   const mutation = useMutation({
     mutationFn: (input: Parameters<typeof generateAI>[0]) => fn(input),
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const liMutation = useMutation({
+    mutationFn: (text: string) => publishLI({ data: { text } }),
+    onSuccess: () => toast.success("Gepubliceerd op LinkedIn ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   const toggle = (p: Platform) =>
     setSelected((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -104,10 +115,30 @@ function Composer() {
               <CheckCircle2 className="h-4 w-4" />
               Markeer als gepost
             </Button>
+            {selected.includes("linkedin") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#0A66C2]/40 text-[#0A66C2] hover:bg-[#0A66C2]/10 hover:text-[#0A66C2]"
+                disabled={liMutation.isPending || !content.trim()}
+                onClick={() => {
+                  if (!content.trim()) return toast.error("Schrijf eerst een bericht.");
+                  liMutation.mutate(content);
+                }}
+              >
+                {liMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Linkedin className="h-4 w-4" />
+                )}
+                Post naar LinkedIn
+              </Button>
+            )}
             <Button size="sm" className="gap-1.5">
               <Send className="h-4 w-4" />
               Inplannen
             </Button>
+
           </>
         }
       />

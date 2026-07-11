@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Link2, Plug } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Check, Link2, Loader2, Plug } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
@@ -10,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
+import { getLinkedInProfile } from "@/lib/linkedin.functions";
+
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Instellingen — ZoetBezorgen Social" }] }),
@@ -34,6 +38,7 @@ function Settings() {
           <CardContent className="space-y-3">
             {PLATFORMS.map((p) => {
               const acc = accounts.find((a) => a.platform === p.id);
+              if (p.id === "linkedin") return <LinkedInRow key={p.id} />;
               const live = acc?.connection === "api";
               return (
                 <div
@@ -62,10 +67,11 @@ function Settings() {
               );
             })}
             <p className="text-xs text-muted-foreground">
-              TikTok &amp; LinkedIn kunnen we direct via Lovable connectoren koppelen.
-              Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
+              LinkedIn is nu echt gekoppeld via de Lovable connector (persoonlijk account). Company-page publicatie vereist LinkedIn's Marketing Developer Program — vraag dit aan als admin van de bedrijfspagina.
+              TikTok kunnen we via Lovable connectoren koppelen. Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
             </p>
           </CardContent>
+
         </Card>
 
         <Card>
@@ -128,3 +134,47 @@ function Settings() {
     </AppShell>
   );
 }
+
+function LinkedInRow() {
+  const fn = useServerFn(getLinkedInProfile);
+  const { data, isLoading } = useQuery({
+    queryKey: ["linkedin", "profile"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  return (
+    <div
+      className="platform-row flex items-center gap-3 rounded-md border p-3"
+      style={platformTintStyle("linkedin")}
+    >
+      <PlatformIcon platform="linkedin" />
+      <div className="flex-1">
+        <div className="text-sm font-medium">LinkedIn</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : data?.connected
+              ? `${data.name}${data.email ? ` · ${data.email}` : ""}`
+              : data?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : data?.connected ? (
+        <>
+          {data.picture && (
+            <img src={data.picture} alt="" className="h-8 w-8 rounded-full object-cover" />
+          )}
+          <Badge variant="outline" className="gap-1 text-success">
+            <Check className="h-3 w-3" /> Live
+          </Badge>
+        </>
+      ) : (
+        <Badge variant="outline">Niet gekoppeld</Badge>
+      )}
+    </div>
+  );
+}
+
