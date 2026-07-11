@@ -20,6 +20,7 @@ import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
+import { Route as SettingsMetaRouteImport } from './routes/settings.meta'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
@@ -84,6 +85,11 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdsRoute,
 } as any)
+const SettingsMetaRoute = SettingsMetaRouteImport.update({
+  id: '/meta',
+  path: '/meta',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -133,12 +139,13 @@ export interface FileRoutesByFullPath {
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/settings/meta': typeof SettingsMetaRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -152,11 +159,12 @@ export interface FileRoutesByTo {
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/settings/meta': typeof SettingsMetaRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -173,12 +181,13 @@ export interface FileRoutesById {
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
   '/schedule': typeof ScheduleRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/settings/meta': typeof SettingsMetaRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/settings/meta'
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/competitors/$id'
+    | '/settings/meta'
     | '/ads'
     | '/competitors'
     | '/ads/google/$campaignId'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/settings/meta'
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
@@ -257,7 +269,7 @@ export interface RootRouteChildren {
   ComposerRoute: typeof ComposerRoute
   InboxRoute: typeof InboxRoute
   ScheduleRoute: typeof ScheduleRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   TrendsRoute: typeof TrendsRoute
 }
 
@@ -339,6 +351,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
+    }
+    '/settings/meta': {
+      id: '/settings/meta'
+      path: '/meta'
+      fullPath: '/settings/meta'
+      preLoaderRoute: typeof SettingsMetaRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/competitors/$id': {
       id: '/competitors/$id'
@@ -447,6 +466,18 @@ const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
   CompetitorsRouteChildren,
 )
 
+interface SettingsRouteChildren {
+  SettingsMetaRoute: typeof SettingsMetaRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsMetaRoute: SettingsMetaRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdsRoute: AdsRouteWithChildren,
@@ -455,19 +486,9 @@ const rootRouteChildren: RootRouteChildren = {
   ComposerRoute: ComposerRoute,
   InboxRoute: InboxRoute,
   ScheduleRoute: ScheduleRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
