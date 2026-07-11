@@ -270,6 +270,8 @@ function Composer() {
             onAppend={(hashtags) => setContent((c) => `${c}${c ? "\n\n" : ""}${hashtags}`)}
           />
 
+          <ManualMetaPanel content={content} media={media} platforms={selected} />
+
           <h3 className="text-sm font-medium text-muted-foreground">Live preview</h3>
           {selected.length === 0 && (
             <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
