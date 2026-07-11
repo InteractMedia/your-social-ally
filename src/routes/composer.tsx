@@ -115,10 +115,30 @@ function Composer() {
               <CheckCircle2 className="h-4 w-4" />
               Markeer als gepost
             </Button>
+            {selected.includes("linkedin") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#0A66C2]/40 text-[#0A66C2] hover:bg-[#0A66C2]/10 hover:text-[#0A66C2]"
+                disabled={liMutation.isPending || !content.trim()}
+                onClick={() => {
+                  if (!content.trim()) return toast.error("Schrijf eerst een bericht.");
+                  liMutation.mutate(content);
+                }}
+              >
+                {liMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Linkedin className="h-4 w-4" />
+                )}
+                Post naar LinkedIn
+              </Button>
+            )}
             <Button size="sm" className="gap-1.5">
               <Send className="h-4 w-4" />
               Inplannen
             </Button>
+
           </>
         }
       />
