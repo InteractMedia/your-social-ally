@@ -15,9 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
+import { publishLinkedInPost } from "@/lib/linkedin.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
 import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/composer")({
   head: () => ({ meta: [{ title: "Post Composer — ZoetBezorgen Social" }] }),
