@@ -38,11 +38,19 @@ function Composer() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [selected, setSelected] = useState<Platform[]>(["tiktok", "instagram"]);
   const fn = useServerFn(generateAI);
+  const publishLI = useServerFn(publishLinkedInPost);
 
   const mutation = useMutation({
     mutationFn: (input: Parameters<typeof generateAI>[0]) => fn(input),
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const liMutation = useMutation({
+    mutationFn: (text: string) => publishLI({ data: { text } }),
+    onSuccess: () => toast.success("Gepubliceerd op LinkedIn ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   const toggle = (p: Platform) =>
     setSelected((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
