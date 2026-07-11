@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Link2, Loader2, Plug } from "lucide-react";
+import { Check, Link2, Loader2, Plug, Sparkles } from "lucide-react";
+
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { PlatformIcon, platformTintStyle } from "@/components/platform-icon";
