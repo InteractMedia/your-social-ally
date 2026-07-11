@@ -134,3 +134,47 @@ function Settings() {
     </AppShell>
   );
 }
+
+function LinkedInRow() {
+  const fn = useServerFn(getLinkedInProfile);
+  const { data, isLoading } = useQuery({
+    queryKey: ["linkedin", "profile"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  return (
+    <div
+      className="platform-row flex items-center gap-3 rounded-md border p-3"
+      style={platformTintStyle("linkedin")}
+    >
+      <PlatformIcon platform="linkedin" />
+      <div className="flex-1">
+        <div className="text-sm font-medium">LinkedIn</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : data?.connected
+              ? `${data.name}${data.email ? ` · ${data.email}` : ""}`
+              : data?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : data?.connected ? (
+        <>
+          {data.picture && (
+            <img src={data.picture} alt="" className="h-8 w-8 rounded-full object-cover" />
+          )}
+          <Badge variant="outline" className="gap-1 text-success">
+            <Check className="h-3 w-3" /> Live
+          </Badge>
+        </>
+      ) : (
+        <Badge variant="outline">Niet gekoppeld</Badge>
+      )}
+    </div>
+  );
+}
+
