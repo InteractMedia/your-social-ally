@@ -4,15 +4,21 @@ import { cn } from "@/lib/utils";
 
 export function ReplyTimeMeter({ inboxCount, unread }: { inboxCount: number; unread: number }) {
   const median = medianReplyTimeMinutes();
-  const good = median < 60;
+  const good = median !== null && median < 60;
   return (
     <div className="flex items-center gap-4 rounded-md border border-border bg-surface p-3 text-xs">
       <div className="flex items-center gap-2">
         <Clock className={cn("h-4 w-4", good ? "text-success" : "text-warning")} />
         <div>
-          <div className="font-medium">Mediaan reactietijd: {median} min</div>
+          <div className="font-medium">
+            Mediaan reactietijd: {median === null ? "—" : `${median} min`}
+          </div>
           <div className="text-[10px] text-muted-foreground">
-            {good ? "✓ Onder 1u — algoritme boost" : "Boven 1u — mist algoritme window"}
+            {median === null
+              ? "Nog geen data"
+              : good
+                ? "✓ Onder 1u — algoritme boost"
+                : "Boven 1u — mist algoritme window"}
           </div>
         </div>
       </div>
