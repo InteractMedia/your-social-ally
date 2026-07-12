@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
+import { getMetaStatus } from "@/lib/meta.functions";
 
 
 export const Route = createFileRoute("/settings")({
@@ -40,8 +41,9 @@ function Settings() {
             {PLATFORMS.map((p) => {
               const acc = accounts.find((a) => a.platform === p.id);
               if (p.id === "linkedin") return <LinkedInRow key={p.id} />;
+              if (p.id === "facebook" || p.id === "instagram")
+                return <MetaRow key={p.id} platform={p.id} />;
               const live = acc?.connection === "api";
-              const isMeta = p.id === "facebook" || p.id === "instagram";
               return (
                 <div
                   key={p.id}
@@ -59,13 +61,6 @@ function Settings() {
                     <Badge variant="outline" className="gap-1 text-success">
                       <Check className="h-3 w-3" /> Live
                     </Badge>
-                  ) : isMeta ? (
-                    <Button asChild size="sm" variant="outline" className="gap-1.5">
-                      <Link to="/meta">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Wizard starten
-                      </Link>
-                    </Button>
                   ) : (
                     <Button size="sm" variant="outline" className="gap-1.5">
                       <Link2 className="h-3.5 w-3.5" />
@@ -77,8 +72,7 @@ function Settings() {
             })}
 
             <p className="text-xs text-muted-foreground">
-              LinkedIn is nu echt gekoppeld via de Lovable connector (persoonlijk account). Company-page publicatie vereist LinkedIn's Marketing Developer Program — vraag dit aan als admin van de bedrijfspagina.
-              TikTok kunnen we via Lovable connectoren koppelen. Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
+              LinkedIn, Facebook en Instagram zijn nu echt gekoppeld via de Graph API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
             </p>
           </CardContent>
 
@@ -187,4 +181,55 @@ function LinkedInRow() {
     </div>
   );
 }
+
+function MetaRow({ platform }: { platform: "facebook" | "instagram" }) {
+  const fn = useServerFn(getMetaStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["meta", "status"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const info = platform === "facebook" ? data?.page : data?.instagram;
+  const connected = !!info?.connected;
+  const label =
+    platform === "facebook"
+      ? info?.connected ? `${(info as { name?: string }).name ?? "Facebook Page"}` : ""
+      : info?.connected ? `@${(info as { username?: string }).username ?? ""}` : "";
+
+  return (
+    <div
+      className="platform-row flex items-center gap-3 rounded-md border p-3"
+      style={platformTintStyle(platform)}
+    >
+      <PlatformIcon platform={platform} />
+      <div className="flex-1">
+        <div className="text-sm font-medium">{platform === "facebook" ? "Facebook" : "Instagram"}</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : connected
+              ? label
+              : info?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : connected ? (
+        <Badge variant="outline" className="gap-1 text-success">
+          <Check className="h-3 w-3" /> Live
+        </Badge>
+      ) : (
+        <Button asChild size="sm" variant="outline" className="gap-1.5">
+          <Link to="/meta">
+            <Sparkles className="h-3.5 w-3.5" />
+            Wizard
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
 

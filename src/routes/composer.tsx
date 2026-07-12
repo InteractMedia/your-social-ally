@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Brain, CheckCircle2, Hash, Linkedin, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+import { Brain, CheckCircle2, Facebook, Hash, Instagram, Linkedin, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
 
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
 import { publishLinkedInPost } from "@/lib/linkedin.functions";
+import { publishFacebookPost, publishInstagramPost } from "@/lib/meta.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
 import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,8 @@ function Composer() {
   const [selected, setSelected] = useState<Platform[]>(["tiktok", "instagram"]);
   const fn = useServerFn(generateAI);
   const publishLI = useServerFn(publishLinkedInPost);
+  const publishFB = useServerFn(publishFacebookPost);
+  const publishIG = useServerFn(publishInstagramPost);
 
   const mutation = useMutation({
     mutationFn: (input: Parameters<typeof generateAI>[0]) => fn(input),
@@ -49,6 +52,18 @@ function Composer() {
   const liMutation = useMutation({
     mutationFn: (text: string) => publishLI({ data: { text } }),
     onSuccess: () => toast.success("Gepubliceerd op LinkedIn ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const fbMutation = useMutation({
+    mutationFn: (input: { message: string; mediaPaths?: string[] }) => publishFB({ data: input }),
+    onSuccess: () => toast.success("Gepubliceerd op Facebook ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const igMutation = useMutation({
+    mutationFn: (input: { caption?: string; mediaPaths: string[] }) => publishIG({ data: input }),
+    onSuccess: () => toast.success("Gepubliceerd op Instagram ✅"),
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -133,6 +148,36 @@ function Composer() {
                   <Linkedin className="h-4 w-4" />
                 )}
                 Post naar LinkedIn
+              </Button>
+            )}
+            {selected.includes("facebook") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#1877F2]/40 text-[#1877F2] hover:bg-[#1877F2]/10 hover:text-[#1877F2]"
+                disabled={fbMutation.isPending || !content.trim()}
+                onClick={() => {
+                  if (!content.trim()) return toast.error("Schrijf eerst een bericht.");
+                  fbMutation.mutate({ message: content, mediaPaths: media.map((m) => m.path) });
+                }}
+              >
+                {fbMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Facebook className="h-4 w-4" />}
+                Post naar Facebook
+              </Button>
+            )}
+            {selected.includes("instagram") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#E4405F]/40 text-[#E4405F] hover:bg-[#E4405F]/10 hover:text-[#E4405F]"
+                disabled={igMutation.isPending || media.length === 0}
+                onClick={() => {
+                  if (media.length === 0) return toast.error("Instagram vereist minimaal 1 afbeelding.");
+                  igMutation.mutate({ caption: content, mediaPaths: media.map((m) => m.path) });
+                }}
+              >
+                {igMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />}
+                Post naar Instagram
               </Button>
             )}
             <Button size="sm" className="gap-1.5">
