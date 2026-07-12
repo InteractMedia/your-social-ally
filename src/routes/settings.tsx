@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Link2, Loader2, Plug, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Copy, Link2, Loader2, Plug, Sparkles, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
 
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -14,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
-import { getMetaStatus } from "@/lib/meta.functions";
+import { debugMetaToken, getMetaStatus } from "@/lib/meta.functions";
 
 
 export const Route = createFileRoute("/settings")({
@@ -134,6 +135,8 @@ function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        <MetaDebugCard />
       </div>
     </AppShell>
   );
@@ -231,5 +234,168 @@ function MetaRow({ platform }: { platform: "facebook" | "instagram" }) {
     </div>
   );
 }
+
+function copy(value: string, label: string) {
+  navigator.clipboard.writeText(value).then(
+    () => toast.success(`${label} gekopieerd`),
+    () => toast.error("Kopiëren mislukt"),
+  );
+}
+
+function MetaDebugCard() {
+  const fn = useServerFn(debugMetaToken);
+  const { data, isFetching, refetch, error } = useQuery({
+    queryKey: ["meta", "debug"],
+    queryFn: () => fn(),
+    enabled: false,
+    retry: false,
+  });
+
+  const REQUIRED_SCOPES = [
+    "pages_show_list",
+    "pages_read_engagement",
+    "pages_manage_posts",
+    "instagram_basic",
+    "instagram_content_publish",
+  ];
+
+  const scopes = data && "ok" in data && data.ok ? data.tokenInfo?.scopes ?? [] : [];
+  const missingScopes = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Stethoscope className="h-4 w-4 text-primary" /> Meta diagnose
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Controleert welke Pages en Instagram Business accounts jouw huidige access token kan zien. Gebruik de resultaten om de juiste <code className="rounded bg-surface px-1">META_PAGE_ID</code> en <code className="rounded bg-surface px-1">META_IG_BUSINESS_ID</code> te vinden.
+          </p>
+          <Button size="sm" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Diagnose uitvoeren"}
+          </Button>
+        </div>
+
+        {error && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            {(error as Error).message}
+          </div>
+        )}
+
+        {data && "ok" in data && data.ok === false && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            {data.error}
+          </div>
+        )}
+
+        {data && "ok" in data && data.ok === true && (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-md border p-3 text-sm">
+                <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Token</div>
+                <div>Type: <span className="font-mono">{data.tokenInfo?.type ?? "?"}</span></div>
+                <div>Geldig: {data.tokenInfo?.is_valid ? "ja" : "nee"}</div>
+                <div>
+                  Verloopt:{" "}
+                  {data.tokenInfo?.expires_at !== undefined
+                    ? data.tokenInfo.expires_at === 0
+                      ? "nooit (long-lived)"
+                      : new Date(data.tokenInfo.expires_at * 1000).toLocaleString()
+                    : "?"}
+                </div>
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground">Scopes:</div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {scopes.length === 0 && <span className="text-xs text-muted-foreground">geen</span>}
+                    {scopes.map((s) => (
+                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                    ))}
+                  </div>
+                  {missingScopes.length > 0 && (
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>Mist: {missingScopes.join(", ")}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-md border p-3 text-sm">
+                <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Huidige secrets</div>
+                <div className="font-mono text-xs">META_PAGE_ID = {data.current.pageId ?? "—"}</div>
+                <div className="font-mono text-xs">META_IG_BUSINESS_ID = {data.current.igId ?? "—"}</div>
+                <div className="mt-2 text-xs text-muted-foreground">Vergelijk met de gevonden Pages hieronder.</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                Gevonden Pages ({data.pages.length})
+              </div>
+              {data.pages.length === 0 && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                  Geen Pages gevonden. Het token hoort waarschijnlijk bij een account zonder Page-beheer, of mist <code>pages_show_list</code>.
+                </div>
+              )}
+              <div className="space-y-3">
+                {data.pages.map((p) => (
+                  <div key={p.id} className="rounded-md border p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium">{p.name}</div>
+                      {(p.matchesCurrentPageId || p.matchesCurrentIgId) && (
+                        <Badge variant="outline" className="gap-1 text-success">
+                          <Check className="h-3 w-3" />
+                          {p.matchesCurrentPageId && p.matchesCurrentIgId ? "Beide IDs komen overeen" : p.matchesCurrentPageId ? "Page ID komt overeen" : "IG ID komt overeen"}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
+                        <div className="min-w-0">
+                          <div className="text-[10px] uppercase text-muted-foreground">Page ID</div>
+                          <div className="truncate font-mono text-xs">{p.id}</div>
+                        </div>
+                        <Button size="icon" variant="ghost" onClick={() => copy(p.id, "Page ID")}>
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
+                        <div className="min-w-0">
+                          <div className="text-[10px] uppercase text-muted-foreground">
+                            IG Business ID {p.instagram?.username ? `(@${p.instagram.username})` : ""}
+                          </div>
+                          <div className="truncate font-mono text-xs">{p.instagram?.id ?? "— geen IG gekoppeld"}</div>
+                        </div>
+                        {p.instagram?.id && (
+                          <Button size="icon" variant="ghost" onClick={() => copy(p.instagram!.id, "IG Business ID")}>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {p.category && (
+                      <div className="mt-1 text-xs text-muted-foreground">Categorie: {p.category}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {data.errors.length > 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                <div className="mb-1 font-medium">Waarschuwingen</div>
+                {data.errors.map((e, i) => <div key={i}>{e}</div>)}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 
