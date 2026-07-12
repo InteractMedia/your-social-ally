@@ -41,8 +41,9 @@ function Settings() {
             {PLATFORMS.map((p) => {
               const acc = accounts.find((a) => a.platform === p.id);
               if (p.id === "linkedin") return <LinkedInRow key={p.id} />;
+              if (p.id === "facebook" || p.id === "instagram")
+                return <MetaRow key={p.id} platform={p.id} />;
               const live = acc?.connection === "api";
-              const isMeta = p.id === "facebook" || p.id === "instagram";
               return (
                 <div
                   key={p.id}
@@ -60,13 +61,6 @@ function Settings() {
                     <Badge variant="outline" className="gap-1 text-success">
                       <Check className="h-3 w-3" /> Live
                     </Badge>
-                  ) : isMeta ? (
-                    <Button asChild size="sm" variant="outline" className="gap-1.5">
-                      <Link to="/meta">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Wizard starten
-                      </Link>
-                    </Button>
                   ) : (
                     <Button size="sm" variant="outline" className="gap-1.5">
                       <Link2 className="h-3.5 w-3.5" />
@@ -78,8 +72,7 @@ function Settings() {
             })}
 
             <p className="text-xs text-muted-foreground">
-              LinkedIn is nu echt gekoppeld via de Lovable connector (persoonlijk account). Company-page publicatie vereist LinkedIn's Marketing Developer Program — vraag dit aan als admin van de bedrijfspagina.
-              TikTok kunnen we via Lovable connectoren koppelen. Instagram, Facebook en YouTube vereisen Meta business-review of een eigen YouTube API key — daarom v1 als handmatige invoer.
+              LinkedIn, Facebook en Instagram zijn nu echt gekoppeld via de Graph API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
             </p>
           </CardContent>
 
