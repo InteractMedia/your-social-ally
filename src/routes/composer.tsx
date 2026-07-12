@@ -150,6 +150,36 @@ function Composer() {
                 Post naar LinkedIn
               </Button>
             )}
+            {selected.includes("facebook") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#1877F2]/40 text-[#1877F2] hover:bg-[#1877F2]/10 hover:text-[#1877F2]"
+                disabled={fbMutation.isPending || !content.trim()}
+                onClick={() => {
+                  if (!content.trim()) return toast.error("Schrijf eerst een bericht.");
+                  fbMutation.mutate({ message: content, mediaPaths: media.map((m) => m.path) });
+                }}
+              >
+                {fbMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Facebook className="h-4 w-4" />}
+                Post naar Facebook
+              </Button>
+            )}
+            {selected.includes("instagram") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-[#E4405F]/40 text-[#E4405F] hover:bg-[#E4405F]/10 hover:text-[#E4405F]"
+                disabled={igMutation.isPending || media.length === 0}
+                onClick={() => {
+                  if (media.length === 0) return toast.error("Instagram vereist minimaal 1 afbeelding.");
+                  igMutation.mutate({ caption: content, mediaPaths: media.map((m) => m.path) });
+                }}
+              >
+                {igMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />}
+                Post naar Instagram
+              </Button>
+            )}
             <Button size="sm" className="gap-1.5">
               <Send className="h-4 w-4" />
               Inplannen
