@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Link2, Loader2, Plug, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Copy, Link2, Loader2, Plug, Sparkles, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
 
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -14,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
-import { getMetaStatus } from "@/lib/meta.functions";
+import { debugMetaToken, getMetaStatus } from "@/lib/meta.functions";
 
 
 export const Route = createFileRoute("/settings")({
