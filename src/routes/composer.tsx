@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Brain, CheckCircle2, Hash, Linkedin, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
+import { Brain, CheckCircle2, Facebook, Hash, Instagram, Linkedin, Loader2, Maximize2, Minimize2, RefreshCcw, Send, Sparkles } from "lucide-react";
 
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { generateAI } from "@/lib/ai.functions";
 import { publishLinkedInPost } from "@/lib/linkedin.functions";
+import { publishFacebookPost, publishInstagramPost } from "@/lib/meta.functions";
 import { PLATFORMS, platformLabel, type Platform } from "@/lib/demo-data";
 import { computeLearnings, recordPostResult } from "@/lib/feedback-loop";
 import { cn } from "@/lib/utils";
