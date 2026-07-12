@@ -1,30 +1,58 @@
-# Neon Studio — Full App Restyling
+# Meta (Facebook + Instagram) live koppeling
 
-Ik pas stijl B (Neon Studio) toe op de hele app-layout via de design tokens in `src/styles.css`, zodat elk scherm (Dashboard, Ads, Google Ads Stats, etc.) direct meegaat zonder per-component herwerk.
+Nu App Review binnen is: van demo/handmatig naar echte Graph API-integratie voor publiceren, comments/DM's inlezen en insights.
 
-## Visuele richting
+## 1. Secrets (backend)
+Via `add_secret` opslaan (jij vult in via secure form):
+- `META_APP_ID`, `META_APP_SECRET`
+- `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN` (long-lived)
+- `META_IG_BUSINESS_ID`
 
-- **Achtergrond:** diep warm zwart `#0f0f0f`, met subtiele donkere surface `#181818` voor cards.
-- **Accenten:** neon pink `#ff2d55` (primary) en electric cyan `#00f5d4` (secondary/accent).
-- **Tekst:** off-white `#f5f5f7` voor headings, muted `#a1a1aa` voor secundair.
-- **Borders:** semi-transparant wit `rgba(255,255,255,0.08)`, bij hover neon glow.
-- **Shadows/Glow:** `0 0 24px rgba(255,45,85,0.35)` op primary buttons en KPI-highlights.
-- **Typography:** iets condensed / bold voor grote KPI-getallen (via bestaande font-stack, `font-black tracking-tight`).
-- **Gradients:** `linear-gradient(135deg, #ff2d55, #00f5d4)` als accent op hero-elementen, KPI-toppers en active states.
+## 2. Server-functies — `src/lib/meta.functions.ts`
+Alle calls naar `graph.facebook.com/v21.0`, token uit `process.env`.
 
-## Wijzigingen
+- `getMetaStatus()` — check token geldigheid + page/IG info (naam, avatar, followers). Voedt Settings.
+- `publishFacebookPost({ text, mediaPaths[] })` — 0/1 image = `/{page}/photos` of `/{page}/feed`; meerdere = unpublished photos → `/{page}/feed` met `attached_media`.
+- `publishInstagramPost({ caption, mediaPaths[] })` — single: `/{ig}/media` (image_url) → `/{ig}/media_publish`; carousel: children containers → carousel container → publish. Media wordt eerst uit Supabase `post-media` bucket via signed URL beschikbaar gemaakt (Graph vereist publieke URL — we gebruiken korte-TTL signed URLs).
+- `listMetaComments({ platform, since })` — FB: `/{page}/feed?fields=comments{...}`; IG: `/{ig}/media?fields=comments{...}`. Normaliseert naar het bestaande `InboxItem`-shape.
+- `replyMetaComment({ platform, commentId, message })`.
+- `getMetaInsights({ platform, range })` — page/IG insights (reach, impressions, engagement, follower_count).
 
-1. **`src/styles.css`** — herdefinieer alle semantic tokens (background, foreground, card, primary, secondary, accent, muted, border, ring) naar de neon-donkerpalet in `oklch`, inclusief nieuwe tokens:
-   - `--gradient-neon`, `--shadow-glow-pink`, `--shadow-glow-cyan`.
-   - Forceer dark als default (root krijgt de dark waarden).
-2. **`src/routes/__root.tsx`** — zet `<body>` op `bg-background text-foreground` en voeg een subtiele radial gradient overlay toe (pink/cyan glow blobs, low opacity) achter de content.
-3. **Sidebar/Nav (indien aanwezig in layout)** — actieve items krijgen neon-pink underline/glow; icons in cyan bij hover.
-4. **Cards & KPI blocks (globale klassen, niet per-component)** — via tokens al gedekt; check dat `Card`/`Button` variants het nieuwe primary + glow shadow overnemen.
-5. **Charts (Google Ads Stats)** — recharts kleuren omschakelen naar `hsl(var(--primary))` en `hsl(var(--accent))` via bestaande wrapper, zonder logica te wijzigen.
+Alles met `.middleware([requireSupabaseAuth])` + nette error-surfacing (Graph errors doorgeven).
 
-## Buiten scope
+## 3. UI-integratie
 
-- Geen wijziging aan data, routes, forms of business logic.
-- Geen nieuwe pagina's of componenten — puur visual/token layer.
+**Settings (`/settings`)** — vervang de Meta "Wizard starten"-knoppen door live `MetaRow` (net als `LinkedInRow`): live status via `getMetaStatus`, badge "Live" + page/IG naam en avatar. Wizard-route (`/meta`) blijft bereikbaar als "Herconfigureren".
 
-Na akkoord bouw ik dit in één batch, dan zie je de hele app in Neon Studio-stijl in de preview.
+**Composer (`/composer`)**
+- Nieuwe knoppen "Post naar Facebook" en "Post naar Instagram" (analoog aan LinkedIn), zichtbaar wanneer platform geselecteerd is.
+- IG validatie: minimaal 1 image verplicht (Graph vereist).
+- `ManualMetaPanel` verwijderen uit Composer (jouw keuze: vervangen door echte publish).
+
+**Inbox (`/inbox`)**
+- `useQuery` naar `listMetaComments` per platform; mergen met bestaande demo-items achter een toggle "Alleen live" (default aan zodra Meta connected).
+- "Verstuur antwoord" roept nu `replyMetaComment` aan voor FB/IG items; LinkedIn/TikTok/YT blijven demo tot hun eigen koppeling.
+
+**Nieuwe route `/insights` (of tab in dashboard)**
+- KPI-kaarten per platform (FB Page + IG Business) met reach/impressions/engagement/followers via `getMetaInsights`, filter last 7/28/90 dagen.
+
+## 4. Publiceren-flow met media
+- Composer stuurt `mediaPaths` (Supabase storage paths) mee.
+- Server-fn genereert signed URL (10 min TTL) → geeft door aan Graph API.
+- Na publish: `recordPostResult` net als bij LinkedIn.
+
+## 5. Cleanup
+- `src/components/composer/ManualMetaPanel.tsx` verwijderen + import uit `composer.tsx`.
+- `demo-data.ts` inboxItems markeren als fallback (alleen tonen als geen live data).
+
+## Volgorde van uitvoeren
+1. Secrets opvragen (add_secret).
+2. `meta.functions.ts` bouwen + Settings `MetaRow`.
+3. Composer publish-knoppen + ManualMetaPanel weghalen.
+4. Inbox live comments + reply.
+5. Insights route.
+
+## Buiten scope (volgende ronde als je wilt)
+- Scheduling naar Meta (nu direct-publish).
+- Stories/Reels publiceren (andere endpoints, extra review vaak nodig).
+- DM's via Messenger Platform (aparte webhook setup).
