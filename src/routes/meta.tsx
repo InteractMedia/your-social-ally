@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,18 +11,28 @@ import {
   Facebook,
   Instagram,
   KeyRound,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+import {
+  checkMetaScopes,
+  exchangeMetaToken,
+  getMetaOAuthConfig,
+  REQUIRED_META_SCOPES,
+} from "@/lib/meta.functions";
 
 export const Route = createFileRoute("/meta")({
   head: () => ({
@@ -31,151 +41,76 @@ export const Route = createFileRoute("/meta")({
   component: MetaWizard,
 });
 
-type StepId = "intro" | "prereqs" | "app" | "permissions" | "credentials" | "review" | "done";
-
-type Progress = {
-  prereqs: {
-    businessManager: boolean;
-    facebookPage: boolean;
-    instagramBusiness: boolean;
-    igLinkedToPage: boolean;
-  };
-  permissions: string[];
-  credentials: {
-    appId: string;
-    pageId: string;
-    igBusinessId: string;
-    hasSecret: boolean;
-    hasToken: boolean;
-  };
-  currentStep: StepId;
-  submittedAt?: string;
-};
-
-const STORAGE_KEY = "meta-wizard-progress";
-
-const DEFAULT_PROGRESS: Progress = {
-  prereqs: {
-    businessManager: false,
-    facebookPage: false,
-    instagramBusiness: false,
-    igLinkedToPage: false,
-  },
-  permissions: [],
-  credentials: {
-    appId: "",
-    pageId: "",
-    igBusinessId: "",
-    hasSecret: false,
-    hasToken: false,
-  },
-  currentStep: "intro",
-};
+type StepId = "intro" | "prereqs" | "connect" | "done";
 
 const STEPS: { id: StepId; label: string }[] = [
   { id: "intro", label: "Start" },
   { id: "prereqs", label: "Vereisten" },
-  { id: "app", label: "Meta App" },
-  { id: "permissions", label: "Permissies" },
-  { id: "credentials", label: "Gegevens" },
-  { id: "review", label: "Review" },
+  { id: "connect", label: "Koppelen" },
   { id: "done", label: "Klaar" },
 ];
 
-const PERMISSIONS = [
+const REQUIRED_PREREQS = [
   {
-    id: "pages_show_list",
-    label: "pages_show_list",
-    desc: "Lijst van FB-pages waar je admin bent",
-    tier: "basic",
+    id: "businessManager" as const,
+    title: "Facebook Business Manager account",
+    link: "https://business.facebook.com/",
+    desc: "Maak (of open) een Business Portfolio waar de FB-page en het IG-account onder vallen.",
   },
   {
-    id: "pages_read_engagement",
-    label: "pages_read_engagement",
-    desc: "Post-analytics + comments lezen (FB)",
-    tier: "review",
+    id: "facebookPage" as const,
+    title: "Facebook Page van ZoetBezorgen",
+    link: "https://www.facebook.com/pages/create",
+    desc: "Je moet admin-rol hebben op de page.",
   },
   {
-    id: "pages_manage_posts",
-    label: "pages_manage_posts",
-    desc: "Publiceren op de FB-page",
-    tier: "review",
+    id: "instagramBusiness" as const,
+    title: "Instagram omgezet naar Business/Creator",
+    link: "https://help.instagram.com/502981923235522",
+    desc: "In de IG-app: Settings → Account type → switch to Business.",
   },
   {
-    id: "pages_manage_engagement",
-    label: "pages_manage_engagement",
-    desc: "Reageren op comments/DMs (Inbox)",
-    tier: "review",
+    id: "igLinkedToPage" as const,
+    title: "Instagram gekoppeld aan de FB-page",
+    link: "https://www.facebook.com/business/help/connect-instagram-to-page",
+    desc: "In Meta Business Suite → Instellingen → Instagram-accounts → koppel aan page.",
   },
-  {
-    id: "instagram_basic",
-    label: "instagram_basic",
-    desc: "IG business-profiel + basic media",
-    tier: "review",
-  },
-  {
-    id: "instagram_content_publish",
-    label: "instagram_content_publish",
-    desc: "Publiceren op Instagram",
-    tier: "review",
-  },
-  {
-    id: "instagram_manage_insights",
-    label: "instagram_manage_insights",
-    desc: "IG post & account analytics",
-    tier: "review",
-  },
-  {
-    id: "instagram_manage_comments",
-    label: "instagram_manage_comments",
-    desc: "IG comments beheren (Inbox)",
-    tier: "review",
-  },
-] as const;
-
-function loadProgress(): Progress {
-  if (typeof window === "undefined") return DEFAULT_PROGRESS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_PROGRESS;
-    return { ...DEFAULT_PROGRESS, ...JSON.parse(raw) };
-  } catch {
-    return DEFAULT_PROGRESS;
-  }
-}
+];
 
 function MetaWizard() {
-  const [p, setP] = useState<Progress>(DEFAULT_PROGRESS);
-  const [hydrated, setHydrated] = useState(false);
+  const [step, setStep] = useState<StepId>("intro");
+  const [prereqs, setPrereqs] = useState<Record<string, boolean>>({
+    businessManager: false,
+    facebookPage: false,
+    instagramBusiness: false,
+    igLinkedToPage: false,
+  });
 
-  useEffect(() => {
-    setP(loadProgress());
-    setHydrated(true);
-  }, []);
+  const [oauthData, setOauthData] = useState<{
+    shortLivedToken?: string;
+    pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+    granted?: string[];
+    missing?: string[];
+    error?: string;
+  }>({});
 
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-  }, [p, hydrated]);
+  const [selectedPageId, setSelectedPageId] = useState<string>();
+  const [isExchanging, setIsExchanging] = useState(false);
 
-  const stepIdx = STEPS.findIndex((s) => s.id === p.currentStep);
-  const go = (id: StepId) => setP((s) => ({ ...s, currentStep: id }));
+  const stepIdx = STEPS.findIndex((s) => s.id === step);
+  const go = (id: StepId) => setStep(id);
   const next = () => go(STEPS[Math.min(stepIdx + 1, STEPS.length - 1)].id);
   const prev = () => go(STEPS[Math.max(stepIdx - 1, 0)].id);
 
-  const prereqsDone = Object.values(p.prereqs).every(Boolean);
-  const credsDone =
-    p.credentials.appId.trim().length > 0 &&
-    p.credentials.pageId.trim().length > 0 &&
-    p.credentials.hasSecret &&
-    p.credentials.hasToken;
+  const prereqsDone = Object.values(prereqs).every(Boolean);
+  const selectedPage = oauthData.pages?.find((p) => p.id === selectedPageId);
+  const connectDone =
+    !!oauthData.shortLivedToken && !!selectedPage && (oauthData.missing?.length ?? 0) === 0;
 
   const canProceed: Record<StepId, boolean> = {
     intro: true,
     prereqs: prereqsDone,
-    app: !!p.credentials.appId.trim(),
-    permissions: p.permissions.length > 0,
-    credentials: credsDone,
-    review: true,
+    connect: connectDone,
     done: true,
   };
 
@@ -183,7 +118,7 @@ function MetaWizard() {
     <AppShell>
       <PageHeader
         title="Meta koppeling"
-        subtitle="Stap voor stap Facebook & Instagram autoriseren voor publiceren en analytics."
+        subtitle="Autoriseer Facebook & Instagram stap voor stap. De wizard haalt automatisch de juiste Page ID en IG Business ID op."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/settings">
@@ -193,10 +128,9 @@ function MetaWizard() {
         }
       />
 
-      {/* Stepper */}
       <ol className="mb-6 flex flex-wrap items-center gap-2">
         {STEPS.map((s, i) => {
-          const active = s.id === p.currentStep;
+          const active = s.id === step;
           const done = i < stepIdx;
           return (
             <li key={s.id} className="flex items-center gap-2">
@@ -226,47 +160,39 @@ function MetaWizard() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          {p.currentStep === "intro" && <IntroStep />}
-          {p.currentStep === "prereqs" && (
-            <PrereqStep value={p.prereqs} onChange={(prereqs) => setP((s) => ({ ...s, prereqs }))} />
+          {step === "intro" && <IntroStep />}
+          {step === "prereqs" && (
+            <PrereqStep value={prereqs} onChange={setPrereqs} />
           )}
-          {p.currentStep === "app" && (
-            <AppStep
-              appId={p.credentials.appId}
-              onChange={(appId) =>
-                setP((s) => ({ ...s, credentials: { ...s.credentials, appId } }))
-              }
+          {step === "connect" && (
+            <ConnectStep
+              data={oauthData}
+              setData={setOauthData}
+              selectedPageId={selectedPageId}
+              setSelectedPageId={setSelectedPageId}
+              isExchanging={isExchanging}
+              setIsExchanging={setIsExchanging}
             />
           )}
-          {p.currentStep === "permissions" && (
-            <PermissionsStep
-              value={p.permissions}
-              onChange={(permissions) => setP((s) => ({ ...s, permissions }))}
-            />
-          )}
-          {p.currentStep === "credentials" && (
-            <CredentialsStep
-              value={p.credentials}
-              onChange={(credentials) => setP((s) => ({ ...s, credentials }))}
-            />
-          )}
-          {p.currentStep === "review" && (
-            <ReviewStep
-              progress={p}
-              onSubmit={() => {
-                setP((s) => ({ ...s, submittedAt: new Date().toISOString(), currentStep: "done" }));
+          {step === "done" && (
+            <DoneStep
+              selectedPage={selectedPage}
+              missing={oauthData.missing}
+              onRestart={() => {
+                setStep("intro");
+                setOauthData({});
+                setSelectedPageId(undefined);
               }}
             />
           )}
-          {p.currentStep === "done" && <DoneStep progress={p} onRestart={() => setP(DEFAULT_PROGRESS)} />}
 
-          {p.currentStep !== "done" && (
+          {step !== "done" && (
             <div className="flex items-center justify-between">
               <Button variant="ghost" onClick={prev} disabled={stepIdx === 0}>
                 <ArrowLeft className="mr-1 h-4 w-4" /> Vorige
               </Button>
-              <Button onClick={next} disabled={!canProceed[p.currentStep]}>
-                {p.currentStep === "review" ? "Indienen" : "Volgende"}
+              <Button onClick={next} disabled={!canProceed[step]}>
+                {step === "connect" ? "Bevestig configuratie" : "Volgende"}
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
@@ -274,15 +200,13 @@ function MetaWizard() {
         </div>
 
         <aside className="space-y-4">
-          <StatusCard progress={p} />
+          <StatusCard prereqs={prereqs} oauthData={oauthData} selectedPageId={selectedPageId} />
           <HelpCard />
         </aside>
       </div>
     </AppShell>
   );
 }
-
-/* ============ Steps ============ */
 
 function IntroStep() {
   return (
@@ -295,7 +219,8 @@ function IntroStep() {
       <CardContent className="space-y-4 text-sm">
         <p>
           Deze wizard leidt je door de complete Meta setup voor <strong>Facebook Pages</strong> en{" "}
-          <strong>Instagram Business</strong>. Aan het eind kun je posts publiceren en analytics uitlezen vanuit ZoetBezorgen Social.
+          <strong>Instagram Business</strong>. Aan het eind kun je posts publiceren en analytics
+          uitlezen vanuit ZoetBezorgen Social.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-md border p-3">
@@ -331,36 +256,9 @@ function PrereqStep({
   value,
   onChange,
 }: {
-  value: Progress["prereqs"];
-  onChange: (v: Progress["prereqs"]) => void;
+  value: Record<string, boolean>;
+  onChange: (v: Record<string, boolean>) => void;
 }) {
-  const items = [
-    {
-      id: "businessManager" as const,
-      title: "Facebook Business Manager account",
-      link: "https://business.facebook.com/",
-      desc: "Maak (of open) een Business Portfolio waar de FB-page en het IG-account onder vallen.",
-    },
-    {
-      id: "facebookPage" as const,
-      title: "Facebook Page van ZoetBezorgen",
-      link: "https://www.facebook.com/pages/create",
-      desc: "Je moet admin-rol hebben op de page.",
-    },
-    {
-      id: "instagramBusiness" as const,
-      title: "Instagram omgezet naar Business/Creator",
-      link: "https://help.instagram.com/502981923235522",
-      desc: "In de IG-app: Settings → Account type → switch to Business.",
-    },
-    {
-      id: "igLinkedToPage" as const,
-      title: "Instagram gekoppeld aan de FB-page",
-      link: "https://www.facebook.com/business/help/connect-instagram-to-page",
-      desc: "In Meta Business Suite → Instellingen → Instagram-accounts → koppel aan page.",
-    },
-  ];
-
   return (
     <Card>
       <CardHeader>
@@ -369,13 +267,13 @@ function PrereqStep({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {items.map((item) => (
+        {REQUIRED_PREREQS.map((item) => (
           <label
             key={item.id}
             className="flex cursor-pointer items-start gap-3 rounded-md border p-3 hover:bg-muted/40"
           >
             <Checkbox
-              checked={value[item.id]}
+              checked={value[item.id] ?? false}
               onCheckedChange={(v) => onChange({ ...value, [item.id]: v === true })}
               className="mt-0.5"
             />
@@ -401,259 +299,392 @@ function PrereqStep({
   );
 }
 
-function AppStep({ appId, onChange }: { appId: string; onChange: (v: string) => void }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Meta Developer App aanmaken</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <ol className="list-decimal space-y-2 pl-5">
-          <li>
-            Ga naar{" "}
-            <a
-              href="https://developers.facebook.com/apps/"
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary hover:underline"
-            >
-              developers.facebook.com/apps
-            </a>{" "}
-            en klik <strong>Create App</strong>.
-          </li>
-          <li>Type: <strong>Business</strong> → gebruik je Business Portfolio.</li>
-          <li>App name: <code className="rounded bg-muted px-1">ZoetBezorgen Social</code>.</li>
-          <li>
-            Voeg producten toe: <strong>Facebook Login for Business</strong>,{" "}
-            <strong>Instagram Graph API</strong>, <strong>Pages API</strong>.
-          </li>
-          <li>
-            Bij <em>Valid OAuth Redirect URIs</em> plak de callback URL uit het paneel rechts.
-          </li>
-        </ol>
+function ConnectStep({
+  data,
+  setData,
+  selectedPageId,
+  setSelectedPageId,
+  isExchanging,
+  setIsExchanging,
+}: {
+  data: {
+    shortLivedToken?: string;
+    pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+    granted?: string[];
+    missing?: string[];
+    error?: string;
+  };
+  setData: React.Dispatch<
+    React.SetStateAction<{
+      shortLivedToken?: string;
+      pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+      granted?: string[];
+      missing?: string[];
+      error?: string;
+    }>
+  >;
+  selectedPageId?: string;
+  setSelectedPageId: (id: string | undefined) => void;
+  isExchanging: boolean;
+  setIsExchanging: (v: boolean) => void;
+}) {
+  const configFn = useServerFn(getMetaOAuthConfig);
+  const exchangeFn = useServerFn(exchangeMetaToken);
+  const checkScopesFn = useServerFn(checkMetaScopes);
+  const [oauthError, setOauthError] = useState<string>();
+  const [checkingScopes, setCheckingScopes] = useState(false);
 
-        <div className="space-y-1">
-          <Label htmlFor="appId" className="text-xs">
-            Meta App ID
-          </Label>
-          <Input
-            id="appId"
-            value={appId}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="bv. 1234567890123456"
-            className="bg-surface"
-          />
-          <p className="text-xs text-muted-foreground">
-            Te vinden in App Dashboard → Settings → Basic.
+  const startOAuth = async () => {
+    setOauthError(undefined);
+    const config = await configFn();
+    if (!config.ok) {
+      setOauthError(config.error);
+      return;
+    }
+
+    const redirectUri = `${window.location.origin}/api/public/meta-callback`;
+    const state = crypto.randomUUID();
+    const scopes = config.scopes;
+    const url =
+      `https://www.facebook.com/${config.version}/dialog/oauth` +
+      `?client_id=${encodeURIComponent(config.appId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&scope=${encodeURIComponent(scopes)}` +
+      `&response_type=code`;
+
+    const popup = window.open(url, "meta-oauth", "width=600,height=700,popup=true");
+    if (!popup) {
+      setOauthError("Popup geblokkeerd. Sta popups toe voor dit domein.");
+      return;
+    }
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "META_OAUTH_CALLBACK") return;
+      window.removeEventListener("message", onMessage);
+      if (event.data.error) {
+        setOauthError(event.data.error);
+        return;
+      }
+      if (!event.data.token) {
+        setOauthError("Geen token ontvangen van Meta.");
+        return;
+      }
+      exchange(event.data.token);
+    };
+    window.addEventListener("message", onMessage);
+  };
+
+  const exchange = async (shortLivedToken: string) => {
+    setIsExchanging(true);
+    setData({ shortLivedToken });
+    try {
+      const result = await exchangeFn({ data: { shortLivedToken } });
+      if (!result.ok) {
+        setData({ error: "Exchange faalde" });
+        return;
+      }
+      setData({
+        shortLivedToken,
+        pages: result.pages,
+        granted: result.granted,
+        missing: result.missing,
+      });
+      if (result.pages.length === 1) {
+        setSelectedPageId(result.pages[0].id);
+      }
+    } catch (err) {
+      setData({ error: (err as Error).message });
+    } finally {
+      setIsExchanging(false);
+    }
+  };
+
+  const recheckScopes = async () => {
+    setCheckingScopes(true);
+    try {
+      const result = await checkScopesFn();
+      if ("ok" in result && result.ok) {
+        setData((d) => ({
+          ...d,
+          granted: result.granted,
+          missing: result.missing,
+        }));
+      } else {
+        setData((d) => ({
+          ...d,
+          granted: [],
+          missing: [...REQUIRED_META_SCOPES],
+        }));
+      }
+    } finally {
+      setCheckingScopes(false);
+    }
+  };
+
+  const selectedPage = data.pages?.find((p) => p.id === selectedPageId);
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-primary" /> Autoriseer Meta
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <p>
+            Klik op de knop hieronder om in te loggen bij Meta en de benodigde permissions te
+            verlenen. De app vraagt alleen de scopes die nodig zijn voor publiceren en analytics.
           </p>
-        </div>
-      </CardContent>
-    </Card>
+          <Button onClick={startOAuth} disabled={isExchanging} className="gap-2">
+            {isExchanging ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Facebook className="h-4 w-4" />
+            )}
+            {isExchanging ? "Bezig..." : "Autoriseer Meta"}
+          </Button>
+
+          {(oauthError || data.error) && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              {oauthError || data.error}
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground">
+            Gevraagde scopes: {REQUIRED_META_SCOPES.join(", ")}
+          </div>
+        </CardContent>
+      </Card>
+
+      {data.pages && data.pages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Kies een Facebook Page</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Selecteer de Page die gekoppeld is aan het Instagram Business account dat je wilt
+              gebruiken.
+            </p>
+            <div className="space-y-2">
+              {data.pages.map((p) => (
+                <label
+                  key={p.id}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition hover:bg-muted/40",
+                    selectedPageId === p.id && "border-primary bg-primary/5",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="page"
+                    checked={selectedPageId === p.id}
+                    onChange={() => setSelectedPageId(p.id)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">Page ID: {p.id}</div>
+                    {p.instagram ? (
+                      <div className="text-xs text-success">
+                        IG gekoppeld: @{p.instagram.username || p.instagram.name} ({p.instagram.id})
+                      </div>
+                    ) : (
+                      <div className="text-xs text-amber-600">Geen Instagram Business account gekoppeld</div>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedPage && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Geselecteerde gegevens</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <CopyRow label="Page ID" value={selectedPage.id} />
+            <CopyRow
+              label="IG Business ID"
+              value={selectedPage.instagram?.id ?? "—"}
+              note={
+                selectedPage.instagram?.username
+                  ? `@${selectedPage.instagram.username}`
+                  : undefined
+              }
+            />
+            <CopyRow
+              label="Page Access Token"
+              value={selectedPage.pageToken ?? "—"}
+              masked
+            />
+            <p className="text-xs text-muted-foreground">
+              Deze waardes moeten in de app-secrets worden opgeslagen. Gebruik de knoppen om ze te
+              kopiëren en plak ze in de beveiligde secrets-form, of deel ze in de chat zodat ze
+              opgeslagen kunnen worden.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {(data.granted || data.missing) && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Permission check</CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={recheckScopes}
+                disabled={checkingScopes}
+              >
+                {checkingScopes ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  "Opnieuw controleren"
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {REQUIRED_META_SCOPES.map((scope) => {
+                const granted = data.granted?.includes(scope) ?? false;
+                return (
+                  <div
+                    key={scope}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border p-2 text-xs",
+                      granted ? "border-success/30 bg-success/10" : "border-destructive/30 bg-destructive/10",
+                    )}
+                  >
+                    {granted ? (
+                      <Check className="h-3.5 w-3.5 text-success" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                    <span className={granted ? "text-success" : "text-destructive"}>{scope}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {data.missing && data.missing.length > 0 && (
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
+                <strong>Missende scopes:</strong> {data.missing.join(", ")}. Klik opnieuw op
+                "Autoriseer Meta" om de ontbrekende permissions toe te voegen.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
-function PermissionsStep({
+function CopyRow({
+  label,
   value,
-  onChange,
+  note,
+  masked,
 }: {
-  value: string[];
-  onChange: (v: string[]) => void;
+  label: string;
+  value: string;
+  note?: string;
+  masked?: boolean;
 }) {
-  const toggle = (id: string) =>
-    onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
-
-  const selectAll = () => onChange(PERMISSIONS.map((p) => p.id));
+  const [revealed, setRevealed] = useState(false);
+  const display = masked && !revealed ? "•".repeat(Math.min(value.length, 24)) : value;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Permissies selecteren</CardTitle>
-          <Button size="sm" variant="ghost" onClick={selectAll}>
-            Alles aanvinken
+    <div className="rounded-md border p-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+          <div className="font-mono text-xs break-all">{display}</div>
+          {note && <div className="text-xs text-muted-foreground">{note}</div>}
+        </div>
+        <div className="flex shrink-0 gap-1">
+          {masked && (
+            <Button size="icon" variant="ghost" onClick={() => setRevealed((v) => !v)}>
+              <KeyRound className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => navigator.clipboard.writeText(value).then(() => toast.success(`${label} gekopieerd`))}
+          >
+            <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {PERMISSIONS.map((perm) => (
-          <label
-            key={perm.id}
-            className="flex cursor-pointer items-start gap-3 rounded-md border p-3 hover:bg-muted/40"
-          >
-            <Checkbox
-              checked={value.includes(perm.id)}
-              onCheckedChange={() => toggle(perm.id)}
-              className="mt-0.5"
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <code className="text-sm font-medium">{perm.label}</code>
-                {perm.tier === "review" ? (
-                  <Badge variant="outline" className="text-warning">
-                    App Review
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-success">
-                    Direct
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">{perm.desc}</p>
-            </div>
-          </label>
-        ))}
-        <p className="pt-2 text-xs text-muted-foreground">
-          Vraag deze aan in App Dashboard → <strong>App Review → Permissions and Features</strong>.
-          Bij elke scope: business use case beschrijven, screencast uploaden en submitten.
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
-function CredentialsStep({
-  value,
-  onChange,
+function DoneStep({
+  selectedPage,
+  missing,
+  onRestart,
 }: {
-  value: Progress["credentials"];
-  onChange: (v: Progress["credentials"]) => void;
+  selectedPage?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"][number];
+  missing?: string[];
+  onRestart: () => void;
 }) {
+  const allGood = selectedPage && (!missing || missing.length === 0);
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <KeyRound className="h-4 w-4 text-primary" /> IDs & tokens invoeren
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-xs">Meta App ID</Label>
-            <Input
-              value={value.appId}
-              onChange={(e) => onChange({ ...value, appId: e.target.value })}
-              placeholder="1234567890123456"
-              className="bg-surface"
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Facebook Page ID</Label>
-            <Input
-              value={value.pageId}
-              onChange={(e) => onChange({ ...value, pageId: e.target.value })}
-              placeholder="bv. 100088123456789"
-              className="bg-surface"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Page → About → Page transparency → Page ID.
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="text-xs">Instagram Business Account ID (optioneel)</Label>
-            <Input
-              value={value.igBusinessId}
-              onChange={(e) => onChange({ ...value, igBusinessId: e.target.value })}
-              placeholder="17841400000000000"
-              className="bg-surface"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Op te halen via <code>/me/accounts?fields=instagram_business_account</code> in de Graph API Explorer.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
-          <p>
-            <strong>Secrets opslaan:</strong> De <em>App Secret</em> en <em>Long-Lived Page Access Token</em> horen niet in de UI. Sla ze veilig op als backend-secrets (
-            <code>META_APP_SECRET</code>, <code>META_PAGE_ACCESS_TOKEN</code>). Vink hieronder aan zodra ze via een beheerder zijn ingevoerd.
-          </p>
-          <label className="mt-2 flex items-center gap-2">
-            <Checkbox
-              checked={value.hasSecret}
-              onCheckedChange={(v) => onChange({ ...value, hasSecret: v === true })}
-            />
-            <span>
-              <code>META_APP_SECRET</code> is opgeslagen
-            </span>
-          </label>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={value.hasToken}
-              onCheckedChange={(v) => onChange({ ...value, hasToken: v === true })}
-            />
-            <span>
-              <code>META_PAGE_ACCESS_TOKEN</code> (long-lived, 60 dagen) is opgeslagen
-            </span>
-          </label>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ReviewStep({ progress, onSubmit }: { progress: Progress; onSubmit: () => void }) {
-  const rows: [string, string][] = [
-    ["App ID", progress.credentials.appId || "—"],
-    ["Page ID", progress.credentials.pageId || "—"],
-    ["IG Business ID", progress.credentials.igBusinessId || "—"],
-    ["Permissies", progress.permissions.join(", ") || "—"],
-    ["App Secret opgeslagen", progress.credentials.hasSecret ? "Ja" : "Nee"],
-    ["Page Access Token opgeslagen", progress.credentials.hasToken ? "Ja" : "Nee"],
-  ];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Overzicht & indienen</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <dl className="divide-y rounded-md border">
-          {rows.map(([k, v]) => (
-            <div key={k} className="flex items-center justify-between gap-4 px-3 py-2 text-sm">
-              <dt className="text-muted-foreground">{k}</dt>
-              <dd className="max-w-[60%] truncate text-right font-medium">{v}</dd>
-            </div>
-          ))}
-        </dl>
-        <Button className="w-full" onClick={onSubmit}>
-          Bevestig configuratie
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Deze wizard slaat je voortgang lokaal op. Zodra Meta App Review binnen is en de tokens in
-          Lovable Cloud staan, activeren we de live publicatie in de Composer.
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DoneStep({ progress, onRestart }: { progress: Progress; onRestart: () => void }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-success">
-          <CheckCircle2 className="h-5 w-5" /> Configuratie ingediend
+        <CardTitle className={cn("flex items-center gap-2", allGood ? "text-success" : "text-warning")}>
+          {allGood ? (
+            <>
+              <CheckCircle2 className="h-5 w-5" /> Koppeling voltooid
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="h-5 w-5" /> Koppeling bijna klaar
+            </>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        <p>
-          Je Meta-setup is opgeslagen op{" "}
-          <strong>{progress.submittedAt ? new Date(progress.submittedAt).toLocaleString("nl-NL") : "-"}</strong>.
-        </p>
-        <div className="rounded-md border p-3">
-          <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">Volgende stappen</div>
-          <ul className="space-y-1 text-sm">
-            <li className="flex items-start gap-2">
-              <Circle className="mt-1 h-2 w-2 fill-primary text-primary" /> Dien App Review in bij Meta (± 1–3 weken).
-            </li>
-            <li className="flex items-start gap-2">
-              <Circle className="mt-1 h-2 w-2 fill-primary text-primary" /> Test in <em>Development Mode</em> met eigen accounts.
-            </li>
-            <li className="flex items-start gap-2">
-              <Circle className="mt-1 h-2 w-2 fill-primary text-primary" /> Zodra approved: laat weten en we schakelen live publicatie in Composer aan.
-            </li>
-          </ul>
-        </div>
+        {allGood ? (
+          <p>
+            De wizard heeft de juiste Page ID en IG Business ID gevonden. Sla de waardes op in de
+            app-secrets om de koppeling live te zetten.
+          </p>
+        ) : (
+          <p>
+            Er ontbreken nog permissions of er is geen Page geselecteerd. Herhaal de vorige stap
+            en autoriseer opnieuw.
+          </p>
+        )}
+
+        {selectedPage && (
+          <div className="rounded-md border p-3">
+            <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">Geselecteerde accounts</div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Facebook className="h-4 w-4" style={{ color: "hsl(var(--platform-facebook))" }} />
+                <span>{selectedPage.name}</span>
+                <Badge variant="outline" className="text-[10px]">{selectedPage.id}</Badge>
+              </div>
+              {selectedPage.instagram && (
+                <div className="flex items-center gap-2">
+                  <Instagram className="h-4 w-4" style={{ color: "hsl(var(--platform-instagram))" }} />
+                  <span>@{selectedPage.instagram.username || selectedPage.instagram.name}</span>
+                  <Badge variant="outline" className="text-[10px]">{selectedPage.instagram.id}</Badge>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button variant="outline" onClick={onRestart}>
             Wizard opnieuw doorlopen
@@ -667,11 +698,40 @@ function DoneStep({ progress, onRestart }: { progress: Progress; onRestart: () =
   );
 }
 
-/* ============ Sidebar ============ */
+function AlertTriangle({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
 
-function StatusCard({ progress }: { progress: Progress }) {
-  const prereqsDone = Object.values(progress.prereqs).filter(Boolean).length;
-  const permsCount = progress.permissions.length;
+function StatusCard({
+  prereqs,
+  oauthData,
+  selectedPageId,
+}: {
+  prereqs: Record<string, boolean>;
+  oauthData: {
+    pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+    missing?: string[];
+  };
+  selectedPageId?: string;
+}) {
+  const prereqsDone = Object.values(prereqs).filter(Boolean).length;
+  const pageSelected = oauthData.pages?.some((p) => p.id === selectedPageId);
+  const scopesOk = (oauthData.missing?.length ?? 1) === 0;
   return (
     <Card>
       <CardHeader>
@@ -679,11 +739,9 @@ function StatusCard({ progress }: { progress: Progress }) {
       </CardHeader>
       <CardContent className="space-y-2 text-xs">
         <Row label="Vereisten" value={`${prereqsDone}/4`} ok={prereqsDone === 4} />
-        <Row label="App ID" value={progress.credentials.appId ? "✓" : "—"} ok={!!progress.credentials.appId} />
-        <Row label="Permissies" value={`${permsCount} geselecteerd`} ok={permsCount > 0} />
-        <Row label="Page ID" value={progress.credentials.pageId ? "✓" : "—"} ok={!!progress.credentials.pageId} />
-        <Row label="Secret" value={progress.credentials.hasSecret ? "✓" : "—"} ok={progress.credentials.hasSecret} />
-        <Row label="Token" value={progress.credentials.hasToken ? "✓" : "—"} ok={progress.credentials.hasToken} />
+        <Row label="Meta geautoriseerd" value={oauthData.pages ? "✓" : "—"} ok={!!oauthData.pages} />
+        <Row label="Page geselecteerd" value={pageSelected ? "✓" : "—"} ok={!!pageSelected} />
+        <Row label="Scopes compleet" value={scopesOk ? "✓" : "—"} ok={scopesOk} />
       </CardContent>
     </Card>
   );
@@ -702,7 +760,10 @@ function Row({ label, value, ok }: { label: string; value: string; ok: boolean }
 }
 
 function HelpCard() {
-  const callback = typeof window !== "undefined" ? `${window.location.origin}/auth/callback/meta` : "";
+  const callback = useMemo(
+    () => (typeof window !== "undefined" ? `${window.location.origin}/api/public/meta-callback` : ""),
+    [],
+  );
   return (
     <Card>
       <CardHeader>
@@ -718,7 +779,7 @@ function HelpCard() {
             size="icon"
             variant="ghost"
             className="h-7 w-7"
-            onClick={() => navigator.clipboard?.writeText(callback)}
+            onClick={() => navigator.clipboard?.writeText(callback).then(() => toast.success("Callback URL gekopieerd"))}
           >
             <Copy className="h-3.5 w-3.5" />
           </Button>

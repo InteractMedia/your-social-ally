@@ -1,33 +1,64 @@
-## Doel
-De huidige Meta-fouten oplossen door (1) het nieuwe access token op te slaan en (2) een debug-hulp in de app te bouwen die de juiste Page ID + Instagram Business ID ophaalt zodat we ze zeker weten.
+## Plan: Meta-koppeling wizard 2.0
 
-## Stappen
+### Doel
+De huidige handmatige flow (token kopieren uit Graph API Explorer, permissions één voor één zoeken) vervangen door een wizard in de app die zelf de juiste permissions vraagt, het token omwisselt naar een Page-token, en meldt wat er nog mist.
 
-1. **Token opslaan**
-   - `META_PAGE_ACCESS_TOKEN` updaten naar het zojuist geplakte token (via `update_secret`, secure form — ik plak het token niet zelf in code).
+### Gebruikersinput
+- App ID in Graph API Explorer: `2787894608246851`
+- Huidig zichtbare permissions: `ads_management`, `ads_read`, `business_management`, `pages_manage_ads`, `pages_read_engagement`, `pages_show_list`
+- Waarschijnlijk missende permissions voor post-publicatie: `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`
 
-2. **Debug server function toevoegen** (`src/lib/meta.functions.ts`)
-   - `debugMetaToken` (GET, auth-protected): roept Graph API aan met het huidige token:
-     - `GET /me` → wie is het token van (user of page)
-     - `GET /me/accounts?fields=id,name,category,access_token,instagram_business_account{id,username,name,followers_count}` → alle Pages die dit token kan zien, met per-page token en gekoppeld IG Business account
-     - `GET /debug_token` → geldigheid, expiry, scopes
-   - Geeft een gestructureerd resultaat terug met alle IDs en scopes.
+### Stappen
 
-3. **Debug UI toevoegen** (`src/routes/settings.tsx`)
-   - Nieuwe kaart "Meta diagnose" onder Platform-koppelingen met een "Diagnose uitvoeren"-knop.
-   - Toont per gevonden Page: naam, Page ID, IG Business ID, username, gekoppelde scopes.
-   - Kopieerknoppen naast elke ID.
-   - Waarschuwing bij ontbrekende scopes (`pages_manage_posts`, `instagram_content_publish`, etc.).
-   - Waarschuwing als token binnenkort verloopt (of "never" bij long-lived).
+1. **Nieuwe server functie: `exchangeMetaToken`** (`src/lib/meta.functions.ts`)
+   - Ontvangt een kortstondige User Access Token van de frontend (na Facebook Login).
+   - Wisselt deze in voor een long-lived User Access Token via `GET /oauth/access_token`.
+   - Roept `GET /me/accounts` aan met dat long-lived token en slaat per gevonden Page het page-specific token op.
+   - Retourneert: lijst van Pages, per Page de gekoppelde Instagram Business ID, en een lijst van verleende/missende scopes.
+   - Gebruikt `requireSupabaseAuth`.
 
-4. **Vervolgactie (na diagnose)**
-   - Zodra jij de juiste Page ID + IG Business ID uit de diagnose kopieert, update ik `META_PAGE_ID` en `META_IG_BUSINESS_ID` via de secrets-form. Daarna zou de Meta-status in Instellingen groen moeten worden.
-   - Als de diagnose laat zien dat het token een User Token is (geen Page Token), converteer ik in de debug-flow direct naar het Page-specifieke token uit `/me/accounts` — dat is meestal de echte oorzaak van dit soort 400-fouten.
+2. **Server functie: `checkMetaScopes`** (`src/lib/meta.functions.ts`)
+   - Controleert het huidige `META_PAGE_ACCESS_TOKEN` via `/debug_token`.
+   - Vergelijkt de teruggekomen scopes met een vereisten-set:
+     - Voor Facebook posts: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`
+     - Voor Instagram posts: `instagram_basic`, `instagram_content_publish`
+   - Retourneert een object met `granted`, `missing` en `isPageToken`.
 
-## Waarom deze aanpak
-De huidige fout ("Object does not exist / missing permissions") komt bijna altijd doordat het token bij een ander account/scope hoort dan de opgeslagen IDs. In plaats van gokken, laten we Graph API zelf de correcte waarden teruggeven. Meteen ingebouwd als herbruikbaar diagnose-scherm — handig als er later opnieuw iets misgaat (token expired, IG ontkoppeld, etc.).
+3. **Meta OAuth callback route** (`src/routes/api/public/meta-callback.ts`)
+   - Een publieke server route onder `/api/public/meta-callback` die de Facebook-redirect opvangt (`code` + `state`).
+   - Wisselt `code` in voor een short-lived User Access Token.
+   - Geeft het token terug aan de frontend via een redirect met query-param of postMessage.
+   - Valideert `state` tegen een server-side cookie of session.
+   - Geen state-changing DB-acties zonder token-validatie.
 
-## Technisch
-- Geen wijziging aan bestaande `publishFacebookPost` / `publishInstagramPost` — die blijven werken zodra IDs kloppen.
-- `debugMetaToken` gebruikt hetzelfde `graph()` helper-patroon dat er al staat.
-- Alleen zichtbaar voor ingelogde gebruikers (`requireSupabaseAuth`).
+4. **Wizard UI uitbreiden** (`src/routes/meta.tsx`)
+   - Stap 1: Klik "Autoriseer Meta" → opent Facebook OAuth met alle benodigde scopes in één request.
+   - Stap 2: Callback verwerkt het token en toont de gevonden Pages.
+   - Stap 3: Gebruiker kiest de juiste Page + gekoppeld Instagram Business account.
+   - Stap 4: App slaat `META_PAGE_ID`, `META_IG_BUSINESS_ID` en het page-specific token op in secrets.
+   - Stap 5: Scope-check toont groene vinkjes voor verleende scopes en rode kruisjes voor missende scopes.
+   - Stap 6: "Opnieuw autoriseren"-knop vraagt alleen de missende scopes opnieuw aan.
+
+5. **Settings-integratie** (`src/routes/settings.tsx`)
+   - Vervang de handmatige diagnose-kaart door een statuskaart met:
+     - Huidige Page/IG status
+     - Lijst van verleende vs missende scopes
+     - "Verbinden / Opnieuw verbinden"-knop
+     - "Diagnose uitvoeren"-knop als secundaire optie
+
+6. **Secrets update**
+   - Bij succesvolle wizard-flow: `META_PAGE_ID`, `META_IG_BUSINESS_ID`, `META_PAGE_ACCESS_TOKEN` updaten via de secure secrets-form.
+   - Geen tokens in code of logs.
+
+### Technisch
+- Geen wijzigingen aan `publishFacebookPost` / `publishInstagramPost`; die werken zodra IDs + token + scopes kloppen.
+- De Graph API app ID `2787894608246851` wordt gebruikt in de OAuth-redirect-URL.
+- OAuth `redirect_uri` = `https://socialcockpit.nl/api/public/meta-callback` (of `window.location.origin` voor preview).
+- TikTok/LinkedIn blijven ongemoeid.
+
+### Acceptatiecriteria
+- Gebruiker kan Meta koppelen zonder Graph API Explorer te openen.
+- Wizard toont duidelijk welke permissions ontbreken.
+- "Opnieuw verbinden" vraagt precies de missende scopes opnieuw aan.
+- Na succesvolle koppeling zijn de 400-fouten "Object does not exist" verdwenen.
+- Secrets blijven veilig opgeslagen; geen tokens in frontend state.
