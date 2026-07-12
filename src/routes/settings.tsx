@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
+import { getMetaStatus } from "@/lib/meta.functions";
 
 
 export const Route = createFileRoute("/settings")({
