@@ -135,6 +135,8 @@ function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        <MetaDebugCard />
       </div>
     </AppShell>
   );
