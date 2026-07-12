@@ -146,6 +146,163 @@ export const debugMetaToken = createServerFn({ method: "GET" })
     return result;
   });
 
+export const REQUIRED_META_SCOPES = [
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_manage_posts",
+  "instagram_basic",
+  "instagram_content_publish",
+] as const;
+
+export const checkMetaScopes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const token = process.env.META_PAGE_ACCESS_TOKEN;
+    if (!token) {
+      return {
+        ok: false as const,
+        error: "META_PAGE_ACCESS_TOKEN ontbreekt.",
+        granted: [],
+        missing: [...REQUIRED_META_SCOPES],
+      };
+    }
+
+    try {
+      const debug = await graph<{
+        data: {
+          type?: string;
+          is_valid?: boolean;
+          scopes?: string[];
+          app_id?: string;
+          application?: string;
+          expires_at?: number;
+        };
+      }>("/debug_token", { token, params: { input_token: token } });
+      const granted = debug.data.scopes ?? [];
+      const missing = REQUIRED_META_SCOPES.filter((s) => !granted.includes(s));
+      return {
+        ok: true as const,
+        type: debug.data.type,
+        is_valid: debug.data.is_valid,
+        app_id: debug.data.app_id,
+        application: debug.data.application,
+        expires_at: debug.data.expires_at,
+        granted,
+        missing,
+        isPageToken: debug.data.type === "PAGE",
+      };
+    } catch (err) {
+      return {
+        ok: false as const,
+        error: (err as Error).message,
+        granted: [],
+        missing: [...REQUIRED_META_SCOPES],
+      };
+    }
+  });
+
+export const getMetaOAuthConfig = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const appId = process.env.META_APP_ID;
+    if (!appId) {
+      return { ok: false as const, error: "META_APP_ID ontbreekt." };
+    }
+    return {
+      ok: true as const,
+      appId,
+      scopes: REQUIRED_META_SCOPES.join(","),
+      version: "v21.0",
+    };
+  });
+
+export const exchangeMetaToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        shortLivedToken: z.string().min(1),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appId || !appSecret) {
+      throw new Error("META_APP_ID of META_APP_SECRET ontbreekt.");
+    }
+
+    // 1. Long-lived user token
+    const longLived = await graph<{
+      access_token?: string;
+      token_type?: string;
+      expires_in?: number;
+    }>("/oauth/access_token", {
+      token: data.shortLivedToken,
+      params: {
+        grant_type: "fb_exchange_token",
+        client_id: appId,
+        client_secret: appSecret,
+        fb_exchange_token: data.shortLivedToken,
+      },
+    });
+
+    const userToken = longLived.access_token;
+    if (!userToken) {
+      throw new Error("Kon geen long-lived token verkrijgen.");
+    }
+
+    // 2. Pages + page tokens + IG accounts
+    const accounts = await graph<{
+      data: Array<{
+        id: string;
+        name: string;
+        category?: string;
+        access_token?: string;
+        instagram_business_account?: {
+          id: string;
+          username?: string;
+          name?: string;
+          followers_count?: number;
+        };
+      }>;
+    }>("/me/accounts", {
+      token: userToken,
+      params: {
+        fields:
+          "id,name,category,access_token,instagram_business_account{id,username,name,followers_count}",
+        limit: "50",
+      },
+    });
+
+    const pages = (accounts.data ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      pageToken: p.access_token,
+      instagram: p.instagram_business_account,
+    }));
+
+    if (pages.length === 0) {
+      throw new Error("Geen Facebook Pages gevonden met dit token.");
+    }
+
+    // 3. Scopes on the long-lived user token
+    const debug = await graph<{
+      data: { scopes?: string[]; is_valid?: boolean; type?: string };
+    }>("/debug_token", { token: userToken, params: { input_token: userToken } });
+    const granted = debug.data.scopes ?? [];
+    const missing = REQUIRED_META_SCOPES.filter((s) => !granted.includes(s));
+
+    return {
+      ok: true as const,
+      userToken,
+      pages,
+      granted,
+      missing,
+    };
+  });
+
 export const getMetaStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
@@ -157,6 +314,7 @@ export const getMetaStatus = createServerFn({ method: "GET" })
       page: { connected: boolean; id?: string; name?: string; category?: string; error?: string };
       instagram: { connected: boolean; id?: string; username?: string; name?: string; followers?: number; error?: string };
       secretsPresent: { pageId: boolean; token: boolean; igId: boolean };
+      scopes?: { granted: string[]; missing: string[]; is_valid?: boolean; type?: string };
     } = {
       page: { connected: false },
       instagram: { connected: false },
@@ -166,6 +324,17 @@ export const getMetaStatus = createServerFn({ method: "GET" })
     if (!pageId || !token) {
       status.page.error = "META_PAGE_ID of META_PAGE_ACCESS_TOKEN ontbreekt.";
       return status;
+    }
+
+    try {
+      const debug = await graph<{
+        data: { scopes?: string[]; is_valid?: boolean; type?: string };
+      }>("/debug_token", { token, params: { input_token: token } });
+      const granted = debug.data.scopes ?? [];
+      const missing = REQUIRED_META_SCOPES.filter((s) => !granted.includes(s));
+      status.scopes = { granted, missing, is_valid: debug.data.is_valid, type: debug.data.type };
+    } catch {
+      // non-blocking; page status still attempted below
     }
 
     try {
