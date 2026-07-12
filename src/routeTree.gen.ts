@@ -26,6 +26,7 @@ import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
 import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
 import { Route as AdsGoogleIndexRouteImport } from './routes/ads.google.index'
+import { Route as ApiPublicMetaCallbackRouteImport } from './routes/api/public/meta-callback'
 import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
@@ -115,6 +116,11 @@ const AdsGoogleIndexRoute = AdsGoogleIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
+const ApiPublicMetaCallbackRoute = ApiPublicMetaCallbackRouteImport.update({
+  id: '/api/public/meta-callback',
+  path: '/api/public/meta-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdsGoogleStatsRoute = AdsGoogleStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
 }
 export interface FileRoutesByTo {
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google': typeof AdsGoogleIndexRoute
 }
 export interface FileRoutesById {
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
 }
 export interface FileRouteTypes {
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/ads/google/$campaignId'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/meta-callback'
     | '/ads/google/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/ads/google/$campaignId'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/meta-callback'
     | '/ads/google'
   id:
     | '__root__'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/ads/google/$campaignId'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/meta-callback'
     | '/ads/google/'
   fileRoutesById: FileRoutesById
 }
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
+  ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleIndexRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
+    '/api/public/meta-callback': {
+      id: '/api/public/meta-callback'
+      path: '/api/public/meta-callback'
+      fullPath: '/api/public/meta-callback'
+      preLoaderRoute: typeof ApiPublicMetaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ads/google/stats': {
       id: '/ads/google/stats'
       path: '/stats'
@@ -478,6 +498,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
+  ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
