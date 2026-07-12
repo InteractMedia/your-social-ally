@@ -16,9 +16,9 @@ function creds() {
   return { pageId, token, igId };
 }
 
-async function graph<T = any>(
+async function graph<T = unknown>(
   path: string,
-  init: RequestInit & { token: string; params?: Record<string, string> },
+  init: { method?: string; token: string; params?: Record<string, string>; body?: BodyInit; headers?: HeadersInit },
 ): Promise<T> {
   const url = new URL(`${GRAPH}${path}`);
   url.searchParams.set("access_token", init.token);
@@ -31,20 +31,18 @@ async function graph<T = any>(
     body: init.body,
   });
   const text = await res.text();
-  let json: any;
+  let json: { error?: { message?: string } } & Record<string, unknown> = {};
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
     throw new Error(`Meta Graph API [${res.status}]: ${text.slice(0, 300)}`);
   }
   if (!res.ok || json?.error) {
-    const msg = json?.error?.message ?? text;
-    throw new Error(`Meta Graph API [${res.status}]: ${msg}`);
+    throw new Error(`Meta Graph API [${res.status}]: ${json?.error?.message ?? text}`);
   }
   return json as T;
 }
 
-/** Verify Page + IG business ID connectivity and return account names. */
 export const getMetaStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
@@ -68,10 +66,10 @@ export const getMetaStatus = createServerFn({ method: "GET" })
     }
 
     try {
-      const page = await graph<{ id: string; name: string; category?: string }>(
-        `/${pageId}`,
-        { token, params: { fields: "id,name,category" } },
-      );
+      const page = await graph<{ id: string; name: string; category?: string }>(`/${pageId}`, {
+        token,
+        params: { fields: "id,name,category" },
+      });
       status.page = { connected: true, id: page.id, name: page.name, category: page.category };
     } catch (err) {
       status.page.error = (err as Error).message;
@@ -79,15 +77,10 @@ export const getMetaStatus = createServerFn({ method: "GET" })
 
     if (igId) {
       try {
-        const ig = await graph<{
-          id: string;
-          username: string;
-          name?: string;
-          followers_count?: number;
-        }>(`/${igId}`, {
-          token,
-          params: { fields: "id,username,name,followers_count" },
-        });
+        const ig = await graph<{ id: string; username: string; name?: string; followers_count?: number }>(
+          `/${igId}`,
+          { token, params: { fields: "id,username,name,followers_count" } },
+        );
         status.instagram = {
           connected: true,
           id: ig.id,
@@ -118,7 +111,6 @@ async function signMediaUrls(paths: string[]): Promise<string[]> {
   });
 }
 
-/** Publish to the connected Facebook Page (text, or single/multi-photo). */
 export const publishFacebookPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -134,7 +126,6 @@ export const publishFacebookPost = createServerFn({ method: "POST" })
     const paths = data.mediaPaths ?? [];
     const urls = await signMediaUrls(paths);
 
-    // No media → simple text post
     if (urls.length === 0) {
       const res = await graph<{ id: string }>(`/${pageId}/feed`, {
         method: "POST",
@@ -144,7 +135,6 @@ export const publishFacebookPost = createServerFn({ method: "POST" })
       return { ok: true, id: res.id };
     }
 
-    // Single photo → publish directly with caption
     if (urls.length === 1) {
       const res = await graph<{ id: string; post_id?: string }>(`/${pageId}/photos`, {
         method: "POST",
@@ -154,7 +144,6 @@ export const publishFacebookPost = createServerFn({ method: "POST" })
       return { ok: true, id: res.post_id ?? res.id };
     }
 
-    // Multi-photo → upload unpublished, then create a feed post with attached_media
     const mediaIds: string[] = [];
     for (const url of urls) {
       const uploaded = await graph<{ id: string }>(`/${pageId}/photos`, {
@@ -173,7 +162,6 @@ export const publishFacebookPost = createServerFn({ method: "POST" })
     return { ok: true, id: res.id };
   });
 
-/** Publish an Instagram feed post (single image or carousel). Image required. */
 export const publishInstagramPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -206,7 +194,6 @@ export const publishInstagramPost = createServerFn({ method: "POST" })
         ...(data.caption ? { caption: data.caption } : {}),
       });
     } else {
-      // Carousel: upload each child, then create carousel container
       const childIds: string[] = [];
       for (const url of urls) {
         const id = await createContainer({ image_url: url, is_carousel_item: "true" });
@@ -219,7 +206,6 @@ export const publishInstagramPost = createServerFn({ method: "POST" })
       });
     }
 
-    // Publish the container
     const publish = await graph<{ id: string }>(`/${igId}/media_publish`, {
       method: "POST",
       token,
