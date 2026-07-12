@@ -182,3 +182,54 @@ function LinkedInRow() {
   );
 }
 
+function MetaRow({ platform }: { platform: "facebook" | "instagram" }) {
+  const fn = useServerFn(getMetaStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["meta", "status"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const info = platform === "facebook" ? data?.page : data?.instagram;
+  const connected = !!info?.connected;
+  const label =
+    platform === "facebook"
+      ? info?.connected ? `${(info as { name?: string }).name ?? "Facebook Page"}` : ""
+      : info?.connected ? `@${(info as { username?: string }).username ?? ""}` : "";
+
+  return (
+    <div
+      className="platform-row flex items-center gap-3 rounded-md border p-3"
+      style={platformTintStyle(platform)}
+    >
+      <PlatformIcon platform={platform} />
+      <div className="flex-1">
+        <div className="text-sm font-medium">{platform === "facebook" ? "Facebook" : "Instagram"}</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : connected
+              ? label
+              : info?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : connected ? (
+        <Badge variant="outline" className="gap-1 text-success">
+          <Check className="h-3 w-3" /> Live
+        </Badge>
+      ) : (
+        <Button asChild size="sm" variant="outline" className="gap-1.5">
+          <Link to="/meta">
+            <Sparkles className="h-3.5 w-3.5" />
+            Wizard
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+
