@@ -89,8 +89,12 @@ function MetaWizard() {
   const [oauthData, setOauthData] = useState<{
     shortLivedToken?: string;
     pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+    me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
     granted?: string[];
     missing?: string[];
+    permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
+    warning?: string;
+    diagnostics?: string[];
     error?: string;
   }>({});
 
@@ -310,16 +314,24 @@ function ConnectStep({
   data: {
     shortLivedToken?: string;
     pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+      me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
     granted?: string[];
     missing?: string[];
+      permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
+      warning?: string;
+      diagnostics?: string[];
     error?: string;
   };
   setData: React.Dispatch<
     React.SetStateAction<{
       shortLivedToken?: string;
       pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
+      me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
       granted?: string[];
       missing?: string[];
+      permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
+      warning?: string;
+      diagnostics?: string[];
       error?: string;
     }>
   >;
@@ -350,7 +362,10 @@ function ConnectStep({
       `?client_id=${encodeURIComponent(config.appId)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&state=${encodeURIComponent(state)}` +
-      `&scope=${encodeURIComponent(scopes)}` +
+      (config.businessConfigId
+        ? `&config_id=${encodeURIComponent(config.businessConfigId)}`
+        : `&scope=${encodeURIComponent(scopes)}`) +
+      `&auth_type=rerequest` +
       `&response_type=code`;
 
     const popup = window.open(url, "meta-oauth", "width=600,height=700,popup=true");
@@ -387,8 +402,12 @@ function ConnectStep({
       setData({
         shortLivedToken,
         pages: result.pages,
+        me: result.me,
         granted: result.granted,
         missing: result.missing,
+        permissions: result.permissions,
+        warning: result.warning,
+        diagnostics: result.diagnostics,
       });
       if (result.pages.length === 1) {
         setSelectedPageId(result.pages[0].id);
@@ -452,6 +471,27 @@ function ConnectStep({
             </div>
           )}
 
+          {data.warning && (
+            <div className="space-y-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+              <div className="flex items-start gap-2 text-warning">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">{data.warning}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    De login is gelukt voor {data.me?.name ?? "je persoonlijke account"}, maar Meta gaf geen beheerde Page-assets terug.
+                  </p>
+                </div>
+              </div>
+              {data.diagnostics && data.diagnostics.length > 0 && (
+                <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                  {data.diagnostics.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           <div className="text-xs text-muted-foreground">
             Gevraagde scopes: {REQUIRED_META_SCOPES.join(", ")}
           </div>
@@ -496,6 +536,29 @@ function ConnectStep({
                     )}
                   </div>
                 </label>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.permissions && data.pages?.length === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ontvangen Meta permissions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p className="text-xs text-muted-foreground">
+              Als deze permissions op “granted” staan maar Pages leeg blijft, moet de OAuth-flow via Facebook Login for Business met een Configuration ID lopen.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {data.permissions.map((permission) => (
+                <div key={permission.permission} className="flex items-center justify-between rounded-md border p-2 text-xs">
+                  <span>{permission.permission}</span>
+                  <Badge variant="outline" className={permission.status === "granted" ? "text-success" : "text-destructive"}>
+                    {permission.status}
+                  </Badge>
+                </div>
               ))}
             </div>
           </CardContent>

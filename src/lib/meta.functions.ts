@@ -205,12 +205,14 @@ export const getMetaOAuthConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
     const appId = process.env.META_APP_ID;
+    const businessConfigId = process.env.META_BUSINESS_LOGIN_CONFIG_ID;
     if (!appId) {
       return { ok: false as const, error: "META_APP_ID ontbreekt." };
     }
     return {
       ok: true as const,
       appId,
+      businessConfigId,
       scopes: REQUIRED_META_SCOPES.join(","),
       version: "v21.0",
     };
@@ -252,8 +254,53 @@ export const exchangeMetaToken = createServerFn({ method: "POST" })
       throw new Error("Kon geen long-lived token verkrijgen.");
     }
 
+    const diagnostics: string[] = [];
+
+    const me = await graph<{ id: string; name?: string }>("/me", {
+      token: userToken,
+      params: { fields: "id,name" },
+    });
+
+    let granted: string[] = [];
+    let missing = [...REQUIRED_META_SCOPES];
+    try {
+      const debug = await graph<{
+        data: { scopes?: string[]; is_valid?: boolean; type?: string };
+      }>("/debug_token", {
+        token: `${appId}|${appSecret}`,
+        params: { input_token: userToken },
+      });
+      granted = debug.data.scopes ?? [];
+      missing = REQUIRED_META_SCOPES.filter((s) => !granted.includes(s));
+    } catch (err) {
+      diagnostics.push(`Token debug faalde: ${(err as Error).message}`);
+    }
+
+    let permissions: Array<{ permission: string; status: string }> = [];
+    try {
+      const permissionResult = await graph<{
+        data: Array<{ permission: string; status: string }>;
+      }>("/me/permissions", { token: userToken });
+      permissions = permissionResult.data ?? [];
+    } catch (err) {
+      diagnostics.push(`/me/permissions faalde: ${(err as Error).message}`);
+    }
+
     // 2. Pages + page tokens + IG accounts
-    const accounts = await graph<{
+    let accountData: Array<{
+      id: string;
+      name: string;
+      category?: string;
+      access_token?: string;
+      instagram_business_account?: {
+        id: string;
+        username?: string;
+        name?: string;
+        followers_count?: number;
+      };
+    }> = [];
+    try {
+      const accounts = await graph<{
       data: Array<{
         id: string;
         name: string;
@@ -274,8 +321,12 @@ export const exchangeMetaToken = createServerFn({ method: "POST" })
         limit: "50",
       },
     });
+      accountData = accounts.data ?? [];
+    } catch (err) {
+      diagnostics.push(`/me/accounts faalde: ${(err as Error).message}`);
+    }
 
-    const pages = (accounts.data ?? []).map((p) => ({
+    const pages = accountData.map((p) => ({
       id: p.id,
       name: p.name,
       category: p.category,
@@ -284,22 +335,23 @@ export const exchangeMetaToken = createServerFn({ method: "POST" })
     }));
 
     if (pages.length === 0) {
-      throw new Error("Geen Facebook Pages gevonden met dit token.");
+      diagnostics.push(
+        missing.includes("pages_show_list")
+          ? "Het token mist pages_show_list; Meta heeft de Page-lijst niet meegegeven."
+          : "Het token heeft geen Page-assets teruggegeven. Controleer Business Integrations of gebruik Facebook Login for Business met een Configuration ID.",
+      );
     }
-
-    // 3. Scopes on the long-lived user token
-    const debug = await graph<{
-      data: { scopes?: string[]; is_valid?: boolean; type?: string };
-    }>("/debug_token", { token: userToken, params: { input_token: userToken } });
-    const granted = debug.data.scopes ?? [];
-    const missing = REQUIRED_META_SCOPES.filter((s) => !granted.includes(s));
 
     return {
       ok: true as const,
       userToken,
+      me,
       pages,
       granted,
       missing,
+      permissions,
+      warning: pages.length === 0 ? "Geen Facebook Pages gevonden met dit token." : undefined,
+      diagnostics,
     };
   });
 
