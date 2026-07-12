@@ -242,153 +242,209 @@ function copy(value: string, label: string) {
 }
 
 function MetaDebugCard() {
-  const fn = useServerFn(debugMetaToken);
-  const { data, isFetching, refetch, error } = useQuery({
+  const debugFn = useServerFn(debugMetaToken);
+  const scopesFn = useServerFn(checkMetaScopes);
+  const {
+    data: debugData,
+    isFetching: debugFetching,
+    refetch: refetchDebug,
+    error: debugError,
+  } = useQuery({
     queryKey: ["meta", "debug"],
-    queryFn: () => fn(),
+    queryFn: () => debugFn(),
+    enabled: false,
+    retry: false,
+  });
+  const {
+    data: scopesData,
+    isFetching: scopesFetching,
+    refetch: refetchScopes,
+    error: scopesError,
+  } = useQuery({
+    queryKey: ["meta", "scopes"],
+    queryFn: () => scopesFn(),
     enabled: false,
     retry: false,
   });
 
-  const REQUIRED_SCOPES = [
-    "pages_show_list",
-    "pages_read_engagement",
-    "pages_manage_posts",
-    "instagram_basic",
-    "instagram_content_publish",
-  ];
-
-  const scopes = data && "ok" in data && data.ok ? data.tokenInfo?.scopes ?? [] : [];
-  const missingScopes = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
+  const scopes =
+    scopesData && "ok" in scopesData && scopesData.ok ? scopesData.granted : [];
+  const missingScopes =
+    scopesData && "ok" in scopesData && scopesData.ok
+      ? scopesData.missing
+      : REQUIRED_META_SCOPES.filter((s) => !scopes.includes(s));
+  const tokenType = scopesData && "ok" in scopesData && scopesData.ok ? scopesData.type : undefined;
+  const isValid = scopesData && "ok" in scopesData && scopesData.ok ? scopesData.is_valid : undefined;
+  const expiresAt = scopesData && "ok" in scopesData && scopesData.ok ? scopesData.expires_at : undefined;
 
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Stethoscope className="h-4 w-4 text-primary" /> Meta diagnose
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Controleert welke Pages en Instagram Business accounts jouw huidige access token kan zien. Gebruik de resultaten om de juiste <code className="rounded bg-surface px-1">META_PAGE_ID</code> en <code className="rounded bg-surface px-1">META_IG_BUSINESS_ID</code> te vinden.
-          </p>
-          <Button size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Diagnose uitvoeren"}
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-4 w-4 text-primary" /> Meta diagnose
+          </CardTitle>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/meta">
+              <KeyRound className="mr-1 h-3.5 w-3.5" /> Wizard
+            </Link>
           </Button>
         </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <p className="max-w-xl text-sm text-muted-foreground">
+            Controleert welke Pages, Instagram accounts en permissions jouw huidige token heeft. Open
+            de wizard om de koppeling opnieuw te autoriseren.
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => refetchScopes()} disabled={scopesFetching}>
+              {scopesFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Scopes check"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => refetchDebug()} disabled={debugFetching}>
+              {debugFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Pages zoeken"}
+            </Button>
+          </div>
+        </div>
 
-        {error && (
+        {(debugError || scopesError) && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            {(error as Error).message}
+            {(debugError || scopesError)!.message}
           </div>
         )}
 
-        {data && "ok" in data && data.ok === false && (
+        {scopesData && "ok" in scopesData && scopesData.ok === false && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            {data.error}
+            {scopesData.error}
           </div>
         )}
 
-        {data && "ok" in data && data.ok === true && (
+        {scopesData && "ok" in scopesData && scopesData.ok === true && (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-md border p-3 text-sm">
-                <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Token</div>
-                <div>Type: <span className="font-mono">{data.tokenInfo?.type ?? "?"}</span></div>
-                <div>Geldig: {data.tokenInfo?.is_valid ? "ja" : "nee"}</div>
-                <div>
-                  Verloopt:{" "}
-                  {data.tokenInfo?.expires_at !== undefined
-                    ? data.tokenInfo.expires_at === 0
-                      ? "nooit (long-lived)"
-                      : new Date(data.tokenInfo.expires_at * 1000).toLocaleString()
-                    : "?"}
-                </div>
-                <div className="mt-2">
-                  <div className="text-xs text-muted-foreground">Scopes:</div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {scopes.length === 0 && <span className="text-xs text-muted-foreground">geen</span>}
-                    {scopes.map((s) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
-                    ))}
+                <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">Token status</div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Type</span>
+                    <Badge variant="outline" className="text-[10px]">{tokenType ?? "onbekend"}</Badge>
                   </div>
-                  {missingScopes.length > 0 && (
-                    <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
-                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      <span>Mist: {missingScopes.join(", ")}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Geldig</span>
+                    <span>{isValid ? "ja" : "nee"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Verloopt</span>
+                    <span>
+                      {expiresAt === undefined
+                        ? "?"
+                        : expiresAt === 0
+                          ? "nooit (long-lived)"
+                          : new Date(expiresAt * 1000).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="rounded-md border p-3 text-sm">
-                <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Huidige secrets</div>
-                <div className="font-mono text-xs">META_PAGE_ID = {data.current.pageId ?? "—"}</div>
-                <div className="font-mono text-xs">META_IG_BUSINESS_ID = {data.current.igId ?? "—"}</div>
-                <div className="mt-2 text-xs text-muted-foreground">Vergelijk met de gevonden Pages hieronder.</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">
-                Gevonden Pages ({data.pages.length})
-              </div>
-              {data.pages.length === 0 && (
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-                  Geen Pages gevonden. Het token hoort waarschijnlijk bij een account zonder Page-beheer, of mist <code>pages_show_list</code>.
-                </div>
-              )}
-              <div className="space-y-3">
-                {data.pages.map((p) => (
-                  <div key={p.id} className="rounded-md border p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-medium">{p.name}</div>
-                      {(p.matchesCurrentPageId || p.matchesCurrentIgId) && (
-                        <Badge variant="outline" className="gap-1 text-success">
-                          <Check className="h-3 w-3" />
-                          {p.matchesCurrentPageId && p.matchesCurrentIgId ? "Beide IDs komen overeen" : p.matchesCurrentPageId ? "Page ID komt overeen" : "IG ID komt overeen"}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
-                        <div className="min-w-0">
-                          <div className="text-[10px] uppercase text-muted-foreground">Page ID</div>
-                          <div className="truncate font-mono text-xs">{p.id}</div>
-                        </div>
-                        <Button size="icon" variant="ghost" onClick={() => copy(p.id, "Page ID")}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
-                        <div className="min-w-0">
-                          <div className="text-[10px] uppercase text-muted-foreground">
-                            IG Business ID {p.instagram?.username ? `(@${p.instagram.username})` : ""}
-                          </div>
-                          <div className="truncate font-mono text-xs">{p.instagram?.id ?? "— geen IG gekoppeld"}</div>
-                        </div>
-                        {p.instagram?.id && (
-                          <Button size="icon" variant="ghost" onClick={() => copy(p.instagram!.id, "IG Business ID")}>
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
+                <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">Scopes</div>
+                <div className="grid gap-1">
+                  {REQUIRED_META_SCOPES.map((scope) => {
+                    const granted = scopes.includes(scope);
+                    return (
+                      <div key={scope} className="flex items-center justify-between text-xs">
+                        <span>{scope}</span>
+                        {granted ? (
+                          <Badge variant="outline" className="gap-1 text-[10px] text-success">
+                            <Check className="h-3 w-3" /> ja
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-[10px] text-destructive">
+                            <X className="h-3 w-3" /> nee
+                          </Badge>
                         )}
                       </div>
-                    </div>
-                    {p.category && (
-                      <div className="mt-1 text-xs text-muted-foreground">Categorie: {p.category}</div>
-                    )}
+                    );
+                  })}
+                </div>
+                {missingScopes.length > 0 && (
+                  <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>Mist: {missingScopes.join(", ")}</span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
-            {data.errors.length > 0 && (
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
-                <div className="mb-1 font-medium">Waarschuwingen</div>
-                {data.errors.map((e, i) => <div key={i}>{e}</div>)}
+            {missingScopes.length > 0 && (
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+                <div className="mb-2 font-medium">Ontbrekende permissions</div>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Open de Meta-koppelwizard om de ontbrekende scopes opnieuw aan te vragen.
+                </p>
+                <Button asChild size="sm">
+                  <Link to="/meta">
+                    <KeyRound className="mr-1 h-3.5 w-3.5" /> Open wizard
+                  </Link>
+                </Button>
               </div>
             )}
+          </div>
+        )}
+
+        {debugData && "ok" in debugData && debugData.ok === true && (
+          <div>
+            <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+              Gevonden Pages ({debugData.pages.length})
+            </div>
+            {debugData.pages.length === 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                Geen Pages gevonden. Het token hoort waarschijnlijk bij een account zonder Page-beheer, of mist <code>pages_show_list</code>.
+              </div>
+            )}
+            <div className="space-y-3">
+              {debugData.pages.map((p) => (
+                <div key={p.id} className="rounded-md border p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium">{p.name}</div>
+                    {(p.matchesCurrentPageId || p.matchesCurrentIgId) && (
+                      <Badge variant="outline" className="gap-1 text-success">
+                        <Check className="h-3 w-3" />
+                        {p.matchesCurrentPageId && p.matchesCurrentIgId
+                          ? "Beide IDs komen overeen"
+                          : p.matchesCurrentPageId
+                            ? "Page ID komt overeen"
+                            : "IG ID komt overeen"}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase text-muted-foreground">Page ID</div>
+                        <div className="truncate font-mono text-xs">{p.id}</div>
+                      </div>
+                      <Button size="icon" variant="ghost" onClick={() => copy(p.id, "Page ID")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 rounded bg-surface px-2 py-1">
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase text-muted-foreground">
+                          IG Business ID {p.instagram?.username ? `(@${p.instagram.username})` : ""}
+                        </div>
+                        <div className="truncate font-mono text-xs">{p.instagram?.id ?? "— geen IG gekoppeld"}</div>
+                      </div>
+                      {p.instagram?.id && (
+                        <Button size="icon" variant="ghost" onClick={() => copy(p.instagram!.id, "IG Business ID")}>
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
