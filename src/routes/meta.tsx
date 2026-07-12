@@ -336,7 +336,7 @@ function ConnectStep({
 
   const startOAuth = async () => {
     setOauthError(undefined);
-    const { data: config } = await configFn();
+    const config = await configFn();
     if (!config.ok) {
       setOauthError(config.error);
       return;
