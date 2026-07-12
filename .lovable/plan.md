@@ -1,58 +1,33 @@
-# Meta (Facebook + Instagram) live koppeling
+## Doel
+De huidige Meta-fouten oplossen door (1) het nieuwe access token op te slaan en (2) een debug-hulp in de app te bouwen die de juiste Page ID + Instagram Business ID ophaalt zodat we ze zeker weten.
 
-Nu App Review binnen is: van demo/handmatig naar echte Graph API-integratie voor publiceren, comments/DM's inlezen en insights.
+## Stappen
 
-## 1. Secrets (backend)
-Via `add_secret` opslaan (jij vult in via secure form):
-- `META_APP_ID`, `META_APP_SECRET`
-- `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN` (long-lived)
-- `META_IG_BUSINESS_ID`
+1. **Token opslaan**
+   - `META_PAGE_ACCESS_TOKEN` updaten naar het zojuist geplakte token (via `update_secret`, secure form — ik plak het token niet zelf in code).
 
-## 2. Server-functies — `src/lib/meta.functions.ts`
-Alle calls naar `graph.facebook.com/v21.0`, token uit `process.env`.
+2. **Debug server function toevoegen** (`src/lib/meta.functions.ts`)
+   - `debugMetaToken` (GET, auth-protected): roept Graph API aan met het huidige token:
+     - `GET /me` → wie is het token van (user of page)
+     - `GET /me/accounts?fields=id,name,category,access_token,instagram_business_account{id,username,name,followers_count}` → alle Pages die dit token kan zien, met per-page token en gekoppeld IG Business account
+     - `GET /debug_token` → geldigheid, expiry, scopes
+   - Geeft een gestructureerd resultaat terug met alle IDs en scopes.
 
-- `getMetaStatus()` — check token geldigheid + page/IG info (naam, avatar, followers). Voedt Settings.
-- `publishFacebookPost({ text, mediaPaths[] })` — 0/1 image = `/{page}/photos` of `/{page}/feed`; meerdere = unpublished photos → `/{page}/feed` met `attached_media`.
-- `publishInstagramPost({ caption, mediaPaths[] })` — single: `/{ig}/media` (image_url) → `/{ig}/media_publish`; carousel: children containers → carousel container → publish. Media wordt eerst uit Supabase `post-media` bucket via signed URL beschikbaar gemaakt (Graph vereist publieke URL — we gebruiken korte-TTL signed URLs).
-- `listMetaComments({ platform, since })` — FB: `/{page}/feed?fields=comments{...}`; IG: `/{ig}/media?fields=comments{...}`. Normaliseert naar het bestaande `InboxItem`-shape.
-- `replyMetaComment({ platform, commentId, message })`.
-- `getMetaInsights({ platform, range })` — page/IG insights (reach, impressions, engagement, follower_count).
+3. **Debug UI toevoegen** (`src/routes/settings.tsx`)
+   - Nieuwe kaart "Meta diagnose" onder Platform-koppelingen met een "Diagnose uitvoeren"-knop.
+   - Toont per gevonden Page: naam, Page ID, IG Business ID, username, gekoppelde scopes.
+   - Kopieerknoppen naast elke ID.
+   - Waarschuwing bij ontbrekende scopes (`pages_manage_posts`, `instagram_content_publish`, etc.).
+   - Waarschuwing als token binnenkort verloopt (of "never" bij long-lived).
 
-Alles met `.middleware([requireSupabaseAuth])` + nette error-surfacing (Graph errors doorgeven).
+4. **Vervolgactie (na diagnose)**
+   - Zodra jij de juiste Page ID + IG Business ID uit de diagnose kopieert, update ik `META_PAGE_ID` en `META_IG_BUSINESS_ID` via de secrets-form. Daarna zou de Meta-status in Instellingen groen moeten worden.
+   - Als de diagnose laat zien dat het token een User Token is (geen Page Token), converteer ik in de debug-flow direct naar het Page-specifieke token uit `/me/accounts` — dat is meestal de echte oorzaak van dit soort 400-fouten.
 
-## 3. UI-integratie
+## Waarom deze aanpak
+De huidige fout ("Object does not exist / missing permissions") komt bijna altijd doordat het token bij een ander account/scope hoort dan de opgeslagen IDs. In plaats van gokken, laten we Graph API zelf de correcte waarden teruggeven. Meteen ingebouwd als herbruikbaar diagnose-scherm — handig als er later opnieuw iets misgaat (token expired, IG ontkoppeld, etc.).
 
-**Settings (`/settings`)** — vervang de Meta "Wizard starten"-knoppen door live `MetaRow` (net als `LinkedInRow`): live status via `getMetaStatus`, badge "Live" + page/IG naam en avatar. Wizard-route (`/meta`) blijft bereikbaar als "Herconfigureren".
-
-**Composer (`/composer`)**
-- Nieuwe knoppen "Post naar Facebook" en "Post naar Instagram" (analoog aan LinkedIn), zichtbaar wanneer platform geselecteerd is.
-- IG validatie: minimaal 1 image verplicht (Graph vereist).
-- `ManualMetaPanel` verwijderen uit Composer (jouw keuze: vervangen door echte publish).
-
-**Inbox (`/inbox`)**
-- `useQuery` naar `listMetaComments` per platform; mergen met bestaande demo-items achter een toggle "Alleen live" (default aan zodra Meta connected).
-- "Verstuur antwoord" roept nu `replyMetaComment` aan voor FB/IG items; LinkedIn/TikTok/YT blijven demo tot hun eigen koppeling.
-
-**Nieuwe route `/insights` (of tab in dashboard)**
-- KPI-kaarten per platform (FB Page + IG Business) met reach/impressions/engagement/followers via `getMetaInsights`, filter last 7/28/90 dagen.
-
-## 4. Publiceren-flow met media
-- Composer stuurt `mediaPaths` (Supabase storage paths) mee.
-- Server-fn genereert signed URL (10 min TTL) → geeft door aan Graph API.
-- Na publish: `recordPostResult` net als bij LinkedIn.
-
-## 5. Cleanup
-- `src/components/composer/ManualMetaPanel.tsx` verwijderen + import uit `composer.tsx`.
-- `demo-data.ts` inboxItems markeren als fallback (alleen tonen als geen live data).
-
-## Volgorde van uitvoeren
-1. Secrets opvragen (add_secret).
-2. `meta.functions.ts` bouwen + Settings `MetaRow`.
-3. Composer publish-knoppen + ManualMetaPanel weghalen.
-4. Inbox live comments + reply.
-5. Insights route.
-
-## Buiten scope (volgende ronde als je wilt)
-- Scheduling naar Meta (nu direct-publish).
-- Stories/Reels publiceren (andere endpoints, extra review vaak nodig).
-- DM's via Messenger Platform (aparte webhook setup).
+## Technisch
+- Geen wijziging aan bestaande `publishFacebookPost` / `publishInstagramPost` — die blijven werken zodra IDs kloppen.
+- `debugMetaToken` gebruikt hetzelfde `graph()` helper-patroon dat er al staat.
+- Alleen zichtbaar voor ingelogde gebruikers (`requireSupabaseAuth`).
