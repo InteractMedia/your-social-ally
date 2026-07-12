@@ -43,6 +43,109 @@ async function graph<T = unknown>(
   return json as T;
 }
 
+export const debugMetaToken = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const token = process.env.META_PAGE_ACCESS_TOKEN;
+    const currentPageId = process.env.META_PAGE_ID;
+    const currentIgId = process.env.META_IG_BUSINESS_ID;
+
+    if (!token) {
+      return { ok: false as const, error: "META_PAGE_ACCESS_TOKEN ontbreekt." };
+    }
+
+    const result: {
+      ok: true;
+      me?: { id: string; name?: string };
+      tokenInfo?: {
+        type?: string;
+        app_id?: string;
+        application?: string;
+        expires_at?: number;
+        is_valid?: boolean;
+        scopes?: string[];
+        user_id?: string;
+      };
+      pages: Array<{
+        id: string;
+        name: string;
+        category?: string;
+        tasks?: string[];
+        access_token?: string;
+        instagram?: { id: string; username?: string; name?: string; followers_count?: number };
+        matchesCurrentPageId: boolean;
+        matchesCurrentIgId: boolean;
+      }>;
+      current: { pageId?: string; igId?: string };
+      errors: string[];
+    } = { ok: true, pages: [], current: { pageId: currentPageId, igId: currentIgId }, errors: [] };
+
+    try {
+      result.me = await graph<{ id: string; name?: string }>("/me", {
+        token,
+        params: { fields: "id,name" },
+      });
+    } catch (err) {
+      result.errors.push(`/me: ${(err as Error).message}`);
+    }
+
+    try {
+      const debug = await graph<{
+        data: {
+          type?: string;
+          app_id?: string;
+          application?: string;
+          expires_at?: number;
+          is_valid?: boolean;
+          scopes?: string[];
+          user_id?: string;
+        };
+      }>("/debug_token", { token, params: { input_token: token } });
+      result.tokenInfo = debug.data;
+    } catch (err) {
+      result.errors.push(`/debug_token: ${(err as Error).message}`);
+    }
+
+    try {
+      const accounts = await graph<{
+        data: Array<{
+          id: string;
+          name: string;
+          category?: string;
+          tasks?: string[];
+          access_token?: string;
+          instagram_business_account?: {
+            id: string;
+            username?: string;
+            name?: string;
+            followers_count?: number;
+          };
+        }>;
+      }>("/me/accounts", {
+        token,
+        params: {
+          fields:
+            "id,name,category,tasks,access_token,instagram_business_account{id,username,name,followers_count}",
+          limit: "50",
+        },
+      });
+      result.pages = (accounts.data ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        tasks: p.tasks,
+        access_token: p.access_token,
+        instagram: p.instagram_business_account,
+        matchesCurrentPageId: p.id === currentPageId,
+        matchesCurrentIgId: p.instagram_business_account?.id === currentIgId,
+      }));
+    } catch (err) {
+      result.errors.push(`/me/accounts: ${(err as Error).message}`);
+    }
+
+    return result;
+  });
+
 export const getMetaStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
