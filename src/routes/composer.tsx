@@ -41,6 +41,8 @@ function Composer() {
   const [selected, setSelected] = useState<Platform[]>(["tiktok", "instagram"]);
   const fn = useServerFn(generateAI);
   const publishLI = useServerFn(publishLinkedInPost);
+  const publishFB = useServerFn(publishFacebookPost);
+  const publishIG = useServerFn(publishInstagramPost);
 
   const mutation = useMutation({
     mutationFn: (input: Parameters<typeof generateAI>[0]) => fn(input),
@@ -50,6 +52,18 @@ function Composer() {
   const liMutation = useMutation({
     mutationFn: (text: string) => publishLI({ data: { text } }),
     onSuccess: () => toast.success("Gepubliceerd op LinkedIn ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const fbMutation = useMutation({
+    mutationFn: (input: { message: string; mediaPaths?: string[] }) => publishFB({ data: input }),
+    onSuccess: () => toast.success("Gepubliceerd op Facebook ✅"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const igMutation = useMutation({
+    mutationFn: (input: { caption?: string; mediaPaths: string[] }) => publishIG({ data: input }),
+    onSuccess: () => toast.success("Gepubliceerd op Instagram ✅"),
     onError: (err: Error) => toast.error(err.message),
   });
 
