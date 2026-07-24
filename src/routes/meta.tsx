@@ -788,6 +788,8 @@ function DoneStep({
               De wizard heeft de juiste gegevens gevonden, maar het automatisch opslaan is mislukt.
               Probeer de wizard opnieuw te doorlopen, of neem contact op.
             </p>
+          ) : saveStatus === "saving" ? (
+            <p>Koppeling wordt opgeslagen...</p>
           ) : (
             <p>
               De koppeling is live gezet. Je kunt nu posts publiceren naar Facebook en Instagram
