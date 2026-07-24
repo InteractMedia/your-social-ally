@@ -289,7 +289,7 @@ function IntroStep() {
             </p>
           </div>
         </div>
-        <div className="rounded-md border border-info/40 bg-info/5 p-3 text-xs">
+        <div className="rounded-md border bg-muted/40 p-3 text-xs">
           <strong>Automatisch opslaan:</strong> zodra je in stap 3 een Facebook Page selecteert,
           worden Page ID, IG Business ID en Page Access Token automatisch in de app bewaard. Je
           hoeft niets meer handmatig te kopiëren.
