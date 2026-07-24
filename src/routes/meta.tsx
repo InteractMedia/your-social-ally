@@ -634,10 +634,27 @@ function ConnectStep({
               masked
             />
             <p className="text-xs text-muted-foreground">
-              Deze waardes moeten in de app-secrets worden opgeslagen. Gebruik de knoppen om ze te
-              kopiëren en plak ze in de beveiligde secrets-form, of deel ze in de chat zodat ze
-              opgeslagen kunnen worden.
+              Deze waardes worden automatisch opgeslagen zodra je een Page selecteert. Je kunt ze
+              hier nog bekijken ter controle.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {saveStatus && saveStatus !== "idle" && (
+        <Card>
+          <CardContent className="space-y-2 py-4">
+            <div className="flex items-center gap-2 text-sm">
+              {saveStatus === "saving" && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {saveStatus === "saved" && <CheckCircle2 className="h-4 w-4 text-success" />}
+              {saveStatus === "error" && <X className="h-4 w-4 text-destructive" />}
+              <span>
+                {saveStatus === "saving" && "Koppeling opslaan..."}
+                {saveStatus === "saved" && "Koppeling opgeslagen in de app."}
+                {saveStatus === "error" && "Opslaan mislukt"}
+              </span>
+            </div>
+            {saveError && <div className="text-xs text-destructive">{saveError}</div>}
           </CardContent>
         </Card>
       )}
