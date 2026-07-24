@@ -289,6 +289,11 @@ function IntroStep() {
             </p>
           </div>
         </div>
+        <div className="rounded-md border border-info/40 bg-info/5 p-3 text-xs">
+          <strong>Automatisch opslaan:</strong> zodra je in stap 3 een Facebook Page selecteert,
+          worden Page ID, IG Business ID en Page Access Token automatisch in de app bewaard. Je
+          hoeft niets meer handmatig te kopiëren.
+        </div>
         <div className="rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
           <strong>Let op:</strong> Meta vereist een App Review-traject (± 1–3 weken) voor{" "}
           <code className="rounded bg-muted px-1">pages_manage_posts</code>,{" "}
