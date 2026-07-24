@@ -55,6 +55,18 @@ export function addCustomCompetitor(input: {
   return item;
 }
 
+export function updateCustomCompetitor(
+  id: string,
+  patch: Partial<Pick<Competitor, "label" | "primaryHandle" | "primaryPlatform" | "about">>,
+) {
+  const next = read().map((c) => (c.id === id ? { ...c, ...patch } : c));
+  write(next);
+}
+
+export function getCustomCompetitor(id: string): Competitor | undefined {
+  return read().find((c) => c.id === id);
+}
+
 export function removeCustomCompetitor(id: string) {
   write(read().filter((c) => c.id !== id));
 }

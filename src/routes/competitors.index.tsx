@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Plus, TrendingUp, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Pencil, Plus, TrendingUp, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -31,11 +31,13 @@ import {
   competitorPosts,
   competitors as demoCompetitors,
   platformLabel,
+  type Competitor,
   type Platform,
 } from "@/lib/demo-data";
 import {
   addCustomCompetitor,
   removeCustomCompetitor,
+  updateCustomCompetitor,
   useCustomCompetitors,
 } from "@/lib/competitors-store";
 
@@ -56,6 +58,7 @@ function CompetitorsIndex() {
   const custom = useCustomCompetitors();
   const all = [...demoCompetitors, ...custom];
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Competitor | null>(null);
 
   return (
     <AppShell>
@@ -97,27 +100,40 @@ function CompetitorsIndex() {
                 className="platform-row group relative rounded-lg border p-5 transition-colors hover:border-primary/40"
                 style={platformTintStyle(c.primaryPlatform)}
               >
-                {isCustom && (
-                  <button
-                    type="button"
-                    aria-label="Verwijder concurrent"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeCustomCompetitor(c.id);
-                      toast.success(`${c.label} verwijderd`);
-                    }}
-                    className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
+                {/* Full-card click surface, sits BEHIND action buttons */}
                 <Link
                   to="/competitors/$id"
                   params={{ id: c.id }}
-                  className="block"
-                >
-                  <div className="flex items-start justify-between gap-3">
+                  aria-label={`Open ${c.label}`}
+                  className="absolute inset-0 z-0 rounded-lg"
+                />
+
+                {isCustom && (
+                  <div className="absolute right-2 top-2 z-20 flex gap-1">
+                    <button
+                      type="button"
+                      aria-label="Bewerk concurrent"
+                      onClick={() => setEditing(c)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Verwijder concurrent"
+                      onClick={() => {
+                        removeCustomCompetitor(c.id);
+                        toast.success(`${c.label} verwijderd`);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="pointer-events-none relative z-10">
+                  <div className="flex items-start justify-between gap-3 pr-16">
                     <div className="flex items-center gap-3">
                       <PlatformIcon platform={c.primaryPlatform} size={28} />
                       <div>
@@ -170,7 +186,7 @@ function CompetitorsIndex() {
                       <div className="line-clamp-2 text-foreground">{bestPost.caption}</div>
                     </div>
                   )}
-                </Link>
+                </div>
               </div>
             );
           })}
@@ -178,6 +194,10 @@ function CompetitorsIndex() {
       )}
 
       <AddCompetitorDialog open={open} onOpenChange={setOpen} />
+      <EditCompetitorDialog
+        competitor={editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+      />
     </AppShell>
   );
 }
@@ -285,4 +305,92 @@ function AddCompetitorDialog({
     </Dialog>
   );
 }
+
+function EditCompetitorDialog({
+  competitor,
+  onOpenChange,
+}: {
+  competitor: Competitor | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [handle, setHandle] = useState("");
+  const [platform, setPlatform] = useState<Platform>("instagram");
+  const [about, setAbout] = useState("");
+
+  useEffect(() => {
+    if (competitor) {
+      setLabel(competitor.label);
+      setHandle(competitor.primaryHandle);
+      setPlatform(competitor.primaryPlatform);
+      setAbout(competitor.about ?? "");
+    }
+  }, [competitor]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!competitor) return;
+    if (!label.trim() || !handle.trim()) {
+      toast.error("Vul minimaal naam en handle in.");
+      return;
+    }
+    updateCustomCompetitor(competitor.id, {
+      label: label.trim(),
+      primaryHandle: handle.trim().startsWith("@") ? handle.trim() : `@${handle.trim()}`,
+      primaryPlatform: platform,
+      about: about.trim() || undefined,
+    });
+    toast.success(`${label} bijgewerkt`);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={!!competitor} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>Concurrent bewerken</DialogTitle>
+            <DialogDescription>Werk de gegevens van deze concurrent bij.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-label">Naam</Label>
+              <Input id="e-label" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-handle">Handle</Label>
+              <Input id="e-handle" value={handle} onChange={(e) => setHandle(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Primair platform</Label>
+              <Select value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {platformLabel(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-about">Korte omschrijving (optioneel)</Label>
+              <Textarea id="e-about" value={about} onChange={(e) => setAbout(e.target.value)} rows={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuleren
+            </Button>
+            <Button type="submit">Opslaan</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
