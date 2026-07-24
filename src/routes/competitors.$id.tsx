@@ -39,6 +39,7 @@ import {
   type Platform,
 } from "@/lib/demo-data";
 import { computeLearnings } from "@/lib/feedback-loop";
+import { useCustomCompetitors } from "@/lib/competitors-store";
 
 export const Route = createFileRoute("/competitors/$id")({
   component: CompetitorDetail,
@@ -49,7 +50,8 @@ const nf = (n: number) => new Intl.NumberFormat("nl-NL").format(n);
 function CompetitorDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const competitor = competitors.find((c) => c.id === id);
+  const custom = useCustomCompetitors();
+  const competitor = competitors.find((c) => c.id === id) ?? custom.find((c) => c.id === id);
   const channels = competitorChannels.filter((c) => c.competitorId === id);
   const themes = competitorThemes.filter((t) => t.competitorId === id);
   const posts = competitorPosts.filter((p) => p.competitorId === id);
