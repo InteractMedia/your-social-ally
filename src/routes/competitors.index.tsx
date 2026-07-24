@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Plus, TrendingUp, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Pencil, Plus, TrendingUp, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -31,11 +31,13 @@ import {
   competitorPosts,
   competitors as demoCompetitors,
   platformLabel,
+  type Competitor,
   type Platform,
 } from "@/lib/demo-data";
 import {
   addCustomCompetitor,
   removeCustomCompetitor,
+  updateCustomCompetitor,
   useCustomCompetitors,
 } from "@/lib/competitors-store";
 
