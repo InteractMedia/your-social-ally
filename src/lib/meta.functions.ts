@@ -1,19 +1,82 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
-function creds() {
+type MetaConnection = {
+  pageId: string;
+  pageName?: string | null;
+  token: string;
+  igId?: string;
+  igUsername?: string | null;
+  scopes: string[];
+  granted: string[];
+  missing: string[];
+  appId: string;
+};
+
+async function getMetaConnection(context: {
+  supabase: ReturnType<typeof createClient<Database>>;
+  userId: string;
+}): Promise<MetaConnection | null> {
+  const { data, error } = await context.supabase
+    .from("meta_connections")
+    .select("*")
+    .eq("user_id", context.userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Kon Meta-koppeling niet ophalen: ${error.message}`);
+  }
+
+  if (data) {
+    return {
+      pageId: data.page_id,
+      pageName: data.page_name,
+      token: data.page_access_token,
+      igId: data.ig_business_id ?? undefined,
+      igUsername: data.ig_username,
+      scopes: data.scopes ?? [],
+      granted: data.granted_scopes ?? [],
+      missing: data.missing_scopes ?? [],
+      appId: data.app_id,
+    };
+  }
+
+  // Backwards-compatibiliteit: env-secrets als fallback
   const pageId = process.env.META_PAGE_ID;
   const token = process.env.META_PAGE_ACCESS_TOKEN;
   const igId = process.env.META_IG_BUSINESS_ID;
-  if (!pageId || !token) {
+  if (pageId && token) {
+    return {
+      pageId,
+      pageName: undefined,
+      token,
+      igId: igId ?? undefined,
+      igUsername: undefined,
+      scopes: [],
+      granted: [],
+      missing: [],
+      appId: process.env.META_APP_ID ?? "",
+    };
+  }
+
+  return null;
+}
+
+function requireMetaConnection(connection: MetaConnection | null): MetaConnection {
+  if (!connection) {
     throw new Error(
-      "Meta niet volledig geconfigureerd — controleer META_PAGE_ID en META_PAGE_ACCESS_TOKEN.",
+      "Meta is nog niet gekoppeld. Doorloop de koppelingswizard op /meta om Facebook & Instagram te koppelen.",
     );
   }
-  return { pageId, token, igId };
+  if (!connection.pageId || !connection.token) {
+    throw new Error("Meta niet volledig geconfigureerd — controleer de koppeling in /meta.");
+  }
+  return connection;
 }
 
 async function graph<T = unknown>(
@@ -43,15 +106,61 @@ async function graph<T = unknown>(
   return json as T;
 }
 
+export const saveMetaConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        pageId: z.string().min(1),
+        pageName: z.string().optional(),
+        pageToken: z.string().min(1),
+        igBusinessId: z.string().optional(),
+        igUsername: z.string().optional(),
+        scopes: z.array(z.string()).default([]),
+        granted: z.array(z.string()).default([]),
+        missing: z.array(z.string()).default([]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const appId = process.env.META_APP_ID;
+    if (!appId) {
+      throw new Error("META_APP_ID ontbreekt in de app-configuratie.");
+    }
+
+    const { error } = await context.supabase.from("meta_connections").upsert(
+      {
+        user_id: context.userId,
+        page_id: data.pageId,
+        page_name: data.pageName,
+        page_access_token: data.pageToken,
+        ig_business_id: data.igBusinessId,
+        ig_username: data.igUsername,
+        scopes: data.scopes,
+        granted_scopes: data.granted,
+        missing_scopes: data.missing,
+        app_id: appId,
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (error) {
+      throw new Error(`Kon Meta-koppeling niet opslaan: ${error.message}`);
+    }
+
+    return { ok: true as const };
+  });
+
 export const debugMetaToken = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const token = process.env.META_PAGE_ACCESS_TOKEN;
-    const currentPageId = process.env.META_PAGE_ID;
-    const currentIgId = process.env.META_IG_BUSINESS_ID;
+  .handler(async ({ context }) => {
+    const connection = await getMetaConnection(context);
+    const token = connection?.token;
+    const currentPageId = connection?.pageId;
+    const currentIgId = connection?.igId;
 
     if (!token) {
-      return { ok: false as const, error: "META_PAGE_ACCESS_TOKEN ontbreekt." };
+      return { ok: false as const, error: "Er is nog geen Meta-koppeling opgeslagen." };
     }
 
     const result: {
@@ -156,12 +265,13 @@ export const REQUIRED_META_SCOPES = [
 
 export const checkMetaScopes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const token = process.env.META_PAGE_ACCESS_TOKEN;
+  .handler(async ({ context }) => {
+    const connection = await getMetaConnection(context);
+    const token = connection?.token;
     if (!token) {
       return {
         ok: false as const,
-        error: "META_PAGE_ACCESS_TOKEN ontbreekt.",
+        error: "Er is nog geen Meta-koppeling opgeslagen.",
         granted: [],
         missing: [...REQUIRED_META_SCOPES],
       };
@@ -301,26 +411,26 @@ export const exchangeMetaToken = createServerFn({ method: "POST" })
     }> = [];
     try {
       const accounts = await graph<{
-      data: Array<{
-        id: string;
-        name: string;
-        category?: string;
-        access_token?: string;
-        instagram_business_account?: {
+        data: Array<{
           id: string;
-          username?: string;
-          name?: string;
-          followers_count?: number;
-        };
-      }>;
-    }>("/me/accounts", {
-      token: userToken,
-      params: {
-        fields:
-          "id,name,category,access_token,instagram_business_account{id,username,name,followers_count}",
-        limit: "50",
-      },
-    });
+          name: string;
+          category?: string;
+          access_token?: string;
+          instagram_business_account?: {
+            id: string;
+            username?: string;
+            name?: string;
+            followers_count?: number;
+          };
+        }>;
+      }>("/me/accounts", {
+        token: userToken,
+        params: {
+          fields:
+            "id,name,category,access_token,instagram_business_account{id,username,name,followers_count}",
+          limit: "50",
+        },
+      });
       accountData = accounts.data ?? [];
     } catch (err) {
       diagnostics.push(`/me/accounts faalde: ${(err as Error).message}`);
@@ -357,10 +467,11 @@ export const exchangeMetaToken = createServerFn({ method: "POST" })
 
 export const getMetaStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const pageId = process.env.META_PAGE_ID;
-    const token = process.env.META_PAGE_ACCESS_TOKEN;
-    const igId = process.env.META_IG_BUSINESS_ID;
+  .handler(async ({ context }) => {
+    const connection = await getMetaConnection(context);
+    const pageId = connection?.pageId;
+    const token = connection?.token;
+    const igId = connection?.igId;
 
     const status: {
       page: { connected: boolean; id?: string; name?: string; category?: string; error?: string };
@@ -374,7 +485,7 @@ export const getMetaStatus = createServerFn({ method: "GET" })
     };
 
     if (!pageId || !token) {
-      status.page.error = "META_PAGE_ID of META_PAGE_ACCESS_TOKEN ontbreekt.";
+      status.page.error = "Er is nog geen Meta-koppeling opgeslagen.";
       return status;
     }
 
@@ -416,7 +527,7 @@ export const getMetaStatus = createServerFn({ method: "GET" })
         status.instagram.error = (err as Error).message;
       }
     } else {
-      status.instagram.error = "META_IG_BUSINESS_ID ontbreekt.";
+      status.instagram.error = "Geen Instagram Business-account gekoppeld in de wizard.";
     }
 
     return status;
@@ -445,8 +556,9 @@ export const publishFacebookPost = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }) => {
-    const { pageId, token } = creds();
+  .handler(async ({ data, context }) => {
+    const connection = requireMetaConnection(await getMetaConnection(context));
+    const { pageId, token } = connection;
     const paths = data.mediaPaths ?? [];
     const urls = await signMediaUrls(paths);
 
@@ -496,9 +608,10 @@ export const publishInstagramPost = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }) => {
-    const { token, igId } = creds();
-    if (!igId) throw new Error("META_IG_BUSINESS_ID ontbreekt.");
+  .handler(async ({ data, context }) => {
+    const connection = requireMetaConnection(await getMetaConnection(context));
+    const { token, igId } = connection;
+    if (!igId) throw new Error("Geen Instagram Business-account gekoppeld — doorloop de wizard op /meta.");
     const urls = await signMediaUrls(data.mediaPaths);
 
     const createContainer = async (params: Record<string, string>) => {

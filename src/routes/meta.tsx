@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,6 +32,7 @@ import {
   exchangeMetaToken,
   getMetaOAuthConfig,
   REQUIRED_META_SCOPES,
+  saveMetaConnection,
 } from "@/lib/meta.functions";
 
 export const Route = createFileRoute("/meta")({
@@ -100,6 +101,10 @@ function MetaWizard() {
 
   const [selectedPageId, setSelectedPageId] = useState<string>();
   const [isExchanging, setIsExchanging] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string>();
+  const saveFn = useServerFn(saveMetaConnection);
+  const savedPageIdRef = useRef<string | undefined>(undefined);
 
   const stepIdx = STEPS.findIndex((s) => s.id === step);
   const go = (id: StepId) => setStep(id);
@@ -117,6 +122,38 @@ function MetaWizard() {
     connect: connectDone,
     done: true,
   };
+
+  useEffect(() => {
+    if (!selectedPageId || savedPageIdRef.current === selectedPageId) return;
+    const selectedPage = oauthData.pages?.find((p) => p.id === selectedPageId);
+    if (!selectedPage || (oauthData.missing?.length ?? 0) > 0) return;
+
+    savedPageIdRef.current = selectedPageId;
+    setSaveStatus("saving");
+    setSaveError(undefined);
+
+    saveFn({
+      data: {
+        pageId: selectedPage.id,
+        pageName: selectedPage.name,
+        pageToken: selectedPage.pageToken ?? "",
+        igBusinessId: selectedPage.instagram?.id,
+        igUsername: selectedPage.instagram?.username,
+        scopes: [...REQUIRED_META_SCOPES],
+        granted: oauthData.granted ?? [],
+        missing: oauthData.missing ?? [],
+      },
+    })
+      .then(() => {
+        setSaveStatus("saved");
+        toast.success("Meta-koppeling opgeslagen");
+      })
+      .catch((err) => {
+        setSaveStatus("error");
+        setSaveError((err as Error).message);
+        toast.error("Opslaan mislukt: " + (err as Error).message);
+      });
+  }, [selectedPageId, oauthData.pages, oauthData.missing, oauthData.granted, saveFn]);
 
   return (
     <AppShell>
@@ -176,16 +213,22 @@ function MetaWizard() {
               setSelectedPageId={setSelectedPageId}
               isExchanging={isExchanging}
               setIsExchanging={setIsExchanging}
+              saveStatus={saveStatus}
+              saveError={saveError}
             />
           )}
           {step === "done" && (
             <DoneStep
               selectedPage={selectedPage}
               missing={oauthData.missing}
+              saveStatus={saveStatus}
               onRestart={() => {
                 setStep("intro");
                 setOauthData({});
                 setSelectedPageId(undefined);
+                setSaveStatus("idle");
+                setSaveError(undefined);
+                savedPageIdRef.current = undefined;
               }}
             />
           )}
@@ -245,6 +288,11 @@ function IntroStep() {
               Feed & Reels publiceren, post analytics, DMs & comments.
             </p>
           </div>
+        </div>
+        <div className="rounded-md border bg-muted/40 p-3 text-xs">
+          <strong>Automatisch opslaan:</strong> zodra je in stap 3 een Facebook Page selecteert,
+          worden Page ID, IG Business ID en Page Access Token automatisch in de app bewaard. Je
+          hoeft niets meer handmatig te kopiëren.
         </div>
         <div className="rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
           <strong>Let op:</strong> Meta vereist een App Review-traject (± 1–3 weken) voor{" "}
@@ -310,16 +358,18 @@ function ConnectStep({
   setSelectedPageId,
   isExchanging,
   setIsExchanging,
+  saveStatus,
+  saveError,
 }: {
   data: {
     shortLivedToken?: string;
     pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
-      me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
+    me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
     granted?: string[];
     missing?: string[];
-      permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
-      warning?: string;
-      diagnostics?: string[];
+    permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
+    warning?: string;
+    diagnostics?: string[];
     error?: string;
   };
   setData: React.Dispatch<
@@ -339,6 +389,8 @@ function ConnectStep({
   setSelectedPageId: (id: string | undefined) => void;
   isExchanging: boolean;
   setIsExchanging: (v: boolean) => void;
+  saveStatus?: "idle" | "saving" | "saved" | "error";
+  saveError?: string;
 }) {
   const configFn = useServerFn(getMetaOAuthConfig);
   const exchangeFn = useServerFn(exchangeMetaToken);
@@ -587,10 +639,27 @@ function ConnectStep({
               masked
             />
             <p className="text-xs text-muted-foreground">
-              Deze waardes moeten in de app-secrets worden opgeslagen. Gebruik de knoppen om ze te
-              kopiëren en plak ze in de beveiligde secrets-form, of deel ze in de chat zodat ze
-              opgeslagen kunnen worden.
+              Deze waardes worden automatisch opgeslagen zodra je een Page selecteert. Je kunt ze
+              hier nog bekijken ter controle.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {saveStatus && saveStatus !== "idle" && (
+        <Card>
+          <CardContent className="space-y-2 py-4">
+            <div className="flex items-center gap-2 text-sm">
+              {saveStatus === "saving" && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {saveStatus === "saved" && <CheckCircle2 className="h-4 w-4 text-success" />}
+              {saveStatus === "error" && <X className="h-4 w-4 text-destructive" />}
+              <span>
+                {saveStatus === "saving" && "Koppeling opslaan..."}
+                {saveStatus === "saved" && "Koppeling opgeslagen in de app."}
+                {saveStatus === "error" && "Opslaan mislukt"}
+              </span>
+            </div>
+            {saveError && <div className="text-xs text-destructive">{saveError}</div>}
           </CardContent>
         </Card>
       )}
@@ -693,10 +762,12 @@ function CopyRow({
 function DoneStep({
   selectedPage,
   missing,
+  saveStatus,
   onRestart,
 }: {
   selectedPage?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"][number];
   missing?: string[];
+  saveStatus?: "idle" | "saving" | "saved" | "error";
   onRestart: () => void;
 }) {
   const allGood = selectedPage && (!missing || missing.length === 0);
@@ -717,10 +788,19 @@ function DoneStep({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         {allGood ? (
-          <p>
-            De wizard heeft de juiste Page ID en IG Business ID gevonden. Sla de waardes op in de
-            app-secrets om de koppeling live te zetten.
-          </p>
+          saveStatus === "error" ? (
+            <p>
+              De wizard heeft de juiste gegevens gevonden, maar het automatisch opslaan is mislukt.
+              Probeer de wizard opnieuw te doorlopen, of neem contact op.
+            </p>
+          ) : saveStatus === "saving" ? (
+            <p>Koppeling wordt opgeslagen...</p>
+          ) : (
+            <p>
+              De koppeling is live gezet. Je kunt nu posts publiceren naar Facebook en Instagram
+              vanuit de app.
+            </p>
+          )
         ) : (
           <p>
             Er ontbreken nog permissions of er is geen Page geselecteerd. Herhaal de vorige stap
