@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      meta_connections: {
+        Row: {
+          app_id: string
+          created_at: string
+          granted_scopes: string[] | null
+          id: string
+          ig_business_id: string | null
+          ig_username: string | null
+          missing_scopes: string[] | null
+          page_access_token: string
+          page_id: string
+          page_name: string | null
+          scopes: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          created_at?: string
+          granted_scopes?: string[] | null
+          id?: string
+          ig_business_id?: string | null
+          ig_username?: string | null
+          missing_scopes?: string[] | null
+          page_access_token: string
+          page_id: string
+          page_name?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          created_at?: string
+          granted_scopes?: string[] | null
+          id?: string
+          ig_business_id?: string | null
+          ig_username?: string | null
+          missing_scopes?: string[] | null
+          page_access_token?: string
+          page_id?: string
+          page_name?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
