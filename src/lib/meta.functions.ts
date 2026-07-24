@@ -474,7 +474,7 @@ export const getMetaStatus = createServerFn({ method: "GET" })
     const igId = connection?.igId;
 
     const status: {
-      page: { connected: boolean; id?: string; name?: string; category?: string; error?: string };
+      page: { connected: boolean; id?: string; name?: string; category?: string; followers?: number; error?: string };
       instagram: { connected: boolean; id?: string; username?: string; name?: string; followers?: number; error?: string };
       secretsPresent: { pageId: boolean; token: boolean; igId: boolean };
       scopes?: { granted: string[]; missing: string[]; is_valid?: boolean; type?: string };
@@ -501,11 +501,17 @@ export const getMetaStatus = createServerFn({ method: "GET" })
     }
 
     try {
-      const page = await graph<{ id: string; name: string; category?: string }>(`/${pageId}`, {
+      const page = await graph<{ id: string; name: string; category?: string; followers_count?: number; fan_count?: number }>(`/${pageId}`, {
         token,
-        params: { fields: "id,name,category" },
+        params: { fields: "id,name,category,followers_count,fan_count" },
       });
-      status.page = { connected: true, id: page.id, name: page.name, category: page.category };
+      status.page = {
+        connected: true,
+        id: page.id,
+        name: page.name,
+        category: page.category,
+        followers: page.followers_count ?? page.fan_count,
+      };
     } catch (err) {
       status.page.error = (err as Error).message;
     }
