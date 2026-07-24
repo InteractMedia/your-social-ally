@@ -39,6 +39,10 @@ function CompareAds() {
       </AppShell>
     );
   }
+  return <CompareAdsInner />;
+}
+
+function CompareAdsInner() {
   const [myId, setMyId] = useState<string>(myAds[0].id);
   const [theirId, setTheirId] = useState<string>(competitorAds[0].id);
   const mine = myAds.find((a) => a.id === myId)!;
