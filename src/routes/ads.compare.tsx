@@ -21,6 +21,28 @@ export const Route = createFileRoute("/ads/compare")({
 });
 
 function CompareAds() {
+  if (myAds.length === 0 || competitorAds.length === 0) {
+    return (
+      <AppShell>
+        <PageHeader
+          title="Vergelijk ads"
+          subtitle="Zet jouw ad naast een concurrent-ad en zie waar het verschil zit."
+          actions={
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ads"><ArrowLeft className="mr-1 h-4 w-4" /> Terug naar overzicht</Link>
+            </Button>
+          }
+        />
+        <Card className="p-10 text-center text-sm text-muted-foreground">
+          Nog geen ads om te vergelijken. Zodra er eigen ads en concurrent-ads beschikbaar zijn kun je ze hier naast elkaar zetten.
+        </Card>
+      </AppShell>
+    );
+  }
+  return <CompareAdsInner />;
+}
+
+function CompareAdsInner() {
   const [myId, setMyId] = useState<string>(myAds[0].id);
   const [theirId, setTheirId] = useState<string>(competitorAds[0].id);
   const mine = myAds.find((a) => a.id === myId)!;
