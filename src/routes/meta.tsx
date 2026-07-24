@@ -213,16 +213,22 @@ function MetaWizard() {
               setSelectedPageId={setSelectedPageId}
               isExchanging={isExchanging}
               setIsExchanging={setIsExchanging}
+              saveStatus={saveStatus}
+              saveError={saveError}
             />
           )}
           {step === "done" && (
             <DoneStep
               selectedPage={selectedPage}
               missing={oauthData.missing}
+              saveStatus={saveStatus}
               onRestart={() => {
                 setStep("intro");
                 setOauthData({});
                 setSelectedPageId(undefined);
+                setSaveStatus("idle");
+                setSaveError(undefined);
+                savedPageIdRef.current = undefined;
               }}
             />
           )}
