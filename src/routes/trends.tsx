@@ -193,69 +193,83 @@ function TrendsPage() {
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {trends.map((t) => (
-          <Card key={t.id} className="flex flex-col">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-base leading-snug">{t.title}</CardTitle>
-                {statusBadge(t.status)}
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {t.platforms.map((p) => (
-                  <PlatformIcon key={p} platform={p} size={18} />
-                ))}
-                <Badge variant="outline" className="capitalize">
-                  {t.category}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col gap-3">
-              <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-surface-2 p-3 text-center text-xs">
-                <div>
-                  <div className="font-semibold text-foreground">+{t.growth7d}%</div>
-                  <div className="text-muted-foreground">7-daags</div>
+      {trends.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <TrendingUp className="h-10 w-10 text-muted-foreground" />
+            <div className="text-base font-semibold">Nog geen trend-data</div>
+            <p className="max-w-md text-sm text-muted-foreground">
+              Trends worden live opgehaald zodra je een social kanaal koppelt. Koppel Meta of LinkedIn om
+              markttrends, hashtags en groeicijfers hier te zien verschijnen.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {trends.map((t) => (
+            <Card key={t.id} className="flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base leading-snug">{t.title}</CardTitle>
+                  {statusBadge(t.status)}
                 </div>
-                <div>
-                  <div className="font-semibold text-foreground">{nf(t.volume)}</div>
-                  <div className="text-muted-foreground">volume / 30d</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-foreground">{t.avgEngagement}%</div>
-                  <div className="text-muted-foreground">engagement</div>
-                </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground">{t.whyItWorks}</p>
-
-              <div className="space-y-1 text-xs">
-                <div>
-                  <span className="font-medium text-foreground">Beste format:</span>{" "}
-                  <span className="text-muted-foreground">{t.bestFormat}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Voorbeeld:</span>{" "}
-                  <span className="text-muted-foreground italic">{t.example}</span>
-                </div>
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {t.topHashtags.map((h) => (
-                    <Badge key={h} variant="secondary" className="text-[10px]">
-                      {h}
-                    </Badge>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {t.platforms.map((p) => (
+                    <PlatformIcon key={p} platform={p} size={18} />
                   ))}
+                  <Badge variant="outline" className="capitalize">
+                    {t.category}
+                  </Badge>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-3">
+                <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-surface-2 p-3 text-center text-xs">
+                  <div>
+                    <div className="font-semibold text-foreground">+{t.growth7d}%</div>
+                    <div className="text-muted-foreground">7-daags</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground">{nf(t.volume)}</div>
+                    <div className="text-muted-foreground">volume / 30d</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground">{t.avgEngagement}%</div>
+                    <div className="text-muted-foreground">engagement</div>
+                  </div>
+                </div>
 
-              <div className="mt-auto flex items-center justify-between pt-2">
-                <span className="text-[10px] text-muted-foreground">{t.sourceNote}</span>
-                <Button size="sm" className="gap-1.5" onClick={() => inhakenOp(t)}>
-                  <Wand2 className="h-3.5 w-3.5" /> Haak hierop in
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <p className="text-sm text-muted-foreground">{t.whyItWorks}</p>
+
+                <div className="space-y-1 text-xs">
+                  <div>
+                    <span className="font-medium text-foreground">Beste format:</span>{" "}
+                    <span className="text-muted-foreground">{t.bestFormat}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Voorbeeld:</span>{" "}
+                    <span className="text-muted-foreground italic">{t.example}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {t.topHashtags.map((h) => (
+                      <Badge key={h} variant="secondary" className="text-[10px]">
+                        {h}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-auto flex items-center justify-between pt-2">
+                  <span className="text-[10px] text-muted-foreground">{t.sourceNote}</span>
+                  <Button size="sm" className="gap-1.5" onClick={() => inhakenOp(t)}>
+                    <Wand2 className="h-3.5 w-3.5" /> Haak hierop in
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
 
       <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <DialogContent className="max-w-2xl">
