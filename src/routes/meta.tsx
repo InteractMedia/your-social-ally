@@ -104,7 +104,7 @@ function MetaWizard() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState<string>();
   const saveFn = useServerFn(saveMetaConnection);
-  const savedPageIdRef = useRef<string>();
+  const savedPageIdRef = useRef<string | undefined>(undefined);
 
   const stepIdx = STEPS.findIndex((s) => s.id === step);
   const go = (id: StepId) => setStep(id);
