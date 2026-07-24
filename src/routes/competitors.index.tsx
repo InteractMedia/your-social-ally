@@ -306,3 +306,91 @@ function AddCompetitorDialog({
   );
 }
 
+function EditCompetitorDialog({
+  competitor,
+  onOpenChange,
+}: {
+  competitor: Competitor | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [handle, setHandle] = useState("");
+  const [platform, setPlatform] = useState<Platform>("instagram");
+  const [about, setAbout] = useState("");
+
+  useEffect(() => {
+    if (competitor) {
+      setLabel(competitor.label);
+      setHandle(competitor.primaryHandle);
+      setPlatform(competitor.primaryPlatform);
+      setAbout(competitor.about ?? "");
+    }
+  }, [competitor]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!competitor) return;
+    if (!label.trim() || !handle.trim()) {
+      toast.error("Vul minimaal naam en handle in.");
+      return;
+    }
+    updateCustomCompetitor(competitor.id, {
+      label: label.trim(),
+      primaryHandle: handle.trim().startsWith("@") ? handle.trim() : `@${handle.trim()}`,
+      primaryPlatform: platform,
+      about: about.trim() || undefined,
+    });
+    toast.success(`${label} bijgewerkt`);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={!!competitor} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>Concurrent bewerken</DialogTitle>
+            <DialogDescription>Werk de gegevens van deze concurrent bij.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-label">Naam</Label>
+              <Input id="e-label" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-handle">Handle</Label>
+              <Input id="e-handle" value={handle} onChange={(e) => setHandle(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Primair platform</Label>
+              <Select value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {platformLabel(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="e-about">Korte omschrijving (optioneel)</Label>
+              <Textarea id="e-about" value={about} onChange={(e) => setAbout(e.target.value)} rows={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuleren
+            </Button>
+            <Button type="submit">Opslaan</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
