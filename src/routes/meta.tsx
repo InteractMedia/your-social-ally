@@ -740,10 +740,12 @@ function CopyRow({
 function DoneStep({
   selectedPage,
   missing,
+  saveStatus,
   onRestart,
 }: {
   selectedPage?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"][number];
   missing?: string[];
+  saveStatus?: "idle" | "saving" | "saved" | "error";
   onRestart: () => void;
 }) {
   const allGood = selectedPage && (!missing || missing.length === 0);
@@ -764,10 +766,17 @@ function DoneStep({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         {allGood ? (
-          <p>
-            De wizard heeft de juiste Page ID en IG Business ID gevonden. Sla de waardes op in de
-            app-secrets om de koppeling live te zetten.
-          </p>
+          saveStatus === "error" ? (
+            <p>
+              De wizard heeft de juiste gegevens gevonden, maar het automatisch opslaan is mislukt.
+              Probeer de wizard opnieuw te doorlopen, of neem contact op.
+            </p>
+          ) : (
+            <p>
+              De koppeling is live gezet. Je kunt nu posts publiceren naar Facebook en Instagram
+              vanuit de app.
+            </p>
+          )
         ) : (
           <p>
             Er ontbreken nog permissions of er is geen Page geselecteerd. Herhaal de vorige stap
