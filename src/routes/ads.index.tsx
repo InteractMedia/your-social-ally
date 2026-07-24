@@ -35,6 +35,7 @@ function AdsDashboard() {
   const avgCtr = totalImpr ? (totalClicks / totalImpr) * 100 : 0;
   const bestAd = [...myAds].sort((a, b) => b.roas - a.roas)[0];
   const activeCompetitorAds = competitorAds.length;
+  const hasAds = myAds.length > 0;
 
   return (
     <AppShell>
@@ -57,16 +58,17 @@ function AdsDashboard() {
 
       <div className="mb-3 rounded-lg border border-border bg-card/60 px-4 py-2.5 text-xs text-muted-foreground">
         <Sparkles className="mr-1.5 inline h-3.5 w-3.5 text-primary" />
-        Demo-data. Live koppelen kan in <Link to="/settings" className="underline">Instellingen</Link>. Aanmaken/bewerken doe je vooralsnog in de Ads Manager van het platform — vanaf hier deeplink.
+        Nog geen ad-koppelingen actief. Koppel je account in <Link to="/settings" className="underline">Instellingen</Link> of open direct de Ads Manager van het platform.
       </div>
 
       {/* KPI cards */}
       <div className="grid gap-3 md:grid-cols-4">
-        <Kpi label="Totale spend (30d)" value={formatEUR(totalSpend)} hint={`${myAds.filter((a) => a.status === "actief").length} actieve ads`} />
+        <Kpi label="Totale spend (30d)" value={formatEUR(totalSpend)} hint={hasAds ? `${myAds.filter((a) => a.status === "actief").length} actieve ads` : "Geen actieve ads"} />
         <Kpi label="Conversies" value={formatNum(totalConv)} hint={`${formatNum(totalClicks)} clicks`} />
         <Kpi label="Gem. CTR" value={`${avgCtr.toFixed(2)}%`} hint={`${formatNum(totalImpr)} impressies`} />
-        <Kpi label="Beste ROAS" value={`${bestAd.roas.toFixed(1)}×`} hint={bestAd.name} />
+        <Kpi label="Beste ROAS" value={bestAd ? `${bestAd.roas.toFixed(1)}×` : "—"} hint={bestAd?.name ?? "Nog geen data"} />
       </div>
+
 
       {/* Per platform */}
       <h2 className="mb-3 mt-8 text-sm font-semibold text-foreground">Per platform</h2>
