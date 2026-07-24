@@ -42,6 +42,27 @@ function heuristicClassify(item: InboxItem): Classification {
 }
 
 function InboxPage() {
+  if (inboxItems.length === 0) return <EmptyInbox />;
+  return <InboxPageInner />;
+}
+
+function EmptyInbox() {
+  return (
+    <AppShell>
+      <PageHeader
+        title="Inbox"
+        subtitle="Reacties, vermeldingen en DM's van alle platformen op één plek."
+      />
+      <Card>
+        <CardContent className="p-10 text-center text-sm text-muted-foreground">
+          Nog geen berichten. Zodra reacties binnenkomen via je gekoppelde kanalen verschijnen ze hier.
+        </CardContent>
+      </Card>
+    </AppShell>
+  );
+}
+
+function InboxPageInner() {
   const [selectedId, setSelectedId] = useState<string>(inboxItems[0].id);
   const [reply, setReply] = useState("");
   const [filter, setFilter] = useState<"alle" | "ongelezen" | "high">("alle");
