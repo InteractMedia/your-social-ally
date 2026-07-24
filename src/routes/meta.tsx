@@ -101,6 +101,10 @@ function MetaWizard() {
 
   const [selectedPageId, setSelectedPageId] = useState<string>();
   const [isExchanging, setIsExchanging] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string>();
+  const saveFn = useServerFn(saveMetaConnection);
+  const savedPageIdRef = useRef<string>();
 
   const stepIdx = STEPS.findIndex((s) => s.id === step);
   const go = (id: StepId) => setStep(id);
@@ -118,6 +122,38 @@ function MetaWizard() {
     connect: connectDone,
     done: true,
   };
+
+  useEffect(() => {
+    if (!selectedPageId || savedPageIdRef.current === selectedPageId) return;
+    const selectedPage = oauthData.pages?.find((p) => p.id === selectedPageId);
+    if (!selectedPage || (oauthData.missing?.length ?? 0) > 0) return;
+
+    savedPageIdRef.current = selectedPageId;
+    setSaveStatus("saving");
+    setSaveError(undefined);
+
+    saveFn({
+      data: {
+        pageId: selectedPage.id,
+        pageName: selectedPage.name,
+        pageToken: selectedPage.pageToken ?? "",
+        igBusinessId: selectedPage.instagram?.id,
+        igUsername: selectedPage.instagram?.username,
+        scopes: [...REQUIRED_META_SCOPES],
+        granted: oauthData.granted ?? [],
+        missing: oauthData.missing ?? [],
+      },
+    })
+      .then(() => {
+        setSaveStatus("saved");
+        toast.success("Meta-koppeling opgeslagen");
+      })
+      .catch((err) => {
+        setSaveStatus("error");
+        setSaveError((err as Error).message);
+        toast.error("Opslaan mislukt: " + (err as Error).message);
+      });
+  }, [selectedPageId, oauthData.pages, oauthData.missing, oauthData.granted, saveFn]);
 
   return (
     <AppShell>
