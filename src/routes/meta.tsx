@@ -353,16 +353,18 @@ function ConnectStep({
   setSelectedPageId,
   isExchanging,
   setIsExchanging,
+  saveStatus,
+  saveError,
 }: {
   data: {
     shortLivedToken?: string;
     pages?: Awaited<ReturnType<typeof exchangeMetaToken>>["pages"];
-      me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
+    me?: Awaited<ReturnType<typeof exchangeMetaToken>>["me"];
     granted?: string[];
     missing?: string[];
-      permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
-      warning?: string;
-      diagnostics?: string[];
+    permissions?: Awaited<ReturnType<typeof exchangeMetaToken>>["permissions"];
+    warning?: string;
+    diagnostics?: string[];
     error?: string;
   };
   setData: React.Dispatch<
@@ -382,6 +384,8 @@ function ConnectStep({
   setSelectedPageId: (id: string | undefined) => void;
   isExchanging: boolean;
   setIsExchanging: (v: boolean) => void;
+  saveStatus?: "idle" | "saving" | "saved" | "error";
+  saveError?: string;
 }) {
   const configFn = useServerFn(getMetaOAuthConfig);
   const exchangeFn = useServerFn(exchangeMetaToken);
