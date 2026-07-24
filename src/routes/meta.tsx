@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,6 +32,7 @@ import {
   exchangeMetaToken,
   getMetaOAuthConfig,
   REQUIRED_META_SCOPES,
+  saveMetaConnection,
 } from "@/lib/meta.functions";
 
 export const Route = createFileRoute("/meta")({
