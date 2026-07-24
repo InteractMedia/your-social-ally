@@ -58,6 +58,7 @@ function CompetitorsIndex() {
   const custom = useCustomCompetitors();
   const all = [...demoCompetitors, ...custom];
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Competitor | null>(null);
 
   return (
     <AppShell>
@@ -99,27 +100,40 @@ function CompetitorsIndex() {
                 className="platform-row group relative rounded-lg border p-5 transition-colors hover:border-primary/40"
                 style={platformTintStyle(c.primaryPlatform)}
               >
-                {isCustom && (
-                  <button
-                    type="button"
-                    aria-label="Verwijder concurrent"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeCustomCompetitor(c.id);
-                      toast.success(`${c.label} verwijderd`);
-                    }}
-                    className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
+                {/* Full-card click surface, sits BEHIND action buttons */}
                 <Link
                   to="/competitors/$id"
                   params={{ id: c.id }}
-                  className="block"
-                >
-                  <div className="flex items-start justify-between gap-3">
+                  aria-label={`Open ${c.label}`}
+                  className="absolute inset-0 z-0 rounded-lg"
+                />
+
+                {isCustom && (
+                  <div className="absolute right-2 top-2 z-20 flex gap-1">
+                    <button
+                      type="button"
+                      aria-label="Bewerk concurrent"
+                      onClick={() => setEditing(c)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Verwijder concurrent"
+                      onClick={() => {
+                        removeCustomCompetitor(c.id);
+                        toast.success(`${c.label} verwijderd`);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="pointer-events-none relative z-10">
+                  <div className="flex items-start justify-between gap-3 pr-16">
                     <div className="flex items-center gap-3">
                       <PlatformIcon platform={c.primaryPlatform} size={28} />
                       <div>
@@ -172,7 +186,7 @@ function CompetitorsIndex() {
                       <div className="line-clamp-2 text-foreground">{bestPost.caption}</div>
                     </div>
                   )}
-                </Link>
+                </div>
               </div>
             );
           })}
@@ -180,6 +194,10 @@ function CompetitorsIndex() {
       )}
 
       <AddCompetitorDialog open={open} onOpenChange={setOpen} />
+      <EditCompetitorDialog
+        competitor={editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+      />
     </AppShell>
   );
 }
