@@ -84,6 +84,11 @@ function CampaignDetail() {
   const data = query.data;
   const currency = "EUR";
   const campaign = data?.campaign ?? null;
+  const adGroups: any[] = data?.adGroups ?? [];
+  const ads: any[] = data?.ads ?? [];
+  const keywords: any[] = data?.keywords ?? [];
+  const searchTerms: any[] = data?.searchTerms ?? [];
+  const assetGroups: any[] = data?.assetGroups ?? [];
   const isPmax = campaign?.rawType === "PERFORMANCE_MAX";
 
   return (
@@ -132,12 +137,12 @@ function CampaignDetail() {
                   <CardTitle className="text-base">Assetgroepen</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {data.assetGroups.length === 0 ? (
+                  {assetGroups.length === 0 ? (
                     <p className="text-muted-foreground text-sm">
                       Geen assetgroepen met data in deze periode.
                     </p>
                   ) : (
-                    data.assetGroups.map((g) => (
+                    assetGroups.map((g: any) => (
                       <div key={g.id} className="rounded-lg border p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="font-medium">{g.name}</p>
@@ -148,7 +153,7 @@ function CampaignDetail() {
                           </div>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1.5">
-                          {g.assets.slice(0, 20).map((a, i) => (
+                          {g.assets.slice(0, 20).map((a: any, i: number) => (
                             <span
                               key={i}
                               className="bg-muted rounded-md px-2 py-1 text-xs"
@@ -166,14 +171,14 @@ function CampaignDetail() {
             ) : (
               <Tabs defaultValue="adgroups">
                 <TabsList>
-                  <TabsTrigger value="adgroups">Advertentiegroepen ({data.adGroups.length})</TabsTrigger>
-                  <TabsTrigger value="ads">Advertenties ({data.ads.length})</TabsTrigger>
-                  <TabsTrigger value="keywords">Zoekwoorden ({data.keywords.length})</TabsTrigger>
-                  <TabsTrigger value="terms">Zoektermen ({data.searchTerms.length})</TabsTrigger>
+                  <TabsTrigger value="adgroups">Advertentiegroepen ({adGroups.length})</TabsTrigger>
+                  <TabsTrigger value="ads">Advertenties ({ads.length})</TabsTrigger>
+                  <TabsTrigger value="keywords">Zoekwoorden ({keywords.length})</TabsTrigger>
+                  <TabsTrigger value="terms">Zoektermen ({searchTerms.length})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="adgroups" className="mt-4">
-                  {data.adGroups.length === 0 ? (
+                  {adGroups.length === 0 ? (
                     <AdsEmpty
                       title="Geen advertentiegroepen met data"
                       description="In deze periode had geen advertentiegroep vertoningen."
@@ -190,7 +195,7 @@ function CampaignDetail() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {data.adGroups.map((g) => (
+                            {adGroups.map((g: any) => (
                               <TableRow key={g.id}>
                                 <TableCell className="font-medium">{g.name}</TableCell>
                                 <TableCell className="text-muted-foreground text-sm">{g.status}</TableCell>
@@ -205,13 +210,13 @@ function CampaignDetail() {
                 </TabsContent>
 
                 <TabsContent value="ads" className="mt-4 space-y-3">
-                  {data.ads.length === 0 ? (
+                  {ads.length === 0 ? (
                     <AdsEmpty
                       title="Geen advertenties met data"
                       description="In deze periode zijn er geen advertentiestatistieken."
                     />
                   ) : (
-                    data.ads.map((ad) => (
+                    ads.map((ad: any) => (
                       <Card key={ad.id}>
                         <CardContent className="space-y-3 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -251,7 +256,7 @@ function CampaignDetail() {
                 </TabsContent>
 
                 <TabsContent value="keywords" className="mt-4">
-                  {data.keywords.length === 0 ? (
+                  {keywords.length === 0 ? (
                     <AdsEmpty
                       title="Geen zoekwoorden met data"
                       description="Deze campagne gebruikt geen zoekwoorden of had geen vertoningen in deze periode."
@@ -269,7 +274,7 @@ function CampaignDetail() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {data.keywords.map((k, i) => (
+                            {keywords.map((k: any, i: number) => (
                               <TableRow key={`${k.text}-${i}`}>
                                 <TableCell className="font-medium">{k.text}</TableCell>
                                 <TableCell className="text-muted-foreground text-sm">
@@ -289,7 +294,7 @@ function CampaignDetail() {
                 </TabsContent>
 
                 <TabsContent value="terms" className="mt-4">
-                  {data.searchTerms.length === 0 ? (
+                  {searchTerms.length === 0 ? (
                     <AdsEmpty
                       title="Geen zoektermen"
                       description="Er zijn in deze periode geen zoektermen gerapporteerd voor deze campagne."
@@ -306,7 +311,7 @@ function CampaignDetail() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {data.searchTerms.map((t, i) => (
+                            {searchTerms.map((t: any, i: number) => (
                               <TableRow key={`${t.text}-${i}`}>
                                 <TableCell className="font-medium">{t.text}</TableCell>
                                 <TableCell className="text-muted-foreground text-sm">
