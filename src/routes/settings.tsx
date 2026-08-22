@@ -138,9 +138,122 @@ function Settings() {
           </CardContent>
         </Card>
 
+        <WorkspaceCard />
+
         <MetaDebugCard />
       </div>
     </AppShell>
+  );
+}
+
+/** Tenant/workspace ownership + ingest credentials per workspace. */
+function WorkspaceCard() {
+  const load = useServerFn(getMyWorkspace);
+  const create = useServerFn(createIngestKey);
+  const revoke = useServerFn(revokeIngestKey);
+  const [label, setLabel] = useState("");
+  const [freshToken, setFreshToken] = useState<string | null>(null);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["workspace", "me"],
+    queryFn: () => load({}),
+  });
+
+  const addKey = async () => {
+    if (label.trim().length < 2) return toast.error("Geef de sleutel een naam.");
+    try {
+      const res = await create({ data: { label } });
+      setFreshToken(res.token);
+      setLabel("");
+      await refetch();
+      toast.success("Ingest-sleutel aangemaakt");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Aanmaken mislukt");
+    }
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-primary" /> Workspace &amp; lead-ingest
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Laden…</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <Badge variant="secondary">{data?.workspace?.name ?? "—"}</Badge>
+              <span className="text-muted-foreground">
+                {data?.memberCount ?? 0} gebruiker(s) · jouw rol: {data?.role}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Alle leads horen bij deze workspace. Gebruikers zien uitsluitend leads van workspaces
+              waar zij lid van zijn. Een ingest-sleutel bepaalt automatisch bij welke workspace een
+              binnenkomende lead terechtkomt.
+            </p>
+
+            <div className="space-y-2">
+              {(data?.ingestKeys ?? []).map((k) => (
+                <div key={k.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                  <div>
+                    <p className="font-medium">{k.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {k.token_prefix}… · {k.active ? "actief" : "ingetrokken"}
+                      {k.last_used_at ? ` · laatst gebruikt ${new Date(k.last_used_at).toLocaleString("nl-NL")}` : ""}
+                    </p>
+                  </div>
+                  {k.active && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        await revoke({ data: { id: k.id } });
+                        await refetch();
+                        toast.success("Sleutel ingetrokken");
+                      }}
+                    >
+                      Intrekken
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {(data?.ingestKeys ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground">Nog geen eigen ingest-sleutels.</p>
+              )}
+            </div>
+
+            {freshToken && (
+              <div className="rounded-md border border-primary/40 bg-primary/5 p-3">
+                <p className="text-xs font-medium">Bewaar deze sleutel nu — hij wordt eenmalig getoond.</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <code className="flex-1 break-all text-xs">{freshToken}</code>
+                  <Button size="sm" variant="outline" onClick={() => copy(freshToken, "Ingest-sleutel")}>
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Gebruik als header <code>x-lead-ingest-secret</code> op /api/public/lead-ingest/quote
+                  of /platform.
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label className="text-xs">Naam nieuwe ingest-sleutel</Label>
+                <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Shopify offerteformulier" />
+              </div>
+              <Button size="sm" onClick={addKey}>
+                <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Aanmaken
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
