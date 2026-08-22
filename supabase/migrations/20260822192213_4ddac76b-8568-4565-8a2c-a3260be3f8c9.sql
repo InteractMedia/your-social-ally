@@ -1,0 +1,15 @@
+REVOKE ALL ON public.leads FROM anon;
+REVOKE ALL ON public.lead_activities FROM anon;
+REVOKE ALL ON public.lead_conversion_events FROM anon;
+REVOKE ALL ON public.industries FROM anon;
+REVOKE ALL ON public.landing_pages FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.leads TO authenticated;
+GRANT SELECT, INSERT ON public.lead_activities TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.lead_conversion_events TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.industries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.landing_pages TO authenticated;
+GRANT ALL ON public.leads TO service_role;
+GRANT ALL ON public.lead_activities TO service_role;
+GRANT ALL ON public.lead_conversion_events TO service_role;
+GRANT ALL ON public.industries TO service_role;
+GRANT ALL ON public.landing_pages TO service_role;
