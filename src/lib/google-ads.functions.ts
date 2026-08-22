@@ -372,13 +372,21 @@ export const getGoogleAdsConversions = createServerFn({ method: "POST" })
         ),
         gaql(
           cid,
-          `SELECT conversion_action.id, metrics.conversions, metrics.all_conversions,
-                  metrics.conversions_value, metrics.cost_micros
-           FROM conversion_action WHERE ${dateFilter(data.start, data.end)}`,
+          `SELECT segments.conversion_action, metrics.all_conversions, metrics.all_conversions_value
+           FROM campaign WHERE ${dateFilter(data.start, data.end)}`,
         ),
       ]);
-      const statsById = new Map<string, any>();
-      for (const r of statRows as any[]) statsById.set(String(r.conversionAction?.id), r.metrics);
+      const statsById = new Map<string, { allConversions: number; value: number }>();
+      for (const r of statRows as any[]) {
+        const resource = String(r.segments?.conversionAction ?? "");
+        const id = resource.split("/").pop() ?? "";
+        if (!id) continue;
+        const prev = statsById.get(id) ?? { allConversions: 0, value: 0 };
+        statsById.set(id, {
+          allConversions: prev.allConversions + num(r.metrics?.allConversions),
+          value: prev.value + num(r.metrics?.allConversionsValue),
+        });
+      }
 
       const actions = (actionRows as any[]).map((r) => {
         const a = r.conversionAction ?? {};
@@ -390,9 +398,9 @@ export const getGoogleAdsConversions = createServerFn({ method: "POST" })
           type: a.type ? String(a.type).replace(/_/g, " ") : null,
           usage: a.primaryForGoal ? ("primary" as const) : ("secondary" as const),
           countedInConversions: Boolean(a.includeInConversionsMetric),
-          conversions: num(m?.conversions),
-          allConversions: num(m?.allConversions),
-          conversionsValue: num(m?.conversionsValue),
+          conversions: a.primaryForGoal ? (m?.allConversions ?? 0) : 0,
+          allConversions: m?.allConversions ?? 0,
+          conversionsValue: m?.value ?? 0,
         };
       });
 
