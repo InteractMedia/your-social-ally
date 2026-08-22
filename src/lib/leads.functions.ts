@@ -454,17 +454,54 @@ export const updateLeadQuality = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => qualityInput.parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("leads")
-      .update({ lead_quality: data.quality })
-      .eq("id", data.id);
+    const patch: Record<string, unknown> = { lead_quality: data.quality };
+    let reasonLabel: string | null = null;
+    if (data.quality === "poor") {
+      if (!data.poorReasonKey) throw new Error("Kies een reden waarom deze lead slecht is.");
+      const { data: reason, error: reasonError } = await context.supabase
+        .from("poor_lead_reasons")
+        .select("id,key,label,requires_notes")
+        .eq("key", data.poorReasonKey)
+        .eq("active", true)
+        .order("user_id", { ascending: true, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      if (reasonError) throw new Error(reasonError.message);
+      if (!reason) throw new Error("Onbekende reden voor slechte lead.");
+      const notes = data.poorReasonNotes?.trim() || null;
+      if (reason.requires_notes && !notes)
+        throw new Error(`Toelichting is verplicht bij "${reason.label}".`);
+      reasonLabel = reason.label;
+      patch.poor_reason_id = reason.id;
+      patch.poor_reason = reason.key;
+      patch.poor_reason_label = reason.label;
+      patch.poor_reason_notes = notes;
+      patch.poor_marked_at = new Date().toISOString();
+    } else {
+      patch.poor_reason_id = null;
+      patch.poor_reason = null;
+      patch.poor_reason_label = null;
+      patch.poor_reason_notes = null;
+      patch.poor_marked_at = null;
+    }
+    const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     await context.supabase.from("lead_activities").insert({
       lead_id: data.id,
       actor_id: context.userId,
-      event_type: "quality_changed",
-      description: `Kwaliteit gezet op ${QUALITY_LABELS[data.quality]}`,
-      meta: { quality: data.quality },
+      event_type: data.quality === "poor" ? "poor_reason_set" : "quality_changed",
+      description:
+        data.quality === "poor"
+          ? `Kwaliteit gezet op Slecht — reden: ${reasonLabel}${
+              patch.poor_reason_notes ? ` (${patch.poor_reason_notes as string})` : ""
+            }`
+          : `Kwaliteit gezet op ${QUALITY_LABELS[data.quality]}`,
+      meta: {
+        quality: data.quality,
+        poor_reason: patch.poor_reason ?? null,
+        poor_reason_label: patch.poor_reason_label ?? null,
+        poor_reason_notes: patch.poor_reason_notes ?? null,
+      },
     });
     if (data.quality === "qualified" || data.quality === "hot") {
       await context.supabase.from("lead_conversion_events").insert({
