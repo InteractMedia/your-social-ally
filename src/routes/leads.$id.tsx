@@ -173,15 +173,14 @@ function LeadDetailPage() {
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               <Field label="Bedrijf" value={lead.company_name} />
-              <Field label="Branche" value={lead.industry_name ?? lead.industry_other} />
+              <Field label="Branche" value={lead.industry_name} />
               <Field label="Contactpersoon" value={lead.contact_name} />
-              <Field label="Functie" value={lead.contact_role} />
               <Field label="E-mail" value={lead.email} />
               <Field label="Telefoon" value={lead.phone} />
               <Field label="Website" value={lead.website} />
-              <Field label="Aantal medewerkers" value={lead.employee_count?.toString()} />
-              <Field label="Plaats" value={lead.city} />
-              <Field label="Land" value={lead.country} />
+              <Field label="Domein" value={lead.company_domain} />
+              <Field label="Bedrijfsgrootte" value={lead.company_size} />
+              <Field label="KvK-nummer" value={lead.kvk_number} />
             </CardContent>
           </Card>
 
