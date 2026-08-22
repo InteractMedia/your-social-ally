@@ -56,7 +56,7 @@ export async function gaql<T = Record<string, any>>(
     res = await fetch(`${GATEWAY}/${API_VERSION}/customers/${cid}/googleAds:search`, {
       method: "POST",
       headers: h,
-      body: JSON.stringify({ query, pageSize: 1000 }),
+      body: JSON.stringify({ query }),
     });
   } catch (err) {
     console.error("[GoogleAds] network error", { cid, query, err });
