@@ -29,6 +29,7 @@ import { Route as AdsGoogleIndexRouteImport } from './routes/ads.google.index'
 import { Route as ApiPublicMetaCallbackRouteImport } from './routes/api/public/meta-callback'
 import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
+import { Route as AdsGoogleConversionsRouteImport } from './routes/ads.google.conversions'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
 
 const TrendsRoute = TrendsRouteImport.update({
@@ -131,6 +132,11 @@ const AdsGoogleNewRoute = AdsGoogleNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
+const AdsGoogleConversionsRoute = AdsGoogleConversionsRouteImport.update({
+  id: '/conversions',
+  path: '/conversions',
+  getParentRoute: () => AdsGoogleRoute,
+} as any)
 const AdsGoogleCampaignIdRoute = AdsGoogleCampaignIdRouteImport.update({
   id: '/$campaignId',
   path: '/$campaignId',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
+    | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/ads'
     | '/competitors'
     | '/ads/google/$campaignId'
+    | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/ads/'
     | '/competitors/'
     | '/ads/google/$campaignId'
+    | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleNewRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
+    '/ads/google/conversions': {
+      id: '/ads/google/conversions'
+      path: '/conversions'
+      fullPath: '/ads/google/conversions'
+      preLoaderRoute: typeof AdsGoogleConversionsRouteImport
+      parentRoute: typeof AdsGoogleRoute
+    }
     '/ads/google/$campaignId': {
       id: '/ads/google/$campaignId'
       path: '/$campaignId'
@@ -441,6 +460,7 @@ declare module '@tanstack/react-router' {
 
 interface AdsGoogleRouteChildren {
   AdsGoogleCampaignIdRoute: typeof AdsGoogleCampaignIdRoute
+  AdsGoogleConversionsRoute: typeof AdsGoogleConversionsRoute
   AdsGoogleNewRoute: typeof AdsGoogleNewRoute
   AdsGoogleStatsRoute: typeof AdsGoogleStatsRoute
   AdsGoogleIndexRoute: typeof AdsGoogleIndexRoute
@@ -448,6 +468,7 @@ interface AdsGoogleRouteChildren {
 
 const AdsGoogleRouteChildren: AdsGoogleRouteChildren = {
   AdsGoogleCampaignIdRoute: AdsGoogleCampaignIdRoute,
+  AdsGoogleConversionsRoute: AdsGoogleConversionsRoute,
   AdsGoogleNewRoute: AdsGoogleNewRoute,
   AdsGoogleStatsRoute: AdsGoogleStatsRoute,
   AdsGoogleIndexRoute: AdsGoogleIndexRoute,

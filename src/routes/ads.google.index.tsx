@@ -1,210 +1,385 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BarChart3, ExternalLink, Pause, Play, Plus, Settings2 } from "lucide-react";
-import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, ArrowUpRight, RefreshCw, Search, Target } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { AdsError, AdsLoading, AdsNotConnected } from "@/components/ads/ads-states";
+import { MetricCards } from "@/components/ads/metric-cards";
+import { PeriodPicker } from "@/components/ads/period-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { formatEUR, formatNum } from "@/lib/demo-ads";
 import {
-  googleAdsStore,
-  sumCampaignStats,
-  useGoogleCampaigns,
-  type GoogleCampaign,
-} from "@/lib/google-ads-store";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  formatDec,
+  formatInt,
+  formatMoney,
+  formatPct,
+  formatDateTime,
+  resolvePeriod,
+  type Period,
+} from "@/lib/ads-period";
+import {
+  getGoogleAdsCampaigns,
+  getGoogleAdsConnection,
+  getGoogleAdsOverview,
+  selectGoogleAdsAccount,
+  syncGoogleAdsAccounts,
+} from "@/lib/google-ads.functions";
 
 export const Route = createFileRoute("/ads/google/")({
   head: () => ({
     meta: [
-      { title: "Google Ads beheer — ZoetBezorgen" },
-      { name: "description", content: "Beheer Google Search, Performance Max en YouTube-campagnes: pauzeren, budget aanpassen, nieuwe campagnes aanmaken." },
+      { title: "Google Ads-dashboard — SocialCockpit" },
+      {
+        name: "description",
+        content:
+          "Live Google Ads-data in SocialCockpit: kosten, klikken, CTR, conversies en alle campagnes per klantaccount en periode.",
+      },
+      { property: "og:title", content: "Google Ads-dashboard — SocialCockpit" },
+      {
+        property: "og:description",
+        content: "Echte campagneprestaties uit je Google Ads-account, per periode en per klantaccount.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: GoogleAdsIndex,
 });
 
-function GoogleAdsIndex() {
-  const campaigns = useGoogleCampaigns();
-  const [budgetEdit, setBudgetEdit] = useState<GoogleCampaign | null>(null);
+const STATUS_TONE: Record<string, string> = {
+  Actief: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  Gepauzeerd: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  Verwijderd: "bg-muted text-muted-foreground",
+};
 
-  const totals = campaigns.reduce(
-    (acc, c) => {
-      const s = sumCampaignStats(c);
-      return {
-        spend: acc.spend + s.spend,
-        conversions: acc.conversions + s.conversions,
-        budget: acc.budget + (c.status === "actief" ? c.dailyBudget : 0),
-      };
+function GoogleAdsIndex() {
+  const [period, setPeriod] = useState<Period>(() => resolvePeriod("last_30_days"));
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sort, setSort] = useState<string>("spend");
+
+  const queryClient = useQueryClient();
+  const connectionFn = useServerFn(getGoogleAdsConnection);
+  const overviewFn = useServerFn(getGoogleAdsOverview);
+  const campaignsFn = useServerFn(getGoogleAdsCampaigns);
+  const syncFn = useServerFn(syncGoogleAdsAccounts);
+  const selectFn = useServerFn(selectGoogleAdsAccount);
+
+  const connection = useQuery({ queryKey: ["google-ads", "connection"], queryFn: () => connectionFn() });
+  const customerId = connection.data?.selected?.customerId ?? null;
+  const currency = connection.data?.selected?.currencyCode ?? "EUR";
+
+  const periodKey = [period.start, period.end, customerId] as const;
+  const overview = useQuery({
+    queryKey: ["google-ads", "overview", ...periodKey],
+    queryFn: () => overviewFn({ data: { start: period.start, end: period.end } }),
+    enabled: Boolean(customerId),
+  });
+  const campaigns = useQuery({
+    queryKey: ["google-ads", "campaigns", ...periodKey],
+    queryFn: () => campaignsFn({ data: { start: period.start, end: period.end } }),
+    enabled: Boolean(customerId),
+  });
+
+  const sync = useMutation({
+    mutationFn: () => syncFn({}),
+    onSuccess: (res) => {
+      if (res.ok) toast.success("Google Ads-accounts vernieuwd");
+      else toast.error(res.error ?? "Vernieuwen mislukt");
+      queryClient.invalidateQueries({ queryKey: ["google-ads"] });
     },
-    { spend: 0, conversions: 0, budget: 0 },
-  );
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const switchAccount = useMutation({
+    mutationFn: (id: string) => selectFn({ data: { customerId: id } }),
+    onSuccess: () => {
+      toast.success("Klantaccount gewijzigd");
+      queryClient.invalidateQueries({ queryKey: ["google-ads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = useMemo(() => {
+    const list = campaigns.data?.campaigns ?? [];
+    const filtered = list.filter((c) => {
+      if (statusFilter === "active" && c.rawStatus !== "ENABLED") return false;
+      if (statusFilter === "paused" && c.rawStatus !== "PAUSED") return false;
+      if (statusFilter === "not_removed" && c.rawStatus === "REMOVED") return false;
+      if (typeFilter !== "all" && c.rawType !== typeFilter) return false;
+      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+    const key = sort as keyof (typeof filtered)[number]["metrics"];
+    return [...filtered].sort((a, b) => (b.metrics[key] ?? 0) - (a.metrics[key] ?? 0));
+  }, [campaigns.data, statusFilter, typeFilter, search, sort]);
+
+  const types = useMemo(() => {
+    const set = new Map<string, string>();
+    for (const c of campaigns.data?.campaigns ?? []) set.set(c.rawType, c.type);
+    return [...set.entries()];
+  }, [campaigns.data]);
+
+  const errorMessage =
+    connection.data?.error || overview.data?.error || campaigns.data?.error || null;
 
   return (
     <AppShell>
       <PageHeader
         title="Google Ads"
-        subtitle="Volledig beheer: pauzeren, budgetten, ad-tekst en nieuwe campagnes."
+        subtitle="Live campagnedata uit je gekoppelde Google Ads-klantaccount."
         actions={
           <>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/ads"><ArrowLeft className="mr-1 h-4 w-4" /> Alle platforms</Link>
+              <Link to="/ads">
+                <ArrowLeft className="mr-1 h-4 w-4" /> Alle platforms
+              </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to="/ads/google/stats"><BarChart3 className="mr-1.5 h-4 w-4" /> Statistieken</Link>
+              <Link to="/ads/google/conversions">
+                <Target className="mr-1.5 h-4 w-4" /> Conversies
+              </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href="https://ads.google.com" target="_blank" rel="noreferrer">
-                Google Ads <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </a>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/ads/google/new"><Plus className="mr-1.5 h-4 w-4" /> Nieuwe campagne</Link>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={sync.isPending}
+              onClick={() => sync.mutate()}
+            >
+              <RefreshCw className={`mr-1.5 h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
+              Vernieuwen
             </Button>
           </>
         }
       />
 
-      <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-foreground">
-        <strong className="text-primary">Demo-modus.</strong> Mutaties (pauzeren, budget, ad-tekst, nieuwe campagne) blijven bewaard tijdens je sessie.
-        Echte koppeling via Google Ads API komt in fase 2 zodra je een Developer Token hebt aangevraagd.
-      </div>
-
-      <div className="mb-6 grid gap-3 md:grid-cols-4">
-        <Kpi label="Totale spend (28d)" value={formatEUR(totals.spend)} />
-        <Kpi label="Conversies (28d)" value={formatNum(totals.conversions)} />
-        <Kpi label="Dagbudget actief" value={formatEUR(totals.budget)} />
-        <Kpi label="Campagnes" value={`${campaigns.filter((c) => c.status === "actief").length} / ${campaigns.length}`} />
-      </div>
-
-      <h2 className="mb-3 text-sm font-semibold">Campagnes</h2>
-      <Card className="overflow-hidden p-0">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-4 py-2.5 text-left font-medium">Campagne</th>
-              <th className="px-4 py-2.5 text-left font-medium">Type</th>
-              <th className="px-4 py-2.5 text-left font-medium">Bod-strategie</th>
-              <th className="px-4 py-2.5 text-right font-medium">Budget/dag</th>
-              <th className="px-4 py-2.5 text-right font-medium">Spend</th>
-              <th className="px-4 py-2.5 text-right font-medium">CTR</th>
-              <th className="px-4 py-2.5 text-right font-medium">Conv.</th>
-              <th className="px-4 py-2.5 text-right font-medium">CPA</th>
-              <th className="px-4 py-2.5 text-left font-medium">Status</th>
-              <th className="px-4 py-2.5 text-right font-medium">Acties</th>
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.map((c) => {
-              const s = sumCampaignStats(c);
-              return (
-                <tr key={c.id} className="border-t border-border hover:bg-muted/20">
-                  <td className="px-4 py-3">
-                    <Link to="/ads/google/$campaignId" params={{ campaignId: c.id }} className="font-medium text-foreground hover:text-primary">
-                      {c.name}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">{c.adGroups.length} ad groups · {c.geo.join(", ")}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs">{c.type}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{c.bidStrategy}{c.targetCpa ? ` · €${c.targetCpa}` : ""}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{formatEUR(c.dailyBudget)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{formatEUR(s.spend)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.ctr.toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{formatNum(s.conversions)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.cpa ? formatEUR(s.cpa) : "—"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2"
-                        onClick={() => {
-                          const next = c.status === "actief" ? "gepauzeerd" : "actief";
-                          googleAdsStore.setStatus(c.id, next);
-                          toast.success(`${c.name} ${next === "actief" ? "geactiveerd" : "gepauzeerd"}`);
-                        }}
-                        title={c.status === "actief" ? "Pauzeer" : "Activeer"}
+      <div className="space-y-6">
+        {connection.isLoading ? (
+          <AdsLoading label="Koppeling controleren…" />
+        ) : !connection.data?.connected ? (
+          <AdsNotConnected />
+        ) : (
+          <>
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <p className="text-muted-foreground text-xs uppercase tracking-wide">Klantaccount</p>
+                    {connection.data.accounts.length > 1 ? (
+                      <Select
+                        value={customerId ?? undefined}
+                        onValueChange={(id) => switchAccount.mutate(id)}
                       >
-                        {c.status === "actief" ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setBudgetEdit(c)} title="Bewerk budget">
-                        <Settings2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Card>
+                        <SelectTrigger className="mt-1 w-[280px]">
+                          <SelectValue placeholder="Kies account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {connection.data.accounts.map((a) => (
+                            <SelectItem key={a.customerId} value={a.customerId}>
+                              {a.name} · {a.customerId}
+                              {a.isManager ? " (manager)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="mt-1 font-medium">
+                        {connection.data.selected?.name ?? "—"}{" "}
+                        <span className="text-muted-foreground text-sm">{customerId}</span>
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="secondary" className="h-6">
+                    Gekoppeld
+                  </Badge>
+                </div>
+                <div className="space-y-1 text-right">
+                  <PeriodPicker period={period} onChange={setPeriod} />
+                  <p className="text-muted-foreground text-xs">
+                    Laatste sync: {formatDateTime(connection.data.selected?.lastSyncedAt)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-      <BudgetDialog campaign={budgetEdit} onClose={() => setBudgetEdit(null)} />
+            {errorMessage ? (
+              <AdsError
+                message={errorMessage}
+                onRetry={() => queryClient.invalidateQueries({ queryKey: ["google-ads"] })}
+              />
+            ) : null}
+
+            <MetricCards
+              metrics={overview.data?.metrics ?? null}
+              currency={overview.data?.currency ?? currency ?? "EUR"}
+              loading={overview.isLoading}
+            />
+
+            <Card>
+              <CardHeader className="gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-base">
+                    Campagnes{" "}
+                    <span className="text-muted-foreground text-sm font-normal">({rows.length})</span>
+                  </CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <Search className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
+                      <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Zoek campagne"
+                        className="w-[200px] pl-8"
+                      />
+                    </div>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Alleen actief</SelectItem>
+                        <SelectItem value="paused">Gepauzeerd</SelectItem>
+                        <SelectItem value="not_removed">Actief + gepauzeerd</SelectItem>
+                        <SelectItem value="all">Alle statussen</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[170px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Alle campagnetypes</SelectItem>
+                        {types.map(([raw, label]) => (
+                          <SelectItem key={raw} value={raw}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={sort} onValueChange={setSort}>
+                      <SelectTrigger className="w-[170px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="spend">Sorteer op kosten</SelectItem>
+                        <SelectItem value="clicks">Sorteer op klikken</SelectItem>
+                        <SelectItem value="impressions">Sorteer op impressies</SelectItem>
+                        <SelectItem value="conversions">Sorteer op conversies</SelectItem>
+                        <SelectItem value="ctr">Sorteer op CTR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {campaigns.isLoading ? (
+                  <div className="space-y-2 p-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                ) : rows.length === 0 ? (
+                  <p className="text-muted-foreground p-6 text-sm">
+                    Geen campagnes gevonden met deze filters in de gekozen periode.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Campagne</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Dagbudget</TableHead>
+                          <TableHead className="text-right">Kosten</TableHead>
+                          <TableHead className="text-right">Impr.</TableHead>
+                          <TableHead className="text-right">Klikken</TableHead>
+                          <TableHead className="text-right">CTR</TableHead>
+                          <TableHead className="text-right">CPC</TableHead>
+                          <TableHead className="text-right">Conv.</TableHead>
+                          <TableHead className="text-right">Kosten/conv.</TableHead>
+                          <TableHead />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.map((c) => (
+                          <TableRow key={c.id}>
+                            <TableCell className="max-w-[240px] font-medium">
+                              <Link
+                                to="/ads/google/$campaignId"
+                                params={{ campaignId: c.id }}
+                                className="hover:underline"
+                              >
+                                {c.name}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{c.type}</TableCell>
+                            <TableCell>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[c.status] ?? "bg-muted text-muted-foreground"}`}
+                              >
+                                {c.status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {c.dailyBudget > 0 ? formatMoney(c.dailyBudget, currency) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatMoney(c.metrics.spend, currency)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatInt(c.metrics.impressions)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatInt(c.metrics.clicks)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatPct(c.metrics.ctr)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatMoney(c.metrics.avgCpc, currency)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatDec(c.metrics.conversions, 1)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {c.metrics.conversions > 0
+                                ? formatMoney(c.metrics.costPerConversion, currency)
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button asChild size="icon" variant="ghost">
+                                <Link to="/ads/google/$campaignId" params={{ campaignId: c.id }}>
+                                  <ArrowUpRight className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
     </AppShell>
   );
-}
-
-function BudgetDialog({ campaign, onClose }: { campaign: GoogleCampaign | null; onClose: () => void }) {
-  const [value, setValue] = useState("");
-  return (
-    <Dialog open={!!campaign} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Dagbudget aanpassen</DialogTitle></DialogHeader>
-        {campaign && (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">{campaign.name}</div>
-            <div>
-              <Label htmlFor="budget">Nieuw dagbudget (EUR)</Label>
-              <Input
-                id="budget"
-                type="number"
-                min={1}
-                placeholder={String(campaign.dailyBudget)}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">Huidig: {formatEUR(campaign.dailyBudget)}/dag</p>
-            </div>
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Annuleren</Button>
-          <Button
-            onClick={() => {
-              if (!campaign) return;
-              const n = Number(value);
-              if (!n || n < 1) return toast.error("Vul een geldig budget in");
-              googleAdsStore.setBudget(campaign.id, n);
-              toast.success(`Budget aangepast naar ${formatEUR(n)}/dag`);
-              setValue("");
-              onClose();
-            }}
-          >Opslaan</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
-    </Card>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    actief: "bg-success/15 text-success border-success/30",
-    gepauzeerd: "bg-muted text-muted-foreground border-border",
-    concept: "bg-warning/15 text-warning border-warning/30",
-  };
-  return <Badge variant="outline" className={`h-5 px-1.5 text-[10px] ${map[status] ?? ""}`}>{status}</Badge>;
 }
