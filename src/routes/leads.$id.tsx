@@ -322,30 +322,8 @@ function LeadDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Conversie-events (offline upload)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {conversions.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  Nog geen conversie-events. Deze worden automatisch vastgelegd bij Qualified, Hot,
-                  Offerte uitgebracht en Klant geworden — klaar om later naar Google Ads te uploaden.
-                </p>
-              ) : (
-                conversions.map((c: any) => (
-                  <div key={c.id} className="border-b pb-2 text-sm last:border-0 last:pb-0">
-                    <p className="font-medium">{c.conversion_event}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {formatDateTime(c.conversion_timestamp)}
-                      {c.value != null ? ` · ${formatMoney(Number(c.value))}` : ""} ·{" "}
-                      {c.uploaded_to_google ? "geüpload naar Google Ads" : "wacht op upload"}
-                    </p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+          <LeadGoogleConversions leadId={id} />
+
         </div>
       </div>
 
