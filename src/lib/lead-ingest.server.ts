@@ -1,5 +1,6 @@
 /** Shared server-side ingest handler for the secured lead endpoints. */
-import { conversionEventForStatus, ingestSchema, normalizeLead, secretMatches } from "./leads.server";
+import { conversionEventForStatus, ingestSchema, normalizeLead } from "./leads.server";
+import { resolveIngestWorkspace } from "./workspaces.server";
 
 type IngestOptions = {
   leadType: string;
@@ -15,14 +16,27 @@ function unauthorized() {
   });
 }
 
-/** Verifies the shared server secret and stores the lead. Never returns internals to the caller. */
+/**
+ * Verifies the ingest credential, resolves the workspace (tenant) it belongs to
+ * and stores the lead under that owner. Never returns internals to the caller.
+ */
 export async function handleLeadIngest(request: Request, options: IngestOptions) {
-  const expected = process.env.LEAD_INGEST_SECRET;
-  if (!expected) return unauthorized();
-  const header =
+  const token =
     request.headers.get("x-lead-ingest-secret") ??
     (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!secretMatches(header || null, expected)) return unauthorized();
+  if (!token) return unauthorized();
+
+  let workspaceId: string;
+  try {
+    const resolved = await resolveIngestWorkspace(token);
+    if (!resolved) return unauthorized();
+    workspaceId = resolved.workspaceId;
+  } catch (e) {
+    console.error("[lead-ingest] credential resolve failed", {
+      message: e instanceof Error ? e.message : "unknown error",
+    });
+    return unauthorized();
+  }
 
   let body: unknown;
   try {
@@ -42,6 +56,7 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
     );
   }
   const payload = parsed.data;
+
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
