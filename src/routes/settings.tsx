@@ -186,6 +186,52 @@ function LinkedInRow() {
   );
 }
 
+function GoogleAdsRow() {
+  const fn = useServerFn(getGoogleAdsConnection);
+  const { data, isLoading } = useQuery({
+    queryKey: ["google-ads", "connection"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const connected = !!data?.connected && !!data.selected;
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border p-3">
+      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+        <Megaphone className="h-4 w-4 text-primary" />
+      </span>
+      <div className="flex-1">
+        <div className="text-sm font-medium">Google Ads</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : connected
+              ? `${data!.selected!.name} · ${data!.selected!.customerId}${
+                  data!.accounts.length > 1 ? ` · ${data!.accounts.length} accounts` : ""
+                }`
+              : data?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : connected ? (
+        <>
+          <Badge variant="outline" className="gap-1 text-success">
+            <Check className="h-3 w-3" /> Live gekoppeld
+          </Badge>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/ads/google">Open</Link>
+          </Button>
+        </>
+      ) : (
+        <Badge variant="outline">Niet gekoppeld</Badge>
+      )}
+    </div>
+  );
+}
+
 function MetaRow({ platform }: { platform: "facebook" | "instagram" }) {
   const fn = useServerFn(getMetaStatus);
   const { data, isLoading } = useQuery({
