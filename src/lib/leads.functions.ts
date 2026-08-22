@@ -454,7 +454,21 @@ export const updateLeadQuality = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => qualityInput.parse(d))
   .handler(async ({ context, data }) => {
-    const patch: Record<string, unknown> = { lead_quality: data.quality };
+    const patch: {
+      lead_quality: string;
+      poor_reason_id: string | null;
+      poor_reason: string | null;
+      poor_reason_label: string | null;
+      poor_reason_notes: string | null;
+      poor_marked_at: string | null;
+    } = {
+      lead_quality: data.quality,
+      poor_reason_id: null,
+      poor_reason: null,
+      poor_reason_label: null,
+      poor_reason_notes: null,
+      poor_marked_at: null,
+    };
     let reasonLabel: string | null = null;
     if (data.quality === "poor") {
       if (!data.poorReasonKey) throw new Error("Kies een reden waarom deze lead slecht is.");
