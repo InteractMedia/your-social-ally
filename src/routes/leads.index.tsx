@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { AddLeadDialog } from "@/components/leads/add-lead-dialog";
 import { QualityBadge, StatusBadge } from "@/components/leads/lead-ui";
+import { usePoorLeadReasons } from "@/components/leads/poor-reason-dialog";
 import { PeriodPicker } from "@/components/ads/period-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +34,7 @@ function LeadsPage() {
   const [funnel, setFunnel] = useState(ALL);
   const [status, setStatus] = useState(ALL);
   const [quality, setQuality] = useState(ALL);
+  const [poorReason, setPoorReason] = useState(ALL);
   const [industryId, setIndustryId] = useState(ALL);
   const [platform, setPlatform] = useState(ALL);
   const [campaign, setCampaign] = useState(ALL);
@@ -48,12 +50,13 @@ function LeadsPage() {
     queryKey: ["leads", "overview", ...key],
     queryFn: () => overviewFn({ data: { start: period.start, end: period.end } }),
   });
+  const poorReasons = usePoorLeadReasons();
   const industries = useQuery({
     queryKey: ["leads", "industries"],
     queryFn: () => industriesFn({}),
   });
   const leads = useQuery({
-    queryKey: ["leads", "list", ...key, funnel, status, quality, industryId, search],
+    queryKey: ["leads", "list", ...key, funnel, status, quality, poorReason, industryId, search],
     queryFn: () =>
       leadsFn({
         data: {
@@ -62,6 +65,7 @@ function LeadsPage() {
           ...(funnel !== ALL ? { funnel } : {}),
           ...(status !== ALL ? { status } : {}),
           ...(quality !== ALL ? { quality } : {}),
+          ...(poorReason !== ALL ? { poorReason } : {}),
           ...(industryId !== ALL ? { industryId } : {}),
           ...(search.trim() ? { search: search.trim() } : {}),
         },
@@ -169,6 +173,12 @@ function LeadsPage() {
               onChange={setQuality}
               placeholder="Kwaliteit"
               options={Object.entries(QUALITY_LABELS)}
+            />
+            <FilterSelect
+              value={poorReason}
+              onChange={setPoorReason}
+              placeholder="Reden slechte lead"
+              options={(poorReasons.data?.reasons ?? []).map((r) => [r.key, r.label])}
             />
             <FilterSelect
               value={industryId}
