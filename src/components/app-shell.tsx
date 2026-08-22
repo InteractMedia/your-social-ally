@@ -142,7 +142,10 @@ function NavEntry({ item, pathname }: { item: NavSection; pathname: string }) {
                 child.to === "/ads/google"
                   ? pathname === "/ads/google" || /^\/ads\/google\/[^/]+$/.test(pathname)
                   : child.to === "/leads"
-                    ? pathname === "/leads" || /^\/leads\/[^/]+$/.test(pathname)
+                    ? pathname === "/leads" ||
+                      (/^\/leads\/[^/]+$/.test(pathname) &&
+                        !["/leads/branches", "/leads/funnels"].includes(pathname))
+
                     : pathname.startsWith(child.to);
 
               return (
