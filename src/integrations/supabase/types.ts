@@ -386,6 +386,57 @@ export type Database = {
           },
         ]
       }
+      lead_external_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          external_event_id: string
+          external_source: string
+          id: string
+          lead_id: string | null
+          payload: Json | null
+          status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          external_event_id: string
+          external_source: string
+          id?: string
+          lead_id?: string | null
+          payload?: Json | null
+          status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          external_event_id?: string
+          external_source?: string
+          id?: string
+          lead_id?: string | null
+          payload?: Json | null
+          status?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_external_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_external_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           ad_group_id: string | null
@@ -405,6 +456,9 @@ export type Database = {
           customer_date: string | null
           email: string | null
           expected_value: number | null
+          external_id: string | null
+          external_order_id: string | null
+          external_source: string | null
           fbclid: string | null
           first_order_date: string | null
           first_touch: Json | null
@@ -473,6 +527,9 @@ export type Database = {
           customer_date?: string | null
           email?: string | null
           expected_value?: number | null
+          external_id?: string | null
+          external_order_id?: string | null
+          external_source?: string | null
           fbclid?: string | null
           first_order_date?: string | null
           first_touch?: Json | null
@@ -541,6 +598,9 @@ export type Database = {
           customer_date?: string | null
           email?: string | null
           expected_value?: number | null
+          external_id?: string | null
+          external_order_id?: string | null
+          external_source?: string | null
           fbclid?: string | null
           first_order_date?: string | null
           first_touch?: Json | null

@@ -98,6 +98,8 @@ export const CONVERSION_EVENTS = [
   "platform_application",
   "platform_approved",
   "platform_activated",
+  "platform_first_order",
+  "platform_active_customer",
 ] as const;
 
 export const CONVERSION_EVENT_FOR_STATUS: Record<string, string> = {
@@ -107,6 +109,8 @@ export const CONVERSION_EVENT_FOR_STATUS: Record<string, string> = {
   application: "platform_application",
   approved: "platform_approved",
   activated: "platform_activated",
+  first_order: "platform_first_order",
+  active_customer: "platform_active_customer",
 };
 
 export type LeadRow = {

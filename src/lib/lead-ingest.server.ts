@@ -1,4 +1,5 @@
 /** Shared server-side ingest handler for the secured lead endpoints. */
+import { claimExternalEvent, nonEmpty } from "./lead-external.server";
 import { conversionEventForStatus, ingestSchema, normalizeLead } from "./leads.server";
 import { resolveIngestWorkspace } from "./workspaces.server";
 
@@ -93,6 +94,52 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
     }
 
     const row = normalizeLead(payload, { ...options, workspaceId, industryId, landingPageId });
+
+    // Idempotency on the external record: same workspace + source + id = same lead.
+    if (payload.external_source && payload.external_id) {
+      const { data: existing } = await supabaseAdmin
+        .from("leads")
+        .select("id,status")
+        .eq("workspace_id", workspaceId)
+        .eq("external_source", payload.external_source)
+        .eq("external_id", payload.external_id)
+        .maybeSingle();
+      if (existing) {
+        // Never overwrite existing data (incl. attribution) with empty values,
+        // and never move the status from an ingest "create" call.
+        const { status: _status, workspace_id: _ws, click_ids, ...rest } = row;
+        const update = nonEmpty(rest as Record<string, unknown>);
+        if (Object.keys(click_ids ?? {}).length > 0) update["click_ids"] = click_ids;
+        await supabaseAdmin
+          .from("leads")
+          .update(update as never)
+          .eq("id", existing.id)
+          .eq("workspace_id", workspaceId);
+        return new Response(
+          JSON.stringify({ ok: true, id: existing.id, status: existing.status, deduplicated: true }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+    }
+
+    // Idempotency on the event itself (retries of the same create call).
+    if (payload.external_event_id) {
+      const fresh = await claimExternalEvent({
+        workspaceId,
+        externalSource: payload.external_source || options.ingestSource,
+        externalEventId: payload.external_event_id,
+        eventType: "lead_created",
+        status: options.status,
+        payload,
+      });
+      if (!fresh) {
+        return new Response(JSON.stringify({ ok: true, deduplicated: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+    }
+
     const { data: inserted, error } = await supabaseAdmin
       .from("leads")
       .insert(row)
@@ -105,7 +152,7 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
       actor_label: options.ingestSource,
       event_type: "lead_received",
       description: `Lead ontvangen via ${row.platform ?? options.ingestSource}`,
-      meta: { ingest_source: options.ingestSource },
+      meta: { ingest_source: options.ingestSource, external_id: payload.external_id ?? null },
     });
 
     const conversionEvent = conversionEventForStatus(options.status);
@@ -117,7 +164,7 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, id: inserted.id }), {
+    return new Response(JSON.stringify({ ok: true, id: inserted.id, deduplicated: false }), {
       status: 201,
       headers: { "content-type": "application/json" },
     });
