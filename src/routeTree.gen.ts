@@ -32,6 +32,7 @@ import { Route as AdsCompareRouteImport } from './routes/ads.compare'
 import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
 import { Route as AdsGoogleIndexRouteImport } from './routes/ads.google.index'
 import { Route as ApiPublicMetaCallbackRouteImport } from './routes/api/public/meta-callback'
+import { Route as ApiPublicLeadStatusRouteImport } from './routes/api/public/lead-status'
 import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleConversionsRouteImport } from './routes/ads.google.conversions'
@@ -154,6 +155,11 @@ const ApiPublicMetaCallbackRoute = ApiPublicMetaCallbackRouteImport.update({
   path: '/api/public/meta-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLeadStatusRoute = ApiPublicLeadStatusRouteImport.update({
+  id: '/api/public/lead-status',
+  path: '/api/public/lead-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdsGoogleStatsRoute = AdsGoogleStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google': typeof AdsGoogleIndexRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
+  '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
     | '/api/public/lead-ingest/platform'
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google'
     | '/api/public/lead-ingest/platform'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
+    | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
     | '/api/public/lead-ingest/platform'
@@ -381,6 +393,7 @@ export interface RootRouteChildren {
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
+  ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
   ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
   ApiPublicLeadIngestQuoteRoute: typeof ApiPublicLeadIngestQuoteRoute
@@ -549,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/lead-status': {
+      id: '/api/public/lead-status'
+      path: '/api/public/lead-status'
+      fullPath: '/api/public/lead-status'
+      preLoaderRoute: typeof ApiPublicLeadStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ads/google/stats': {
       id: '/ads/google/stats'
       path: '/stats'
@@ -672,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
+  ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
   ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
   ApiPublicLeadIngestQuoteRoute: ApiPublicLeadIngestQuoteRoute,
