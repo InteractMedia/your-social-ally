@@ -63,7 +63,11 @@ function ConversionsPage() {
       />
 
       <div className="space-y-6">
+        <OfflineConversionMapping />
+        <OfflineConversionQueue />
+
         <PeriodPicker period={period} onChange={setPeriod} />
+
 
         {query.isLoading ? (
           <AdsLoading label="Conversieacties ophalen…" />
