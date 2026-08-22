@@ -154,7 +154,12 @@ function LeadDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={lead.lead_quality} onValueChange={(v) => setQuality.mutate(v)}>
+              <Select
+                value={lead.lead_quality}
+                onValueChange={(v) =>
+                  v === "poor" ? setPoorOpen(true) : setQuality.mutate({ quality: v })
+                }
+              >
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
