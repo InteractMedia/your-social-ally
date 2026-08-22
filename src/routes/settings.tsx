@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Check, Copy, KeyRound, Link2, Loader2, Plug, Sparkles, Stethoscope, X } from "lucide-react";
+import { AlertTriangle, Check, Copy, KeyRound, Link2, Loader2, Megaphone, Plug, Sparkles, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
