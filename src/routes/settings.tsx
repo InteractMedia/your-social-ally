@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Check, Copy, KeyRound, Link2, Loader2, Plug, Sparkles, Stethoscope, X } from "lucide-react";
+import { AlertTriangle, Check, Copy, KeyRound, Link2, Loader2, Megaphone, Plug, Sparkles, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
+import { getGoogleAdsConnection } from "@/lib/google-ads.functions";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
 import { checkMetaScopes, debugMetaToken, getMetaStatus, REQUIRED_META_SCOPES } from "@/lib/meta.functions";
 
@@ -71,8 +72,10 @@ function Settings() {
               );
             })}
 
+            <GoogleAdsRow />
+
             <p className="text-xs text-muted-foreground">
-              LinkedIn, Facebook en Instagram zijn nu echt gekoppeld via de Graph API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
+              LinkedIn, Facebook, Instagram en Google Ads zijn echt gekoppeld via de API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
             </p>
           </CardContent>
 
@@ -176,6 +179,52 @@ function LinkedInRow() {
           <Badge variant="outline" className="gap-1 text-success">
             <Check className="h-3 w-3" /> Live
           </Badge>
+        </>
+      ) : (
+        <Badge variant="outline">Niet gekoppeld</Badge>
+      )}
+    </div>
+  );
+}
+
+function GoogleAdsRow() {
+  const fn = useServerFn(getGoogleAdsConnection);
+  const { data, isLoading } = useQuery({
+    queryKey: ["google-ads", "connection"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const connected = !!data?.connected && !!data.selected;
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border p-3">
+      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+        <Megaphone className="h-4 w-4 text-primary" />
+      </span>
+      <div className="flex-1">
+        <div className="text-sm font-medium">Google Ads</div>
+        <div className="text-xs text-muted-foreground">
+          {isLoading
+            ? "Verbinding controleren…"
+            : connected
+              ? `${data!.selected!.name} · ${data!.selected!.customerId}${
+                  data!.accounts.length > 1 ? ` · ${data!.accounts.length} accounts` : ""
+                }`
+              : data?.error ?? "Nog niet gekoppeld"}
+        </div>
+      </div>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : connected ? (
+        <>
+          <Badge variant="outline" className="gap-1 text-success">
+            <Check className="h-3 w-3" /> Live gekoppeld
+          </Badge>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/ads/google">Open</Link>
+          </Button>
         </>
       ) : (
         <Badge variant="outline">Niet gekoppeld</Badge>
