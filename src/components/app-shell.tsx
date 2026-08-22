@@ -18,6 +18,8 @@ import {
   Target,
   PlusCircle,
   GitCompare,
+  Briefcase,
+
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
