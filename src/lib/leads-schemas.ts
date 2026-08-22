@@ -55,6 +55,14 @@ export const statusInput = idInput.extend({ status: z.string().min(2).max(50) })
 
 export const qualityInput = idInput.extend({
   quality: z.enum(["unknown", "poor", "qualified", "hot"]),
+  /** Reason key from public.poor_lead_reasons — required when quality is "poor". */
+  poorReasonKey: z.string().min(1).max(100).optional(),
+  poorReasonNotes: z.string().max(2000).optional(),
+});
+
+export const poorReasonInput = z.object({
+  label: z.string().min(2).max(160),
+  requires_notes: z.boolean().optional(),
 });
 
 export const customerInput = idInput.extend({
