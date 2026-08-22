@@ -88,8 +88,19 @@ const nav: NavSection[] = [
       { to: "/ads/compare", label: "Vergelijk concurrent", icon: GitCompare },
     ],
   },
+  {
+    to: "/leads",
+    label: "Leads",
+    icon: Briefcase,
+    children: [
+      { to: "/leads", label: "Alle leads", icon: Briefcase },
+      { to: "/leads/branches", label: "Branches", icon: BarChart3 },
+      { to: "/leads/funnels", label: "Funnels", icon: GitCompare },
+    ],
+  },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
+
 ];
 
 function NavEntry({ item, pathname }: { item: NavSection; pathname: string }) {
