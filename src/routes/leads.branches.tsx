@@ -9,14 +9,14 @@ import { PeriodPicker } from "@/components/ads/period-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDec, formatMoney, resolvePeriod } from "@/lib/ads-period";
+import { formatDec, formatMoney, resolveLeadPeriod } from "@/lib/ads-period";
 import { customerRate, qualifiedRate } from "@/lib/leads-shared";
 import { getBranchAnalytics } from "@/lib/leads.functions";
 
 export const Route = createFileRoute("/leads/branches")({ component: BranchesPage });
 
 function BranchesPage() {
-  const [period, setPeriod] = useState(() => resolvePeriod("last_30_days"));
+  const [period, setPeriod] = useState(() => resolveLeadPeriod("last_30_days"));
   const fn = useServerFn(getBranchAnalytics);
   const query = useQuery({
     queryKey: ["leads", "branches", period.start, period.end],
@@ -38,7 +38,7 @@ function BranchesPage() {
         }
       />
       <div className="space-y-6">
-        <PeriodPicker period={period} onChange={setPeriod} />
+        <PeriodPicker period={period} onChange={setPeriod} includeToday />
         <Card>
           <CardContent className="p-0">
             {query.isLoading ? (

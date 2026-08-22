@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatMoney, resolvePeriod } from "@/lib/ads-period";
+import { formatMoney, resolveLeadPeriod } from "@/lib/ads-period";
 import { getGoogleAdsOverview } from "@/lib/google-ads.functions";
 import { cpql, FUNNEL_LABELS, LEAD_TYPE_LABELS, QUALITY_LABELS, STATUS_LABELS } from "@/lib/leads-shared";
 import { getLeadsOverview, listIndustries, listLeads } from "@/lib/leads.functions";
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/leads/")({ component: LeadsPage });
 const ALL = "all";
 
 function LeadsPage() {
-  const [period, setPeriod] = useState(() => resolvePeriod("last_30_days"));
+  const [period, setPeriod] = useState(() => resolveLeadPeriod("last_30_days"));
   const [funnel, setFunnel] = useState(ALL);
   const [status, setStatus] = useState(ALL);
   const [quality, setQuality] = useState(ALL);
@@ -130,7 +130,7 @@ function LeadsPage() {
       />
 
       <div className="space-y-6">
-        <PeriodPicker period={period} onChange={setPeriod} />
+        <PeriodPicker period={period} onChange={setPeriod} includeToday />
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {kpis.map((k) => (

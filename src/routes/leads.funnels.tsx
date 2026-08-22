@@ -9,7 +9,7 @@ import { PeriodPicker } from "@/components/ads/period-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDec, resolvePeriod } from "@/lib/ads-period";
+import { formatDec, resolveLeadPeriod } from "@/lib/ads-period";
 import {
   FUNNEL_LABELS,
   STATUS_LABELS,
@@ -22,7 +22,7 @@ import { getFunnelAnalytics } from "@/lib/leads.functions";
 export const Route = createFileRoute("/leads/funnels")({ component: FunnelsPage });
 
 function FunnelsPage() {
-  const [period, setPeriod] = useState(() => resolvePeriod("last_30_days"));
+  const [period, setPeriod] = useState(() => resolveLeadPeriod("last_30_days"));
   const fn = useServerFn(getFunnelAnalytics);
   const query = useQuery({
     queryKey: ["leads", "funnels", period.start, period.end],
@@ -44,7 +44,7 @@ function FunnelsPage() {
         }
       />
       <div className="space-y-6">
-        <PeriodPicker period={period} onChange={setPeriod} />
+        <PeriodPicker period={period} onChange={setPeriod} includeToday />
         {query.isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : leads.length === 0 ? (
