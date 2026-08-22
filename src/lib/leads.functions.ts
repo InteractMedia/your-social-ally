@@ -19,12 +19,104 @@ import {
   listLeadsInput,
   notesInput,
   periodInput,
+  poorReasonInput,
   qualityInput,
   statusInput,
 } from "./leads-schemas";
 
 const LEAD_COLUMNS =
-  "id,created_at,received_at,updated_at,lead_type,funnel_type,status,lead_quality,company_name,contact_name,email,phone,website,company_domain,company_size,kvk_number,notes,industry_id,industry_name,source,medium,platform,campaign_id,campaign_name,ad_group_id,ad_group_name,ad_id,ad_name,keyword,search_term,match_type,landing_page,landing_page_id,landing_page_variant,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,gbraid,wbraid,li_fat_id,ttclid,fbclid,attribution_model,first_touch,became_customer,customer_date,order_value,revenue,gross_margin,expected_value,lifetime_value,first_order_date,ingest_source";
+  "id,created_at,received_at,updated_at,lead_type,funnel_type,status,lead_quality,poor_reason_id,poor_reason,poor_reason_label,poor_reason_notes,poor_marked_at,company_name,contact_name,email,phone,website,company_domain,company_size,kvk_number,notes,industry_id,industry_name,source,medium,platform,campaign_id,campaign_name,ad_group_id,ad_group_name,ad_id,ad_name,keyword,search_term,match_type,landing_page,landing_page_id,landing_page_variant,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,gbraid,wbraid,li_fat_id,ttclid,fbclid,attribution_model,first_touch,became_customer,customer_date,order_value,revenue,gross_margin,expected_value,lifetime_value,first_order_date,ingest_source";
+
+/** Configurable "why is this a poor lead" catalogue: global defaults + own additions. */
+export const listPoorLeadReasons = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("poor_lead_reasons")
+      .select("id,key,label,requires_notes,sort_order,user_id")
+      .eq("active", true)
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { reasons: data ?? [] };
+  });
+
+export const createPoorLeadReason = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => poorReasonInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const key = data.label
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/(^_|_$)/g, "");
+    const { data: row, error } = await context.supabase
+      .from("poor_lead_reasons")
+      .insert({
+        user_id: context.userId,
+        key,
+        label: data.label.trim(),
+        requires_notes: data.requires_notes ?? false,
+        sort_order: 500,
+      })
+      .select("id,key,label,requires_notes")
+      .single();
+    if (error) throw new Error(error.message);
+    return { reason: row };
+  });
+
+/**
+ * Poor-lead analysis: counts per reason, broken down by the marketing
+ * dimensions the AI Ads Analyst needs (platform, campagne, branche,
+ * zoekwoord, zoekterm, landingspagina).
+ */
+export const getPoorLeadAnalytics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => periodInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const { from, to } = periodBounds(data.start, data.end);
+    const { data: rows, error } = await context.supabase
+      .from("leads")
+      .select(
+        "id,poor_reason,poor_reason_label,poor_reason_notes,poor_marked_at,platform,campaign_id,campaign_name,industry_name,keyword,search_term,landing_page",
+      )
+      .eq("lead_quality", "poor")
+      .gte("received_at", from)
+      .lt("received_at", to);
+    if (error) throw new Error(error.message);
+    const list = rows ?? [];
+    const group = (pick: (r: (typeof list)[number]) => string | null) => {
+      const map = new Map<string, { value: string; reasons: Record<string, number>; total: number }>();
+      for (const row of list) {
+        const value = pick(row) ?? "Onbekend";
+        const reason = row.poor_reason_label ?? row.poor_reason ?? "Onbekend";
+        const bucket = map.get(value) ?? { value, reasons: {}, total: 0 };
+        bucket.reasons[reason] = (bucket.reasons[reason] ?? 0) + 1;
+        bucket.total += 1;
+        map.set(value, bucket);
+      }
+      return [...map.values()].sort((a, b) => b.total - a.total);
+    };
+    const byReason = new Map<string, { reason: string; label: string; count: number }>();
+    for (const row of list) {
+      const key = row.poor_reason ?? "unknown";
+      const bucket =
+        byReason.get(key) ??
+        { reason: key, label: row.poor_reason_label ?? row.poor_reason ?? "Onbekend", count: 0 };
+      bucket.count += 1;
+      byReason.set(key, bucket);
+    }
+    return {
+      total: list.length,
+      byReason: [...byReason.values()].sort((a, b) => b.count - a.count),
+      byPlatform: group((r) => r.platform),
+      byCampaign: group((r) => r.campaign_name ?? r.campaign_id),
+      byIndustry: group((r) => r.industry_name),
+      byKeyword: group((r) => r.keyword),
+      bySearchTerm: group((r) => r.search_term),
+      byLandingPage: group((r) => r.landing_page),
+    };
+  });
 
 export const listIndustries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
