@@ -58,6 +58,15 @@ export const ingestSchema = attributionSchema.extend({
   expected_value: z.number().optional().nullable(),
   received_at: z.string().optional().nullable(),
   raw: z.record(z.string(), z.unknown()).optional().nullable(),
+  /** Stable identity of the record in the external application. */
+  external_source: z.string().min(1).max(100).optional().nullable(),
+  external_id: z.string().min(1).max(200).optional().nullable(),
+  /** Idempotency key for this specific external event/retry. */
+  external_event_id: z.string().min(1).max(200).optional().nullable(),
+  order_id: z.string().max(200).optional().nullable(),
+  order_value: z.number().nonnegative().optional().nullable(),
+  revenue: z.number().nonnegative().optional().nullable(),
+  order_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 });
 
 export type IngestPayload = z.infer<typeof ingestSchema>;
@@ -152,6 +161,8 @@ export function normalizeLead(
     raw: (p.raw ?? null) as Json,
     expected_value: p.expected_value ?? null,
     ingest_source: opts.ingestSource,
+    external_source: p.external_source || null,
+    external_id: p.external_id || null,
   };
 }
 
