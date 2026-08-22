@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { AdsError, AdsLoading, AdsNotConnected } from "@/components/ads/ads-states";
 import { MetricCards } from "@/components/ads/metric-cards";
+import { OfflineConversionSummary } from "@/components/ads/offline-summary";
 import { PeriodPicker } from "@/components/ads/period-picker";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
