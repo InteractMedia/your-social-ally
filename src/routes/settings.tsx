@@ -71,8 +71,10 @@ function Settings() {
               );
             })}
 
+            <GoogleAdsRow />
+
             <p className="text-xs text-muted-foreground">
-              LinkedIn, Facebook en Instagram zijn nu echt gekoppeld via de Graph API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
+              LinkedIn, Facebook, Instagram en Google Ads zijn echt gekoppeld via de API. TikTok en YouTube volgen zodra hun connectoren beschikbaar zijn.
             </p>
           </CardContent>
 
