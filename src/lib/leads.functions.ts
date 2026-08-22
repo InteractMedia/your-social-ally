@@ -363,6 +363,11 @@ export const createLead = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const funnel = data.funnel_type;
     const status = funnel === "platform" ? "application" : "quote_request";
+    const workspaceId = await requireUserWorkspace(
+      context.supabase,
+      context.userId,
+      (context.claims as { email?: string } | undefined)?.email ?? null,
+    );
     const { funnel_type: _funnel, ...rest } = data;
     const clickIds: Record<string, string> = {};
     for (const key of ["gclid", "gbraid", "wbraid"] as const) {
