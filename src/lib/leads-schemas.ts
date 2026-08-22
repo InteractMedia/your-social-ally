@@ -13,6 +13,7 @@ export const listLeadsInput = periodInput.extend({
   campaignId: z.string().optional(),
   status: z.string().optional(),
   quality: z.string().optional(),
+  poorReason: z.string().optional(),
   search: z.string().optional(),
 });
 
