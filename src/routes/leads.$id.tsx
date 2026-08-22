@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { CustomerValueDialog } from "@/components/leads/customer-value-dialog";
+import { PoorReasonDialog } from "@/components/leads/poor-reason-dialog";
 import { Field, FunnelProgress, QualityBadge, StatusBadge } from "@/components/leads/lead-ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ function LeadDetailPage() {
 
   const [notes, setNotes] = useState("");
   const [valueOpen, setValueOpen] = useState(false);
+  const [poorOpen, setPoorOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["leads", "detail", id],
@@ -69,9 +71,14 @@ function LeadDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const setQuality = useMutation({
-    mutationFn: (quality: string) => qualityFn({ data: { id, quality } }),
+    mutationFn: (vars: {
+      quality: string;
+      poorReasonKey?: string;
+      poorReasonNotes?: string;
+    }) => qualityFn({ data: { id, ...vars } }),
     onSuccess: () => {
       toast.success("Leadkwaliteit bijgewerkt");
+      setPoorOpen(false);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -147,7 +154,12 @@ function LeadDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={lead.lead_quality} onValueChange={(v) => setQuality.mutate(v)}>
+              <Select
+                value={lead.lead_quality}
+                onValueChange={(v) =>
+                  v === "poor" ? setPoorOpen(true) : setQuality.mutate({ quality: v })
+                }
+              >
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -161,8 +173,31 @@ function LeadDetailPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <FunnelProgress funnel={funnel} status={lead.status} />
+            {lead.lead_quality === "poor" && (
+              <div className="border-destructive/40 bg-destructive/5 rounded-md border p-3 text-sm">
+                <p className="font-medium">
+                  Reden slechte lead: {lead.poor_reason_label ?? lead.poor_reason ?? "onbekend"}
+                </p>
+                {lead.poor_reason_notes && (
+                  <p className="text-muted-foreground mt-1">{lead.poor_reason_notes}</p>
+                )}
+                {lead.poor_marked_at && (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Gemarkeerd op {formatDateTime(lead.poor_marked_at)}
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setPoorOpen(true)}
+                >
+                  Reden aanpassen
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -315,6 +350,12 @@ function LeadDetailPage() {
       </div>
 
       <CustomerValueDialog leadId={id} open={valueOpen} onOpenChange={setValueOpen} />
+      <PoorReasonDialog
+        open={poorOpen}
+        onOpenChange={setPoorOpen}
+        pending={setQuality.isPending}
+        onConfirm={(payload) => setQuality.mutate({ quality: "poor", ...payload })}
+      />
     </AppShell>
   );
 }
