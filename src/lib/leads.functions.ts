@@ -180,6 +180,7 @@ export const listLeads = createServerFn({ method: "GET" })
     if (data.campaignId) query = query.eq("campaign_id", data.campaignId);
     if (data.status) query = query.eq("status", data.status);
     if (data.quality) query = query.eq("lead_quality", data.quality);
+    if (data.poorReason) query = query.eq("poor_reason", data.poorReason);
     if (data.search) {
       const term = `%${data.search.replace(/[%,]/g, "")}%`;
       query = query.or(
