@@ -261,8 +261,8 @@ export function OfflineConversionQueue() {
               {selected.length} {selected.length === 1 ? "conversie" : "conversies"} uploaden
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogFooter>
         </AlertDialogContent>
+
       </AlertDialog>
     </Card>
   );
