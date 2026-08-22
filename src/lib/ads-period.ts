@@ -56,6 +56,20 @@ export function resolvePeriod(preset: PeriodPreset, custom?: { start: string; en
   }
 }
 
+/**
+ * Lead reporting includes today: leads arrive in real time, unlike ad stats
+ * which lag a day. Presets that end "yesterday" are extended to today.
+ */
+export function resolveLeadPeriod(
+  preset: PeriodPreset,
+  custom?: { start: string; end: string },
+): Period {
+  const period = resolvePeriod(preset, custom);
+  if (preset === "yesterday" || preset === "last_month" || preset === "custom") return period;
+  const today = iso(new Date());
+  return period.end < today ? { ...period, end: today } : period;
+}
+
 export const formatMoney = (n: number, currency = "EUR") =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency, maximumFractionDigits: 2 }).format(
     Number.isFinite(n) ? n : 0,
