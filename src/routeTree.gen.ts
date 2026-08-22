@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
+import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
@@ -106,6 +107,11 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdsRoute,
 } as any)
+const LeadsBranchesRoute = LeadsBranchesRouteImport.update({
+  id: '/branches',
+  path: '/branches',
+  getParentRoute: () => LeadsRoute,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
   '/leads': typeof LeadsIndexRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/leads/branches'
     | '/ads/'
     | '/competitors/'
     | '/leads/'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/competitors/$id'
+    | '/leads/branches'
     | '/ads'
     | '/competitors'
     | '/leads'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/leads/branches'
     | '/ads/'
     | '/competitors/'
     | '/leads/'
@@ -449,6 +461,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
+    }
+    '/leads/branches': {
+      id: '/leads/branches'
+      path: '/branches'
+      fullPath: '/leads/branches'
+      preLoaderRoute: typeof LeadsBranchesRouteImport
+      parentRoute: typeof LeadsRoute
     }
     '/competitors/$id': {
       id: '/competitors/$id'
@@ -588,10 +607,12 @@ const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
 )
 
 interface LeadsRouteChildren {
+  LeadsBranchesRoute: typeof LeadsBranchesRoute
   LeadsIndexRoute: typeof LeadsIndexRoute
 }
 
 const LeadsRouteChildren: LeadsRouteChildren = {
+  LeadsBranchesRoute: LeadsBranchesRoute,
   LeadsIndexRoute: LeadsIndexRoute,
 }
 
