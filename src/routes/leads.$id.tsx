@@ -173,8 +173,31 @@ function LeadDetailPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <FunnelProgress funnel={funnel} status={lead.status} />
+            {lead.lead_quality === "poor" && (
+              <div className="border-destructive/40 bg-destructive/5 rounded-md border p-3 text-sm">
+                <p className="font-medium">
+                  Reden slechte lead: {lead.poor_reason_label ?? lead.poor_reason ?? "onbekend"}
+                </p>
+                {lead.poor_reason_notes && (
+                  <p className="text-muted-foreground mt-1">{lead.poor_reason_notes}</p>
+                )}
+                {lead.poor_marked_at && (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Gemarkeerd op {formatDateTime(lead.poor_marked_at)}
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setPoorOpen(true)}
+                >
+                  Reden aanpassen
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
