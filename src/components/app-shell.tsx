@@ -18,6 +18,8 @@ import {
   Target,
   PlusCircle,
   GitCompare,
+  Briefcase,
+
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -88,8 +90,19 @@ const nav: NavSection[] = [
       { to: "/ads/compare", label: "Vergelijk concurrent", icon: GitCompare },
     ],
   },
+  {
+    to: "/leads",
+    label: "Leads",
+    icon: Briefcase,
+    children: [
+      { to: "/leads", label: "Alle leads", icon: Briefcase },
+      { to: "/leads/branches", label: "Branches", icon: BarChart3 },
+      { to: "/leads/funnels", label: "Funnels", icon: GitCompare },
+    ],
+  },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
+
 ];
 
 function NavEntry({ item, pathname }: { item: NavSection; pathname: string }) {
@@ -128,7 +141,13 @@ function NavEntry({ item, pathname }: { item: NavSection; pathname: string }) {
               const childActive =
                 child.to === "/ads/google"
                   ? pathname === "/ads/google" || /^\/ads\/google\/[^/]+$/.test(pathname)
-                  : pathname.startsWith(child.to);
+                  : child.to === "/leads"
+                    ? pathname === "/leads" ||
+                      (/^\/leads\/[^/]+$/.test(pathname) &&
+                        !["/leads/branches", "/leads/funnels"].includes(pathname))
+
+                    : pathname.startsWith(child.to);
+
               return (
                 <Link
                   key={child.to}

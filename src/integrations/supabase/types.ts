@@ -212,6 +212,384 @@ export type Database = {
         }
         Relationships: []
       }
+      industries: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      landing_pages: {
+        Row: {
+          active: boolean
+          created_at: string
+          funnel_type: string
+          id: string
+          industry_id: string | null
+          name: string
+          slug: string
+          updated_at: string
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          funnel_type?: string
+          id?: string
+          industry_id?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          funnel_type?: string
+          id?: string
+          industry_id?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_pages_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_activities: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          lead_id: string
+          meta: Json | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          lead_id: string
+          meta?: Json | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          lead_id?: string
+          meta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_conversion_events: {
+        Row: {
+          conversion_event: string
+          conversion_timestamp: string
+          created_at: string
+          currency: string | null
+          google_upload_error: string | null
+          google_upload_status: string | null
+          google_upload_timestamp: string | null
+          id: string
+          lead_id: string
+          platform: string
+          uploaded_to_google: boolean
+          value: number | null
+        }
+        Insert: {
+          conversion_event: string
+          conversion_timestamp?: string
+          created_at?: string
+          currency?: string | null
+          google_upload_error?: string | null
+          google_upload_status?: string | null
+          google_upload_timestamp?: string | null
+          id?: string
+          lead_id: string
+          platform?: string
+          uploaded_to_google?: boolean
+          value?: number | null
+        }
+        Update: {
+          conversion_event?: string
+          conversion_timestamp?: string
+          created_at?: string
+          currency?: string | null
+          google_upload_error?: string | null
+          google_upload_status?: string | null
+          google_upload_timestamp?: string | null
+          id?: string
+          lead_id?: string
+          platform?: string
+          uploaded_to_google?: boolean
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_conversion_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          ad_group_id: string | null
+          ad_group_name: string | null
+          ad_id: string | null
+          ad_name: string | null
+          attribution_model: string
+          became_customer: boolean
+          campaign_id: string | null
+          campaign_name: string | null
+          click_ids: Json
+          company_domain: string | null
+          company_name: string
+          company_size: string | null
+          contact_name: string | null
+          created_at: string
+          customer_date: string | null
+          email: string | null
+          expected_value: number | null
+          fbclid: string | null
+          first_order_date: string | null
+          first_touch: Json | null
+          funnel_type: string
+          gbraid: string | null
+          gclid: string | null
+          gross_margin: number | null
+          id: string
+          industry_id: string | null
+          industry_name: string | null
+          ingest_source: string | null
+          keyword: string | null
+          kvk_number: string | null
+          landing_page: string | null
+          landing_page_id: string | null
+          landing_page_variant: string | null
+          lead_quality: string
+          lead_type: string
+          li_fat_id: string | null
+          lifetime_value: number | null
+          match_type: string | null
+          medium: string | null
+          notes: string | null
+          order_value: number | null
+          phone: string | null
+          platform: string | null
+          raw: Json | null
+          received_at: string
+          referrer: string | null
+          revenue: number | null
+          search_term: string | null
+          source: string | null
+          status: string
+          ttclid: string | null
+          updated_at: string
+          user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          wbraid: string | null
+          website: string | null
+        }
+        Insert: {
+          ad_group_id?: string | null
+          ad_group_name?: string | null
+          ad_id?: string | null
+          ad_name?: string | null
+          attribution_model?: string
+          became_customer?: boolean
+          campaign_id?: string | null
+          campaign_name?: string | null
+          click_ids?: Json
+          company_domain?: string | null
+          company_name: string
+          company_size?: string | null
+          contact_name?: string | null
+          created_at?: string
+          customer_date?: string | null
+          email?: string | null
+          expected_value?: number | null
+          fbclid?: string | null
+          first_order_date?: string | null
+          first_touch?: Json | null
+          funnel_type?: string
+          gbraid?: string | null
+          gclid?: string | null
+          gross_margin?: number | null
+          id?: string
+          industry_id?: string | null
+          industry_name?: string | null
+          ingest_source?: string | null
+          keyword?: string | null
+          kvk_number?: string | null
+          landing_page?: string | null
+          landing_page_id?: string | null
+          landing_page_variant?: string | null
+          lead_quality?: string
+          lead_type?: string
+          li_fat_id?: string | null
+          lifetime_value?: number | null
+          match_type?: string | null
+          medium?: string | null
+          notes?: string | null
+          order_value?: number | null
+          phone?: string | null
+          platform?: string | null
+          raw?: Json | null
+          received_at?: string
+          referrer?: string | null
+          revenue?: number | null
+          search_term?: string | null
+          source?: string | null
+          status?: string
+          ttclid?: string | null
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+          website?: string | null
+        }
+        Update: {
+          ad_group_id?: string | null
+          ad_group_name?: string | null
+          ad_id?: string | null
+          ad_name?: string | null
+          attribution_model?: string
+          became_customer?: boolean
+          campaign_id?: string | null
+          campaign_name?: string | null
+          click_ids?: Json
+          company_domain?: string | null
+          company_name?: string
+          company_size?: string | null
+          contact_name?: string | null
+          created_at?: string
+          customer_date?: string | null
+          email?: string | null
+          expected_value?: number | null
+          fbclid?: string | null
+          first_order_date?: string | null
+          first_touch?: Json | null
+          funnel_type?: string
+          gbraid?: string | null
+          gclid?: string | null
+          gross_margin?: number | null
+          id?: string
+          industry_id?: string | null
+          industry_name?: string | null
+          ingest_source?: string | null
+          keyword?: string | null
+          kvk_number?: string | null
+          landing_page?: string | null
+          landing_page_id?: string | null
+          landing_page_variant?: string | null
+          lead_quality?: string
+          lead_type?: string
+          li_fat_id?: string | null
+          lifetime_value?: number | null
+          match_type?: string | null
+          medium?: string | null
+          notes?: string | null
+          order_value?: number | null
+          phone?: string | null
+          platform?: string | null
+          raw?: Json | null
+          received_at?: string
+          referrer?: string | null
+          revenue?: number | null
+          search_term?: string | null
+          source?: string | null
+          status?: string
+          ttclid?: string | null
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_connections: {
         Row: {
           app_id: string

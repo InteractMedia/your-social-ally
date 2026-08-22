@@ -13,14 +13,19 @@ import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as MetaRouteImport } from './routes/meta'
+import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposerRouteImport } from './routes/composer'
 import { Route as CompetitorsRouteImport } from './routes/competitors'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeadsIndexRouteImport } from './routes/leads.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
+import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
+import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
+import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
@@ -31,6 +36,8 @@ import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleConversionsRouteImport } from './routes/ads.google.conversions'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
+import { Route as ApiPublicLeadIngestQuoteRouteImport } from './routes/api/public/lead-ingest.quote'
+import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/public/lead-ingest.platform'
 
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
@@ -50,6 +57,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
 const MetaRoute = MetaRouteImport.update({
   id: '/meta',
   path: '/meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -82,6 +94,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeadsIndexRoute = LeadsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LeadsRoute,
+} as any)
 const CompetitorsIndexRoute = CompetitorsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,6 +108,21 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdsRoute,
+} as any)
+const LeadsFunnelsRoute = LeadsFunnelsRouteImport.update({
+  id: '/funnels',
+  path: '/funnels',
+  getParentRoute: () => LeadsRoute,
+} as any)
+const LeadsBranchesRoute = LeadsBranchesRouteImport.update({
+  id: '/branches',
+  path: '/branches',
+  getParentRoute: () => LeadsRoute,
+} as any)
+const LeadsIdRoute = LeadsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => LeadsRoute,
 } as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
@@ -142,6 +174,18 @@ const AdsGoogleCampaignIdRoute = AdsGoogleCampaignIdRouteImport.update({
   path: '/$campaignId',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
+const ApiPublicLeadIngestQuoteRoute =
+  ApiPublicLeadIngestQuoteRouteImport.update({
+    id: '/api/public/lead-ingest/quote',
+    path: '/api/public/lead-ingest/quote',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicLeadIngestPlatformRoute =
+  ApiPublicLeadIngestPlatformRouteImport.update({
+    id: '/api/public/lead-ingest/platform',
+    path: '/api/public/lead-ingest/platform',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/leads': typeof LeadsRouteWithChildren
   '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -158,14 +203,20 @@ export interface FileRoutesByFullPath {
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/$id': typeof LeadsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
+  '/leads/funnels': typeof LeadsFunnelsRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
+  '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -179,14 +230,20 @@ export interface FileRoutesByTo {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/$id': typeof LeadsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
+  '/leads/funnels': typeof LeadsFunnelsRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
+  '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google': typeof AdsGoogleIndexRoute
+  '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
+  '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -196,6 +253,7 @@ export interface FileRoutesById {
   '/competitors': typeof CompetitorsRouteWithChildren
   '/composer': typeof ComposerRoute
   '/inbox': typeof InboxRoute
+  '/leads': typeof LeadsRouteWithChildren
   '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -204,14 +262,20 @@ export interface FileRoutesById {
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/leads/$id': typeof LeadsIdRoute
+  '/leads/branches': typeof LeadsBranchesRoute
+  '/leads/funnels': typeof LeadsFunnelsRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
+  '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,6 +286,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/leads'
     | '/meta'
     | '/schedule'
     | '/settings'
@@ -230,14 +295,20 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/leads/$id'
+    | '/leads/branches'
+    | '/leads/funnels'
     | '/ads/'
     | '/competitors/'
+    | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/api/public/lead-ingest/platform'
+    | '/api/public/lead-ingest/quote'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -251,14 +322,20 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/competitors/$id'
+    | '/leads/$id'
+    | '/leads/branches'
+    | '/leads/funnels'
     | '/ads'
     | '/competitors'
+    | '/leads'
     | '/ads/google/$campaignId'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
     | '/ads/google'
+    | '/api/public/lead-ingest/platform'
+    | '/api/public/lead-ingest/quote'
   id:
     | '__root__'
     | '/'
@@ -267,6 +344,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/composer'
     | '/inbox'
+    | '/leads'
     | '/meta'
     | '/schedule'
     | '/settings'
@@ -275,14 +353,20 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/ads/google'
     | '/competitors/$id'
+    | '/leads/$id'
+    | '/leads/branches'
+    | '/leads/funnels'
     | '/ads/'
     | '/competitors/'
+    | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/api/public/lead-ingest/platform'
+    | '/api/public/lead-ingest/quote'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -292,11 +376,14 @@ export interface RootRouteChildren {
   CompetitorsRoute: typeof CompetitorsRouteWithChildren
   ComposerRoute: typeof ComposerRoute
   InboxRoute: typeof InboxRoute
+  LeadsRoute: typeof LeadsRouteWithChildren
   MetaRoute: typeof MetaRoute
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
+  ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
+  ApiPublicLeadIngestQuoteRoute: typeof ApiPublicLeadIngestQuoteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -327,6 +414,13 @@ declare module '@tanstack/react-router' {
       path: '/meta'
       fullPath: '/meta'
       preLoaderRoute: typeof MetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -371,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leads/': {
+      id: '/leads/'
+      path: '/'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof LeadsIndexRouteImport
+      parentRoute: typeof LeadsRoute
+    }
     '/competitors/': {
       id: '/competitors/'
       path: '/'
@@ -384,6 +485,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
+    }
+    '/leads/funnels': {
+      id: '/leads/funnels'
+      path: '/funnels'
+      fullPath: '/leads/funnels'
+      preLoaderRoute: typeof LeadsFunnelsRouteImport
+      parentRoute: typeof LeadsRoute
+    }
+    '/leads/branches': {
+      id: '/leads/branches'
+      path: '/branches'
+      fullPath: '/leads/branches'
+      preLoaderRoute: typeof LeadsBranchesRouteImport
+      parentRoute: typeof LeadsRoute
+    }
+    '/leads/$id': {
+      id: '/leads/$id'
+      path: '/$id'
+      fullPath: '/leads/$id'
+      preLoaderRoute: typeof LeadsIdRouteImport
+      parentRoute: typeof LeadsRoute
     }
     '/competitors/$id': {
       id: '/competitors/$id'
@@ -455,6 +577,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleCampaignIdRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
+    '/api/public/lead-ingest/quote': {
+      id: '/api/public/lead-ingest/quote'
+      path: '/api/public/lead-ingest/quote'
+      fullPath: '/api/public/lead-ingest/quote'
+      preLoaderRoute: typeof ApiPublicLeadIngestQuoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/lead-ingest/platform': {
+      id: '/api/public/lead-ingest/platform'
+      path: '/api/public/lead-ingest/platform'
+      fullPath: '/api/public/lead-ingest/platform'
+      preLoaderRoute: typeof ApiPublicLeadIngestPlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -508,6 +644,22 @@ const CompetitorsRouteWithChildren = CompetitorsRoute._addFileChildren(
   CompetitorsRouteChildren,
 )
 
+interface LeadsRouteChildren {
+  LeadsIdRoute: typeof LeadsIdRoute
+  LeadsBranchesRoute: typeof LeadsBranchesRoute
+  LeadsFunnelsRoute: typeof LeadsFunnelsRoute
+  LeadsIndexRoute: typeof LeadsIndexRoute
+}
+
+const LeadsRouteChildren: LeadsRouteChildren = {
+  LeadsIdRoute: LeadsIdRoute,
+  LeadsBranchesRoute: LeadsBranchesRoute,
+  LeadsFunnelsRoute: LeadsFunnelsRoute,
+  LeadsIndexRoute: LeadsIndexRoute,
+}
+
+const LeadsRouteWithChildren = LeadsRoute._addFileChildren(LeadsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdsRoute: AdsRouteWithChildren,
@@ -515,11 +667,14 @@ const rootRouteChildren: RootRouteChildren = {
   CompetitorsRoute: CompetitorsRouteWithChildren,
   ComposerRoute: ComposerRoute,
   InboxRoute: InboxRoute,
+  LeadsRoute: LeadsRouteWithChildren,
   MetaRoute: MetaRoute,
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
+  ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
+  ApiPublicLeadIngestQuoteRoute: ApiPublicLeadIngestQuoteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

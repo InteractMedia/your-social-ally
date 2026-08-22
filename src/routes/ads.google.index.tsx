@@ -38,6 +38,9 @@ import {
   selectGoogleAdsAccount,
   syncGoogleAdsAccounts,
 } from "@/lib/google-ads.functions";
+import { cac, cpl, cpql, roas } from "@/lib/leads-shared";
+import { getCampaignLeadStats } from "@/lib/leads.functions";
+
 
 export const Route = createFileRoute("/ads/google/")({
   head: () => ({
@@ -95,6 +98,12 @@ function GoogleAdsIndex() {
     queryFn: () => campaignsFn({ data: { start: period.start, end: period.end } }),
     enabled: Boolean(customerId),
   });
+  const leadStatsFn = useServerFn(getCampaignLeadStats);
+  const leadStats = useQuery({
+    queryKey: ["leads", "campaign-stats", period.start, period.end],
+    queryFn: () => leadStatsFn({ data: { start: period.start, end: period.end } }),
+  });
+
 
   const sync = useMutation({
     mutationFn: () => syncFn({}),
@@ -377,7 +386,110 @@ function GoogleAdsIndex() {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">B2B-resultaten per campagne</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  Leads uit de Lead Manager gekoppeld aan Google Ads-campagnes (laatste
+                  niet-directe klik). CPL, CPQL en CAC gebruiken de kosten van dezelfde campagne en
+                  periode.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                {leadStats.isLoading ? (
+                  <div className="space-y-2 p-4">
+                    {[0, 1, 2].map((i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                ) : (leadStats.data?.campaigns ?? []).length === 0 ? (
+                  <p className="text-muted-foreground p-6 text-sm">
+                    Nog geen B2B leads met bekende campagne-attributie in deze periode. Zodra
+                    aanvragen met een campagne of gclid binnenkomen, verschijnen hier Qualified,
+                    Hot, klanten, CPQL, CAC en omzet.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Campagne</TableHead>
+                          <TableHead className="text-right">Kosten</TableHead>
+                          <TableHead className="text-right">Leads</TableHead>
+                          <TableHead className="text-right">Qualified</TableHead>
+                          <TableHead className="text-right">Hot</TableHead>
+                          <TableHead className="text-right">Klanten</TableHead>
+                          <TableHead className="text-right">CPL</TableHead>
+                          <TableHead className="text-right">CPQL</TableHead>
+                          <TableHead className="text-right">CAC</TableHead>
+                          <TableHead className="text-right">Omzet</TableHead>
+                          <TableHead className="text-right">ROAS</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(leadStats.data?.campaigns ?? []).map((s) => {
+                          const match = (campaigns.data?.campaigns ?? []).find(
+                            (c) =>
+                              (s.campaignId && c.id === s.campaignId) ||
+                              (s.campaignName && c.name === s.campaignName),
+                          );
+                          const spend = match?.metrics.spend ?? null;
+                          const money = (v: number | null) =>
+                            v === null ? "—" : formatMoney(v, currency);
+                          const r = spend !== null ? roas(s.revenue, spend) : null;
+                          return (
+                            <TableRow key={s.campaignId ?? s.campaignName ?? "onbekend"}>
+                              <TableCell className="max-w-[240px] font-medium">
+                                {match ? (
+                                  <Link
+                                    to="/ads/google/$campaignId"
+                                    params={{ campaignId: match.id }}
+                                    className="hover:underline"
+                                  >
+                                    {s.campaignName ?? match.name}
+                                  </Link>
+                                ) : (
+                                  (s.campaignName ?? s.campaignId ?? "Onbekend")
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {money(spend)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{s.leads}</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {s.qualified}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{s.hot}</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {s.customers}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {money(spend !== null ? cpl(spend, s.leads) : null)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {money(spend !== null ? cpql(spend, s.qualified) : null)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {money(spend !== null ? cac(spend, s.customers) : null)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {formatMoney(s.revenue, currency)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {r === null ? "—" : `${formatDec(r, 2)}×`}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </>
+
         )}
       </div>
     </AppShell>
