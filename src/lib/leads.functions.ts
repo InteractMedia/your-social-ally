@@ -10,6 +10,7 @@ import {
   periodBounds,
 } from "./leads-shared";
 import { conversionEventForStatus } from "./leads.server";
+import { requireUserWorkspace } from "./workspaces.server";
 import {
   attributionInput,
   createLeadInput,
@@ -387,6 +388,7 @@ export const createLead = createServerFn({ method: "POST" })
       .from("leads")
       .insert({
         ...rest,
+        workspace_id: workspaceId,
         user_id: context.userId,
         funnel_type: funnel,
         lead_type: LEAD_TYPE_BY_FUNNEL[funnel],

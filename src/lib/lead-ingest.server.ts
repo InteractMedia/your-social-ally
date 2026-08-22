@@ -92,7 +92,7 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
       landingPageId = page?.id ?? null;
     }
 
-    const row = normalizeLead(payload, { ...options, industryId, landingPageId });
+    const row = normalizeLead(payload, { ...options, workspaceId, industryId, landingPageId });
     const { data: inserted, error } = await supabaseAdmin
       .from("leads")
       .insert(row)
