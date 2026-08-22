@@ -71,9 +71,14 @@ function LeadDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const setQuality = useMutation({
-    mutationFn: (quality: string) => qualityFn({ data: { id, quality } }),
+    mutationFn: (vars: {
+      quality: string;
+      poorReasonKey?: string;
+      poorReasonNotes?: string;
+    }) => qualityFn({ data: { id, ...vars } }),
     onSuccess: () => {
       toast.success("Leadkwaliteit bijgewerkt");
+      setPoorOpen(false);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
