@@ -7,7 +7,9 @@ import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { CustomerValueDialog } from "@/components/leads/customer-value-dialog";
+import { LeadGoogleConversions } from "@/components/leads/lead-google-conversions";
 import { PoorReasonDialog } from "@/components/leads/poor-reason-dialog";
+
 import { Field, FunnelProgress, QualityBadge, StatusBadge } from "@/components/leads/lead-ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
