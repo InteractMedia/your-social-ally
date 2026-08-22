@@ -431,6 +431,11 @@ export type Database = {
           order_value: number | null
           phone: string | null
           platform: string | null
+          poor_marked_at: string | null
+          poor_reason: string | null
+          poor_reason_id: string | null
+          poor_reason_label: string | null
+          poor_reason_notes: string | null
           raw: Json | null
           received_at: string
           referrer: string | null
@@ -493,6 +498,11 @@ export type Database = {
           order_value?: number | null
           phone?: string | null
           platform?: string | null
+          poor_marked_at?: string | null
+          poor_reason?: string | null
+          poor_reason_id?: string | null
+          poor_reason_label?: string | null
+          poor_reason_notes?: string | null
           raw?: Json | null
           received_at?: string
           referrer?: string | null
@@ -555,6 +565,11 @@ export type Database = {
           order_value?: number | null
           phone?: string | null
           platform?: string | null
+          poor_marked_at?: string | null
+          poor_reason?: string | null
+          poor_reason_id?: string | null
+          poor_reason_label?: string | null
+          poor_reason_notes?: string | null
           raw?: Json | null
           received_at?: string
           referrer?: string | null
@@ -586,6 +601,13 @@ export type Database = {
             columns: ["landing_page_id"]
             isOneToOne: false
             referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_poor_reason_id_fkey"
+            columns: ["poor_reason_id"]
+            isOneToOne: false
+            referencedRelation: "poor_lead_reasons"
             referencedColumns: ["id"]
           },
         ]
@@ -635,6 +657,42 @@ export type Database = {
           scopes?: string[] | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      poor_lead_reasons: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          key: string
+          label: string
+          requires_notes: boolean
+          sort_order: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          requires_notes?: boolean
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          requires_notes?: boolean
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
