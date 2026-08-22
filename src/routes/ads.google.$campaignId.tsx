@@ -1,249 +1,331 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, Pause, Pencil, Play, Save, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { AdsEmpty, AdsError, AdsLoading } from "@/components/ads/ads-states";
+import { MetricCards } from "@/components/ads/metric-cards";
+import { PeriodPicker } from "@/components/ads/period-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { formatEUR, formatNum } from "@/lib/demo-ads";
-import { googleAdsStore, sumCampaignStats, useGoogleCampaign } from "@/lib/google-ads-store";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  formatDec,
+  formatInt,
+  formatMoney,
+  formatPct,
+  resolvePeriod,
+  type Period,
+} from "@/lib/ads-period";
+import { getGoogleAdsCampaignDetail } from "@/lib/google-ads.functions";
 
 export const Route = createFileRoute("/ads/google/$campaignId")({
-  head: ({ params }) => ({ meta: [{ title: `Campagne ${params.campaignId} — Google Ads` }] }),
+  head: () => ({
+    meta: [
+      { title: "Campagnedetails — Google Ads — SocialCockpit" },
+      {
+        name: "description",
+        content:
+          "Bekijk per campagne de advertentiegroepen, advertenties, zoekwoorden en zoektermen met echte kosten, klikken en conversies.",
+      },
+      { property: "og:title", content: "Campagnedetails — Google Ads" },
+      {
+        property: "og:description",
+        content: "Advertentiegroepen, zoekwoorden en zoektermen met live prestaties.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: CampaignDetail,
 });
 
+function MetricHeadCells() {
+  return (
+    <>
+      <TableHead className="text-right">Kosten</TableHead>
+      <TableHead className="text-right">Impr.</TableHead>
+      <TableHead className="text-right">Klikken</TableHead>
+      <TableHead className="text-right">CTR</TableHead>
+      <TableHead className="text-right">CPC</TableHead>
+      <TableHead className="text-right">Conv.</TableHead>
+    </>
+  );
+}
+
+function MetricCells({ m, currency }: { m: any; currency: string }) {
+  return (
+    <>
+      <TableCell className="text-right tabular-nums">{formatMoney(m.spend, currency)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatInt(m.impressions)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatInt(m.clicks)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatPct(m.ctr)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatMoney(m.avgCpc, currency)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatDec(m.conversions, 1)}</TableCell>
+    </>
+  );
+}
+
 function CampaignDetail() {
   const { campaignId } = Route.useParams();
-  const campaign = useGoogleCampaign(campaignId);
-  const [editingAd, setEditingAd] = useState<{ adGroupId: string; adId: string } | null>(null);
+  const [period, setPeriod] = useState<Period>(() => resolvePeriod("last_30_days"));
+  const queryClient = useQueryClient();
+  const detailFn = useServerFn(getGoogleAdsCampaignDetail);
 
-  if (!campaign) throw notFound();
+  const query = useQuery({
+    queryKey: ["google-ads", "campaign", campaignId, period.start, period.end],
+    queryFn: () => detailFn({ data: { campaignId, start: period.start, end: period.end } }),
+  });
 
-  const stats = sumCampaignStats(campaign);
+  const data = query.data;
+  const currency = "EUR";
+  const campaign = data?.campaign ?? null;
+  const isPmax = campaign?.rawType === "PERFORMANCE_MAX";
 
   return (
     <AppShell>
       <PageHeader
-        title={campaign.name}
-        subtitle={`${campaign.type} · ${campaign.objective} · ${campaign.bidStrategy}`}
+        title={campaign?.name ?? "Campagne"}
+        subtitle={
+          campaign
+            ? `${campaign.type} · ${campaign.status}${campaign.bidStrategy ? ` · ${campaign.bidStrategy}` : ""}`
+            : "Campagnedetails uit Google Ads"
+        }
         actions={
-          <>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/ads/google"><ArrowLeft className="mr-1 h-4 w-4" /> Alle campagnes</Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const next = campaign.status === "actief" ? "gepauzeerd" : "actief";
-                googleAdsStore.setStatus(campaign.id, next);
-                toast.success(next === "actief" ? "Campagne geactiveerd" : "Campagne gepauzeerd");
-              }}
-            >
-              {campaign.status === "actief" ? <><Pause className="mr-1.5 h-3.5 w-3.5" /> Pauzeer</> : <><Play className="mr-1.5 h-3.5 w-3.5" /> Activeer</>}
-            </Button>
-            <Button asChild size="sm">
-              <a href="https://ads.google.com" target="_blank" rel="noreferrer">
-                Open in Google Ads <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </a>
-            </Button>
-          </>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/ads/google">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Alle campagnes
+            </Link>
+          </Button>
         }
       />
 
-      <div className="mb-6 grid gap-3 md:grid-cols-4">
-        <Kpi label="Impressies" value={formatNum(stats.impressions)} />
-        <Kpi label="Clicks" value={formatNum(stats.clicks)} />
-        <Kpi label="CTR" value={`${stats.ctr.toFixed(2)}%`} />
-        <Kpi label="CPA" value={stats.cpa ? formatEUR(stats.cpa) : "—"} />
-      </div>
+      <div className="space-y-6">
+        <PeriodPicker period={period} onChange={setPeriod} />
 
-      <Card className="mb-6 p-4">
-        <h3 className="mb-3 text-sm font-semibold">Campagne-instellingen</h3>
-        <div className="grid gap-3 text-sm md:grid-cols-2 lg:grid-cols-4">
-          <Field label="Status" value={campaign.status} />
-          <Field label="Dagbudget" value={formatEUR(campaign.dailyBudget)} />
-          <Field label="Bod-strategie" value={campaign.bidStrategy + (campaign.targetCpa ? ` (€${campaign.targetCpa})` : "")} />
-          <Field label="Geo" value={campaign.geo.join(", ")} />
-          <Field label="Talen" value={campaign.languages.join(", ")} />
-          <Field label="Apparaten" value={(campaign.devices ?? ["desktop", "mobile", "tablet"]).join(", ")} />
-          <Field label="Schema" value={campaign.schedule === "business-hours" ? "Werkdagen 08:00–20:00" : "Altijd (24/7)"} />
-          <Field
-            label="Periode"
-            value={campaign.startDate ? `${campaign.startDate}${campaign.endDate ? ` → ${campaign.endDate}` : " → doorlopend"}` : new Date(campaign.startedAt).toISOString().slice(0, 10)}
+        {query.isLoading ? (
+          <AdsLoading label="Campagnegegevens ophalen…" />
+        ) : data?.error || !campaign ? (
+          <AdsError
+            message={data?.error ?? "Campagne niet gevonden."}
+            onRetry={() => queryClient.invalidateQueries({ queryKey: ["google-ads", "campaign"] })}
           />
-        </div>
-      </Card>
-
-      <h2 className="mb-3 text-sm font-semibold">Ad groups</h2>
-      <div className="space-y-4">
-        {campaign.adGroups.map((g) => (
-          <Card key={g.id} className="p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium text-foreground">{g.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {formatNum(g.impressions)} impr · {formatNum(g.clicks)} clicks · {formatNum(g.conversions)} conv · {formatEUR(g.spend)} spend
-                </div>
-              </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{campaign.type}</Badge>
+              <Badge variant="outline">{campaign.status}</Badge>
+              {campaign.dailyBudget > 0 ? (
+                <Badge variant="outline">Dagbudget {formatMoney(campaign.dailyBudget, currency)}</Badge>
+              ) : null}
             </div>
 
-            {g.keywords.length > 0 && (
-              <div className="mb-4">
-                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Keywords</div>
-                <div className="overflow-hidden rounded-md border border-border">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted/40 text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Keyword</th>
-                        <th className="px-3 py-2 text-left font-medium">Match</th>
-                        <th className="px-3 py-2 text-right font-medium">CPC</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {g.keywords.map((k) => (
-                        <tr key={`${k.text}-${k.match}`} className="border-t border-border">
-                          <td className="px-3 py-2">{k.text}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{matchSymbol(k.match)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">€{k.cpc.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            <MetricCards metrics={campaign.metrics} currency={currency} />
 
-            {g.negatives && g.negatives.length > 0 && (
-              <div className="mb-4">
-                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Negatieve keywords</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {g.negatives.map((n) => (
-                    <Badge key={`${n.text}-${n.match}`} variant="outline" className="text-xs">
-                      <span className="mr-1.5 text-[10px] text-muted-foreground">{matchSymbol(n.match)}</span>
-                      {n.text}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            {isPmax ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Assetgroepen</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {data.assetGroups.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      Geen assetgroepen met data in deze periode.
+                    </p>
+                  ) : (
+                    data.assetGroups.map((g) => (
+                      <div key={g.id} className="rounded-lg border p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-medium">{g.name}</p>
+                          <div className="text-muted-foreground flex gap-4 text-sm tabular-nums">
+                            <span>{formatMoney(g.metrics.spend, currency)}</span>
+                            <span>{formatInt(g.metrics.clicks)} klikken</span>
+                            <span>{formatDec(g.metrics.conversions, 1)} conv.</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {g.assets.slice(0, 20).map((a, i) => (
+                            <span
+                              key={i}
+                              className="bg-muted rounded-md px-2 py-1 text-xs"
+                              title={a.fieldType ?? undefined}
+                            >
+                              {a.text ?? a.assetType ?? a.fieldType}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Tabs defaultValue="adgroups">
+                <TabsList>
+                  <TabsTrigger value="adgroups">Advertentiegroepen ({data.adGroups.length})</TabsTrigger>
+                  <TabsTrigger value="ads">Advertenties ({data.ads.length})</TabsTrigger>
+                  <TabsTrigger value="keywords">Zoekwoorden ({data.keywords.length})</TabsTrigger>
+                  <TabsTrigger value="terms">Zoektermen ({data.searchTerms.length})</TabsTrigger>
+                </TabsList>
 
-            <div className="space-y-3">
-              {g.ads.map((ad) => {
-                const isEditing = editingAd?.adGroupId === g.id && editingAd.adId === ad.id;
-                return (
-                  <div key={ad.id} className="rounded-lg border border-border bg-background/40 p-3">
-                    {isEditing ? (
-                      <AdEditor
-                        initialHeadlines={ad.headlines}
-                        initialDescriptions={ad.descriptions}
-                        onCancel={() => setEditingAd(null)}
-                        onSave={(h, d) => {
-                          googleAdsStore.updateAdText(campaign.id, g.id, ad.id, h, d);
-                          toast.success("Ad-tekst opgeslagen");
-                          setEditingAd(null);
-                        }}
-                      />
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-3">
-                          <SerpPreview headlines={ad.headlines} descriptions={ad.descriptions} url={ad.finalUrl} />
-                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingAd({ adGroupId: g.id, adId: ad.id })}>
-                            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Bewerk
-                          </Button>
-                        </div>
-                        <div className="mt-3 grid gap-2 border-t border-border pt-3 text-xs text-muted-foreground md:grid-cols-2">
-                          <div><strong className="text-foreground">{ad.headlines.length}</strong>/15 headlines</div>
-                          <div><strong className="text-foreground">{ad.descriptions.length}</strong>/4 descriptions</div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        ))}
+                <TabsContent value="adgroups" className="mt-4">
+                  {data.adGroups.length === 0 ? (
+                    <AdsEmpty
+                      title="Geen advertentiegroepen met data"
+                      description="In deze periode had geen advertentiegroep vertoningen."
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="overflow-x-auto p-0">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Advertentiegroep</TableHead>
+                              <TableHead>Status</TableHead>
+                              <MetricHeadCells />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.adGroups.map((g) => (
+                              <TableRow key={g.id}>
+                                <TableCell className="font-medium">{g.name}</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">{g.status}</TableCell>
+                                <MetricCells m={g.metrics} currency={currency} />
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="ads" className="mt-4 space-y-3">
+                  {data.ads.length === 0 ? (
+                    <AdsEmpty
+                      title="Geen advertenties met data"
+                      description="In deze periode zijn er geen advertentiestatistieken."
+                    />
+                  ) : (
+                    data.ads.map((ad) => (
+                      <Card key={ad.id}>
+                        <CardContent className="space-y-3 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="font-medium">{ad.adGroup ?? "Advertentie"}</p>
+                              <p className="text-muted-foreground text-xs">
+                                {ad.type} · {ad.status}
+                              </p>
+                            </div>
+                            <div className="text-muted-foreground flex gap-4 text-sm tabular-nums">
+                              <span>{formatMoney(ad.metrics.spend, currency)}</span>
+                              <span>{formatInt(ad.metrics.clicks)} klikken</span>
+                              <span>{formatPct(ad.metrics.ctr)}</span>
+                            </div>
+                          </div>
+                          {ad.headlines.length > 0 ? (
+                            <div className="space-y-1">
+                              <p className="text-muted-foreground text-xs uppercase tracking-wide">Koppen</p>
+                              <p className="text-sm">{ad.headlines.join(" · ")}</p>
+                            </div>
+                          ) : null}
+                          {ad.descriptions.length > 0 ? (
+                            <div className="space-y-1">
+                              <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                                Beschrijvingen
+                              </p>
+                              <p className="text-sm">{ad.descriptions.join(" · ")}</p>
+                            </div>
+                          ) : null}
+                          {ad.finalUrls.length > 0 ? (
+                            <p className="text-muted-foreground truncate text-xs">{ad.finalUrls[0]}</p>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="keywords" className="mt-4">
+                  {data.keywords.length === 0 ? (
+                    <AdsEmpty
+                      title="Geen zoekwoorden met data"
+                      description="Deze campagne gebruikt geen zoekwoorden of had geen vertoningen in deze periode."
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="overflow-x-auto p-0">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Zoekwoord</TableHead>
+                              <TableHead>Match</TableHead>
+                              <TableHead>Groep</TableHead>
+                              <MetricHeadCells />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.keywords.map((k, i) => (
+                              <TableRow key={`${k.text}-${i}`}>
+                                <TableCell className="font-medium">{k.text}</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                  {k.matchType ?? "—"}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                  {k.adGroup ?? "—"}
+                                </TableCell>
+                                <MetricCells m={k.metrics} currency={currency} />
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="terms" className="mt-4">
+                  {data.searchTerms.length === 0 ? (
+                    <AdsEmpty
+                      title="Geen zoektermen"
+                      description="Er zijn in deze periode geen zoektermen gerapporteerd voor deze campagne."
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="overflow-x-auto p-0">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Zoekterm</TableHead>
+                              <TableHead>Groep</TableHead>
+                              <MetricHeadCells />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.searchTerms.map((t, i) => (
+                              <TableRow key={`${t.text}-${i}`}>
+                                <TableCell className="font-medium">{t.text}</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                  {t.adGroup ?? "—"}
+                                </TableCell>
+                                <MetricCells m={t.metrics} currency={currency} />
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
+          </>
+        )}
       </div>
     </AppShell>
-  );
-}
-
-function matchSymbol(m: "broad" | "phrase" | "exact") {
-  return m === "exact" ? "[exact]" : m === "phrase" ? '"phrase"' : "broad";
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-medium text-foreground">{value}</div>
-    </div>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
-    </Card>
-  );
-}
-
-function SerpPreview({ headlines, descriptions, url }: { headlines: string[]; descriptions: string[]; url: string }) {
-  const title = headlines.slice(0, 3).filter(Boolean).join(" | ");
-  const desc = descriptions.slice(0, 2).filter(Boolean).join(" ");
-  return (
-    <div className="min-w-0 flex-1 rounded-md border border-border bg-card p-3">
-      <div className="text-[11px] text-muted-foreground">
-        <span className="mr-2 rounded-sm border border-border px-1 py-px text-[9px] font-bold text-foreground">Ad</span>
-        {url}
-      </div>
-      <div className="mt-1 truncate text-base font-medium text-primary">{title || "—"}</div>
-      <div className="mt-1 line-clamp-2 text-xs text-foreground">{desc || "—"}</div>
-    </div>
-  );
-}
-
-function AdEditor({
-  initialHeadlines, initialDescriptions, onSave, onCancel,
-}: {
-  initialHeadlines: string[];
-  initialDescriptions: string[];
-  onSave: (h: string[], d: string[]) => void;
-  onCancel: () => void;
-}) {
-  const [headlines, setHeadlines] = useState(initialHeadlines.join("\n"));
-  const [descriptions, setDescriptions] = useState(initialDescriptions.join("\n"));
-  return (
-    <div className="space-y-3">
-      <div>
-        <Label>Headlines (1 per regel, max 30 tekens, max 15 stuks)</Label>
-        <Textarea rows={6} value={headlines} onChange={(e) => setHeadlines(e.target.value)} />
-      </div>
-      <div>
-        <Label>Descriptions (1 per regel, max 90 tekens, max 4 stuks)</Label>
-        <Textarea rows={4} value={descriptions} onChange={(e) => setDescriptions(e.target.value)} />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={onCancel}><X className="mr-1 h-3.5 w-3.5" />Annuleer</Button>
-        <Button
-          size="sm"
-          onClick={() => {
-            const h = headlines.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 15);
-            const d = descriptions.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 4);
-            if (!h.length || !d.length) return toast.error("Minimaal 1 headline en 1 description");
-            onSave(h, d);
-          }}
-        ><Save className="mr-1 h-3.5 w-3.5" />Opslaan</Button>
-      </div>
-    </div>
   );
 }
