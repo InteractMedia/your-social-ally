@@ -88,6 +88,8 @@ export function normalizeLead(
     funnelType: string;
     status: string;
     ingestSource: string;
+    /** Tenant that owns this lead — required, leads can never be ownerless. */
+    workspaceId: string;
     industryId?: string | null;
     landingPageId?: string | null;
     userId?: string | null;
@@ -99,6 +101,7 @@ export function normalizeLead(
     if (value) clickIds[key] = value;
   }
   return {
+    workspace_id: opts.workspaceId,
     user_id: opts.userId ?? null,
     lead_type: opts.leadType,
     funnel_type: opts.funnelType,
