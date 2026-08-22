@@ -272,6 +272,11 @@ function LeadsPage() {
                         </td>
                         <td className="px-3 py-2">
                           <QualityBadge quality={l.lead_quality} />
+                          {l.lead_quality === "poor" && (l as any).poor_reason_label ? (
+                            <p className="text-muted-foreground mt-1 text-xs">
+                              {(l as any).poor_reason_label}
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 tabular-nums">
                           {l.revenue != null
