@@ -7,7 +7,9 @@ import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { CustomerValueDialog } from "@/components/leads/customer-value-dialog";
+import { LeadGoogleConversions } from "@/components/leads/lead-google-conversions";
 import { PoorReasonDialog } from "@/components/leads/poor-reason-dialog";
+
 import { Field, FunnelProgress, QualityBadge, StatusBadge } from "@/components/leads/lead-ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -322,30 +324,8 @@ function LeadDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Conversie-events (offline upload)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {conversions.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  Nog geen conversie-events. Deze worden automatisch vastgelegd bij Qualified, Hot,
-                  Offerte uitgebracht en Klant geworden — klaar om later naar Google Ads te uploaden.
-                </p>
-              ) : (
-                conversions.map((c: any) => (
-                  <div key={c.id} className="border-b pb-2 text-sm last:border-0 last:pb-0">
-                    <p className="font-medium">{c.conversion_event}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {formatDateTime(c.conversion_timestamp)}
-                      {c.value != null ? ` · ${formatMoney(Number(c.value))}` : ""} ·{" "}
-                      {c.uploaded_to_google ? "geüpload naar Google Ads" : "wacht op upload"}
-                    </p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+          <LeadGoogleConversions leadId={id} />
+
         </div>
       </div>
 

@@ -212,6 +212,153 @@ export type Database = {
         }
         Relationships: []
       }
+      google_conversion_mappings: {
+        Row: {
+          created_at: string
+          currency: string
+          enabled: boolean
+          fixed_value: number | null
+          google_conversion_action_id: string | null
+          google_conversion_action_name: string | null
+          id: string
+          internal_event_name: string
+          primary_signal: boolean
+          updated_at: string
+          upload_value: boolean
+          value_source: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          enabled?: boolean
+          fixed_value?: number | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          id?: string
+          internal_event_name: string
+          primary_signal?: boolean
+          updated_at?: string
+          upload_value?: boolean
+          value_source?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          enabled?: boolean
+          fixed_value?: number | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          id?: string
+          internal_event_name?: string
+          primary_signal?: boolean
+          updated_at?: string
+          upload_value?: boolean
+          value_source?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_conversion_mappings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_conversion_upload_log: {
+        Row: {
+          api_response: Json | null
+          approved_by: string | null
+          approved_by_email: string | null
+          click_identifier_type: string | null
+          conversion_event_id: string | null
+          conversion_time: string | null
+          created_at: string
+          currency: string | null
+          customer_id: string | null
+          error_code: string | null
+          error_message: string | null
+          google_conversion_action_id: string | null
+          google_conversion_action_name: string | null
+          id: string
+          internal_event_name: string
+          lead_id: string | null
+          mode: string
+          result: string
+          value: number | null
+          workspace_id: string
+        }
+        Insert: {
+          api_response?: Json | null
+          approved_by?: string | null
+          approved_by_email?: string | null
+          click_identifier_type?: string | null
+          conversion_event_id?: string | null
+          conversion_time?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          id?: string
+          internal_event_name: string
+          lead_id?: string | null
+          mode?: string
+          result: string
+          value?: number | null
+          workspace_id: string
+        }
+        Update: {
+          api_response?: Json | null
+          approved_by?: string | null
+          approved_by_email?: string | null
+          click_identifier_type?: string | null
+          conversion_event_id?: string | null
+          conversion_time?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          id?: string
+          internal_event_name?: string
+          lead_id?: string | null
+          mode?: string
+          result?: string
+          value?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_conversion_upload_log_conversion_event_id_fkey"
+            columns: ["conversion_event_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_conversion_upload_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_conversion_upload_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industries: {
         Row: {
           active: boolean
@@ -335,44 +482,80 @@ export type Database = {
       }
       lead_conversion_events: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          click_identifier_type: string | null
           conversion_event: string
           conversion_timestamp: string
           created_at: string
           currency: string | null
+          google_conversion_action_id: string | null
+          google_conversion_action_name: string | null
+          google_conversion_currency: string | null
+          google_conversion_value: number | null
+          google_next_retry_at: string | null
+          google_request_reference: string | null
+          google_upload_attempts: number
           google_upload_error: string | null
+          google_upload_reason: string | null
           google_upload_status: string | null
           google_upload_timestamp: string | null
           id: string
           lead_id: string
           platform: string
+          updated_at: string
           uploaded_to_google: boolean
           value: number | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          click_identifier_type?: string | null
           conversion_event: string
           conversion_timestamp?: string
           created_at?: string
           currency?: string | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          google_conversion_currency?: string | null
+          google_conversion_value?: number | null
+          google_next_retry_at?: string | null
+          google_request_reference?: string | null
+          google_upload_attempts?: number
           google_upload_error?: string | null
+          google_upload_reason?: string | null
           google_upload_status?: string | null
           google_upload_timestamp?: string | null
           id?: string
           lead_id: string
           platform?: string
+          updated_at?: string
           uploaded_to_google?: boolean
           value?: number | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          click_identifier_type?: string | null
           conversion_event?: string
           conversion_timestamp?: string
           created_at?: string
           currency?: string | null
+          google_conversion_action_id?: string | null
+          google_conversion_action_name?: string | null
+          google_conversion_currency?: string | null
+          google_conversion_value?: number | null
+          google_next_retry_at?: string | null
+          google_request_reference?: string | null
+          google_upload_attempts?: number
           google_upload_error?: string | null
+          google_upload_reason?: string | null
           google_upload_status?: string | null
           google_upload_timestamp?: string | null
           id?: string
           lead_id?: string
           platform?: string
+          updated_at?: string
           uploaded_to_google?: boolean
           value?: number | null
         }
@@ -470,6 +653,7 @@ export type Database = {
           industry_id: string | null
           industry_name: string | null
           ingest_source: string | null
+          is_test: boolean
           keyword: string | null
           kvk_number: string | null
           landing_page: string | null
@@ -541,6 +725,7 @@ export type Database = {
           industry_id?: string | null
           industry_name?: string | null
           ingest_source?: string | null
+          is_test?: boolean
           keyword?: string | null
           kvk_number?: string | null
           landing_page?: string | null
@@ -612,6 +797,7 @@ export type Database = {
           industry_id?: string | null
           industry_name?: string | null
           ingest_source?: string | null
+          is_test?: boolean
           keyword?: string | null
           kvk_number?: string | null
           landing_page?: string | null
@@ -855,6 +1041,8 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          offline_conversion_currency: string
+          offline_conversion_mode: string
           slug: string
           updated_at: string
         }
@@ -864,6 +1052,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          offline_conversion_currency?: string
+          offline_conversion_mode?: string
           slug: string
           updated_at?: string
         }
@@ -873,6 +1063,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          offline_conversion_currency?: string
+          offline_conversion_mode?: string
           slug?: string
           updated_at?: string
         }

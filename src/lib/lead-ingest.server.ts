@@ -157,11 +157,20 @@ export async function handleLeadIngest(request: Request, options: IngestOptions)
 
     const conversionEvent = conversionEventForStatus(options.status);
     if (conversionEvent) {
-      await supabaseAdmin.from("lead_conversion_events").insert({
-        lead_id: inserted.id,
-        conversion_event: conversionEvent,
-        value: payload.expected_value ?? null,
-      });
+      const { data: created } = await supabaseAdmin
+        .from("lead_conversion_events")
+        .insert({
+          lead_id: inserted.id,
+          conversion_event: conversionEvent,
+          value: payload.expected_value ?? null,
+          google_upload_status: "pending",
+        })
+        .select("id")
+        .maybeSingle();
+      if (created?.id) {
+        const { autoUploadIfEnabled } = await import("./google-offline-conversions.server");
+        await autoUploadIfEnabled(workspaceId, created.id);
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, id: inserted.id, deduplicated: false }), {

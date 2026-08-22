@@ -84,6 +84,47 @@ export async function gaql<T = Record<string, any>>(
   return json.results ?? [];
 }
 
+/**
+ * Raw mutate/POST call against the Google Ads REST API (used for offline
+ * conversion uploads). Returns the parsed body plus the HTTP status so callers
+ * can distinguish retryable from permanent failures.
+ */
+export async function adsPost<T = any>(
+  path: string,
+  body: unknown,
+  opts?: { loginCustomerId?: string | null },
+): Promise<{ ok: boolean; status: number; json: T | null; raw: string }> {
+  const h: Record<string, string> = headers();
+  if (opts?.loginCustomerId) h["login-customer-id"] = opts.loginCustomerId.replace(/[^0-9]/g, "");
+
+  let res: Response;
+  try {
+    res = await fetch(`${GATEWAY}/${API_VERSION}/${path.replace(/^\//, "")}`, {
+      method: "POST",
+      headers: h,
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    console.error("[GoogleAds] post network error", { path, err });
+    throw new GoogleAdsApiError(`Google Ads niet bereikbaar: ${(err as Error).message}`, 503);
+  }
+  const raw = await res.text();
+  let json: T | null = null;
+  try {
+    json = raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    json = null;
+  }
+  if (!res.ok) {
+    console.error("[GoogleAds] post failed", { path, status: res.status, body: raw.slice(0, 800) });
+  }
+  return { ok: res.ok, status: res.status, json, raw };
+}
+
+export function apiMessage(body: string, status: number) {
+  return extractApiMessage(body, status);
+}
+
 function extractApiMessage(body: string, status: number): string {
   try {
     const parsed = JSON.parse(body);
