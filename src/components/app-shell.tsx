@@ -13,6 +13,11 @@ import {
   Moon,
   Sun,
   LogOut,
+  ChevronDown,
+  BarChart3,
+  Target,
+  PlusCircle,
+  GitCompare,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -62,18 +67,30 @@ function ThemeToggle() {
   );
 }
 
+type NavItem = { to: string; label: string; icon: typeof Megaphone };
+type NavSection = NavItem & { children?: NavItem[] };
 
-const nav = [
+const nav: NavSection[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/composer", label: "Post Composer", icon: PenSquare },
   { to: "/schedule", label: "Beste posttijd", icon: Clock },
   { to: "/calendar", label: "Kalender", icon: CalendarDays },
   { to: "/trends", label: "Trends", icon: TrendingUp },
   { to: "/competitors", label: "Concurrentie", icon: Users },
-  { to: "/ads", label: "Ads", icon: Megaphone },
+  {
+    to: "/ads",
+    label: "Ads",
+    icon: Megaphone,
+    children: [
+      { to: "/ads/google", label: "Google Ads", icon: BarChart3 },
+      { to: "/ads/google/new", label: "Nieuwe campagne", icon: PlusCircle },
+      { to: "/ads/google/conversions", label: "Conversies", icon: Target },
+      { to: "/ads/compare", label: "Vergelijk concurrent", icon: GitCompare },
+    ],
+  },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
-] as const;
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
