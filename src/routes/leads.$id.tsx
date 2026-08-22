@@ -350,6 +350,12 @@ function LeadDetailPage() {
       </div>
 
       <CustomerValueDialog leadId={id} open={valueOpen} onOpenChange={setValueOpen} />
+      <PoorReasonDialog
+        open={poorOpen}
+        onOpenChange={setPoorOpen}
+        pending={setQuality.isPending}
+        onConfirm={(payload) => setQuality.mutate({ quality: "poor", ...payload })}
+      />
     </AppShell>
   );
 }
