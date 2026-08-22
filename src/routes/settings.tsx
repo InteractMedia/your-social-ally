@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, accounts, platformLabel } from "@/lib/demo-data";
+import { getGoogleAdsConnection } from "@/lib/google-ads.functions";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
 import { checkMetaScopes, debugMetaToken, getMetaStatus, REQUIRED_META_SCOPES } from "@/lib/meta.functions";
 
