@@ -141,7 +141,10 @@ function NavEntry({ item, pathname }: { item: NavSection; pathname: string }) {
               const childActive =
                 child.to === "/ads/google"
                   ? pathname === "/ads/google" || /^\/ads\/google\/[^/]+$/.test(pathname)
-                  : pathname.startsWith(child.to);
+                  : child.to === "/leads"
+                    ? pathname === "/leads" || /^\/leads\/[^/]+$/.test(pathname)
+                    : pathname.startsWith(child.to);
+
               return (
                 <Link
                   key={child.to}
