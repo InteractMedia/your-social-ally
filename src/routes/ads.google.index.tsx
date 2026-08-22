@@ -38,6 +38,9 @@ import {
   selectGoogleAdsAccount,
   syncGoogleAdsAccounts,
 } from "@/lib/google-ads.functions";
+import { cac, cpl, cpql, roas } from "@/lib/leads-shared";
+import { getCampaignLeadStats } from "@/lib/leads.functions";
+
 
 export const Route = createFileRoute("/ads/google/")({
   head: () => ({
