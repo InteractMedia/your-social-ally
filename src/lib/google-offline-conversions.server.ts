@@ -453,7 +453,7 @@ export async function uploadConversionEvent(args: {
     return { eventId, status: "not_eligible", reason: "dry_run" };
   }
 
-  let res: Awaited<ReturnType<typeof adsPost>>;
+  let res: { ok: boolean; status: number; json: any; raw: string };
   try {
     res = await adsPost(`customers/${cid}:uploadClickConversions`, {
       conversions: [conversion],
