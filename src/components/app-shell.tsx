@@ -111,12 +111,73 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
-          {nav.map(({ to, label, icon: Icon }) => {
-            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          {nav.map((item) => {
+            const hasChildren = !!item.children;
+            const isRootActive = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+            const [expanded, setExpanded] = useState(false);
+            // auto-expand when on a child route
+            useEffect(() => {
+              if (hasChildren && isRootActive) setExpanded(true);
+            }, [isRootActive, hasChildren]);
+
+            if (hasChildren) {
+              return (
+                <div key={item.to}>
+                  <button
+                    onClick={() => setExpanded((v) => !v)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      isRootActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    )}
+                  >
+                    <item.icon
+                      className={cn("h-4 w-4", isRootActive && "text-primary")}
+                      strokeWidth={isRootActive ? 2.4 : 1.8}
+                    />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")}
+                    />
+                  </button>
+                  {expanded && (
+                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3">
+                      {item.children!.map((child) => {
+                        const childActive =
+                          child.to === "/ads/google"
+                            ? pathname === "/ads/google" || /^\/ads\/google\/[^/]+$/.test(pathname)
+                            : pathname.startsWith(child.to);
+                        return (
+                          <Link
+                            key={child.to}
+                            to={child.to}
+                            className={cn(
+                              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
+                              childActive
+                                ? "bg-sidebar-accent/80 font-medium text-sidebar-accent-foreground"
+                                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                            )}
+                          >
+                            <child.icon
+                              className={cn("h-3.5 w-3.5", childActive && "text-primary")}
+                              strokeWidth={childActive ? 2.2 : 1.6}
+                            />
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const active = isRootActive;
             return (
               <Link
-                key={to}
-                to={to}
+                key={item.to}
+                to={item.to}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   active
@@ -124,11 +185,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                     : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                 )}
               >
-                <Icon
+                <item.icon
                   className={cn("h-4 w-4", active && "text-primary")}
                   strokeWidth={active ? 2.4 : 1.8}
                 />
-                {label}
+                {item.label}
               </Link>
             );
           })}
