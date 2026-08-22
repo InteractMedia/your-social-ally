@@ -71,6 +71,8 @@ export const statusUpdateSchema = z
     notes: z.string().max(5000).optional(),
     /** Admin correction: allows a backwards status move. */
     allow_status_correction: z.boolean().optional(),
+    /** Test event from the external app: never uploaded to Google Ads. */
+    is_test: z.boolean().optional(),
   })
   .refine((v) => v.lead_id || (v.external_source && v.external_id), {
     message: "lead_id or external_source + external_id is required",
@@ -237,6 +239,7 @@ export async function handleLeadStatusUpdate(request: Request, ingestSource: str
       status: p.status,
     };
     if (p.notes) update["notes"] = p.notes;
+    if (p.is_test === true) update["is_test"] = true;
     if (CUSTOMER_STATUSES.includes(p.status)) update["became_customer"] = true;
 
     // Customer value: only booked once per external order id.
@@ -288,12 +291,21 @@ export async function handleLeadStatusUpdate(request: Request, ingestSource: str
         .limit(1)
         .maybeSingle();
       if (!existing) {
-        await supabaseAdmin.from("lead_conversion_events").insert({
-          lead_id: lead.id,
-          conversion_event: conversionEvent,
-          conversion_timestamp: occurredAt,
-          value: duplicateOrder ? null : (p.revenue ?? p.order_value ?? null),
-        });
+        const { data: created } = await supabaseAdmin
+          .from("lead_conversion_events")
+          .insert({
+            lead_id: lead.id,
+            conversion_event: conversionEvent,
+            conversion_timestamp: occurredAt,
+            value: duplicateOrder ? null : (p.revenue ?? p.order_value ?? null),
+            google_upload_status: "pending",
+          })
+          .select("id")
+          .maybeSingle();
+        if (created?.id) {
+          const { autoUploadIfEnabled } = await import("./google-offline-conversions.server");
+          await autoUploadIfEnabled(workspaceId, created.id);
+        }
       }
     }
 

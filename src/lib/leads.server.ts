@@ -67,6 +67,8 @@ export const ingestSchema = attributionSchema.extend({
   order_value: z.number().nonnegative().optional().nullable(),
   revenue: z.number().nonnegative().optional().nullable(),
   order_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  /** Test lead from the external app: never uploaded to Google Ads. */
+  is_test: z.boolean().optional().nullable(),
 });
 
 export type IngestPayload = z.infer<typeof ingestSchema>;
@@ -163,6 +165,7 @@ export function normalizeLead(
     ingest_source: opts.ingestSource,
     external_source: p.external_source || null,
     external_id: p.external_id || null,
+    is_test: p.is_test === true,
   };
 }
 
