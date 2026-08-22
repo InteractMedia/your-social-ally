@@ -48,6 +48,7 @@ function LeadDetailPage() {
 
   const [notes, setNotes] = useState("");
   const [valueOpen, setValueOpen] = useState(false);
+  const [poorOpen, setPoorOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["leads", "detail", id],
