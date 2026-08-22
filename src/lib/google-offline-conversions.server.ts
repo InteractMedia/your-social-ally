@@ -558,3 +558,43 @@ async function failEvent(
     } as never)
     .eq("id", eventId);
 }
+
+/* ------------------------------------------------- automatic mode (optional) */
+
+/**
+ * Called after a conversion event is created by an external integration.
+ * Uploads immediately only when the workspace is explicitly set to "automatic";
+ * otherwise the event simply waits in the manual approval queue.
+ */
+export async function autoUploadIfEnabled(workspaceId: string, eventId: string) {
+  try {
+    const db = await admin();
+    const { data: ws } = await db
+      .from("workspaces")
+      .select("offline_conversion_mode")
+      .eq("id", workspaceId)
+      .maybeSingle();
+    if ((ws as { offline_conversion_mode?: string } | null)?.offline_conversion_mode !== "automatic")
+      return;
+
+    const { data: owner } = await db
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .eq("role", "owner")
+      .limit(1)
+      .maybeSingle();
+    const userId = (owner as { user_id?: string } | null)?.user_id;
+    if (!userId) return;
+
+    await uploadConversionEvent({
+      ctx: { supabase: db, userId },
+      workspaceId,
+      eventId,
+      actor: { userId, email: "automatic" },
+      mode: "automatic",
+    });
+  } catch (err) {
+    console.error("[OfflineConv] automatic upload failed", (err as Error).message);
+  }
+}
