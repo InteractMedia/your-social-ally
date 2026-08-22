@@ -491,12 +491,6 @@ export const updateLeadQuality = createServerFn({ method: "POST" })
       patch.poor_reason_label = reason.label;
       patch.poor_reason_notes = notes;
       patch.poor_marked_at = new Date().toISOString();
-    } else {
-      patch.poor_reason_id = null;
-      patch.poor_reason = null;
-      patch.poor_reason_label = null;
-      patch.poor_reason_notes = null;
-      patch.poor_marked_at = null;
     }
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
