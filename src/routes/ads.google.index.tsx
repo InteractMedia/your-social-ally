@@ -98,6 +98,12 @@ function GoogleAdsIndex() {
     queryFn: () => campaignsFn({ data: { start: period.start, end: period.end } }),
     enabled: Boolean(customerId),
   });
+  const leadStatsFn = useServerFn(getCampaignLeadStats);
+  const leadStats = useQuery({
+    queryKey: ["leads", "campaign-stats", period.start, period.end],
+    queryFn: () => leadStatsFn({ data: { start: period.start, end: period.end } }),
+  });
+
 
   const sync = useMutation({
     mutationFn: () => syncFn({}),
