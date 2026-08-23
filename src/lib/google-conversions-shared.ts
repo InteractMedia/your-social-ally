@@ -114,17 +114,23 @@ export const VALUE_SOURCE_LABELS: Record<ValueSource, string> = {
 export const REASON_LABELS: Record<string, string> = {
   missing_click_identifier: "Geen Google Ads click-ID bij deze lead.",
   conversion_action_missing: "Geen Google Ads conversion action gekoppeld.",
+  conversion_action_unavailable:
+    "Conversion action bestaat niet meer of staat niet op actief in Google Ads.",
+  conversion_action_wrong_type:
+    "Conversion action is niet geschikt voor offline click-import (geen upload-type).",
   mapping_missing: "Nog geen mapping ingesteld voor dit event.",
   mapping_disabled: "Upload staat uit voor dit event.",
   test_event: "Testlead — wordt nooit naar Google Ads gestuurd.",
-  missing_value: "Dynamische waarde geselecteerd, maar er is geen omzet bekend.",
+  missing_value: "Geen geldige omzet (> 0) bekend — er wordt niets geüpload.",
   invalid_conversion_time: "Google accepteert het conversietijdstip niet.",
   api_auth_error: "Google Ads-koppeling vereist opnieuw autorisatie.",
   skipped_by_user: "Handmatig overgeslagen.",
   no_google_account: "Er is geen Google Ads-account gekoppeld.",
   api_error: "Google Ads gaf een fout terug bij het uploaden.",
   api_unavailable: "Google Ads was tijdelijk niet bereikbaar.",
+  dry_run: "Alleen gecontroleerd (geen upload).",
 };
+
 
 export function reasonLabel(reason?: string | null): string | null {
   if (!reason) return null;

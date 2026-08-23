@@ -269,3 +269,35 @@ export const getOfflineUploadLog = createServerFn({ method: "GET" })
     if (error) return { ok: false as const, entries: [], error: error.message };
     return { ok: true as const, entries: data ?? [], error: null as string | null };
   });
+
+/**
+ * Validate-only check against Google Ads with a synthetic conversion.
+ * validateOnly is always true here — this can never record a conversion.
+ */
+export const runOfflineValidateOnly = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        actionId: z.string().regex(/^[0-9]+$/),
+        withValue: z.boolean().default(false),
+        currency: z.string().length(3).default("EUR"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = context as any;
+    await workspaceOf(ctx);
+    const { validateOnlyCheck } = await import("./google-offline-conversions.server");
+    try {
+      const result = await validateOnlyCheck({
+        ctx,
+        actionId: data.actionId,
+        withValue: data.withValue,
+        currency: data.currency,
+      });
+      return { ok: true as const, result, error: null as string | null };
+    } catch (err) {
+      return { ok: false as const, result: null, error: (err as Error).message };
+    }
+  });
