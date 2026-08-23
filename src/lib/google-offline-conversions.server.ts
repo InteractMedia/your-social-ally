@@ -45,6 +45,12 @@ type EventRow = {
   google_conversion_value: number | null;
   google_conversion_currency: string | null;
   google_request_reference: string | null;
+  google_request_id: string | null;
+  google_transaction_id: string | null;
+  google_processing_status: string | null;
+  google_processing_checked_at: string | null;
+  google_upload_method: string | null;
+  google_diagnostics: unknown | null;
   click_identifier_type: string | null;
   approved_at: string | null;
 };
@@ -62,12 +68,16 @@ type LeadRow = {
   expected_value: number | null;
   campaign_name: string | null;
   platform: string | null;
+  external_source: string | null;
+  external_id: string | null;
+  external_order_id: string | null;
 };
 
 const LEAD_FIELDS =
-  "id,workspace_id,company_name,is_test,gclid,gbraid,wbraid,revenue,order_value,expected_value,campaign_name,platform";
+  "id,workspace_id,company_name,is_test,gclid,gbraid,wbraid,revenue,order_value,expected_value,campaign_name,platform,external_source,external_id,external_order_id";
 const EVENT_FIELDS =
-  "id,lead_id,conversion_event,conversion_timestamp,value,currency,google_upload_status,google_upload_attempts,google_upload_error,google_upload_reason,google_upload_timestamp,google_conversion_action_id,google_conversion_action_name,google_conversion_value,google_conversion_currency,google_request_reference,click_identifier_type,approved_at";
+  "id,lead_id,conversion_event,conversion_timestamp,value,currency,google_upload_status,google_upload_attempts,google_upload_error,google_upload_reason,google_upload_timestamp,google_conversion_action_id,google_conversion_action_name,google_conversion_value,google_conversion_currency,google_request_reference,google_request_id,google_transaction_id,google_processing_status,google_processing_checked_at,google_upload_method,google_diagnostics,click_identifier_type,approved_at";
+
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
