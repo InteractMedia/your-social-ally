@@ -29,6 +29,7 @@ import { Route as OfferteSlugRouteImport } from './routes/offerte.$slug'
 import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
+import { Route as LandingpagesProductenRouteImport } from './routes/landingpages.producten'
 import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
 import { Route as LandingAiIdRouteImport } from './routes/landing-ai.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
@@ -148,6 +149,11 @@ const LeadsIdRoute = LeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => LeadsRoute,
 } as any)
+const LandingpagesProductenRoute = LandingpagesProductenRouteImport.update({
+  id: '/landingpages/producten',
+  path: '/landingpages/producten',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LandingpagesIdRoute = LandingpagesIdRouteImport.update({
   id: '/landingpages/$id',
   path: '/landingpages/$id',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -493,6 +505,7 @@ export interface RootRouteChildren {
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
   LandingAiIdRoute: typeof LandingAiIdRoute
   LandingpagesIdRoute: typeof LandingpagesIdRoute
+  LandingpagesProductenRoute: typeof LandingpagesProductenRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
@@ -643,6 +656,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/leads/$id'
       preLoaderRoute: typeof LeadsIdRouteImport
       parentRoute: typeof LeadsRoute
+    }
+    '/landingpages/producten': {
+      id: '/landingpages/producten'
+      path: '/landingpages/producten'
+      fullPath: '/landingpages/producten'
+      preLoaderRoute: typeof LandingpagesProductenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/landingpages/$id': {
       id: '/landingpages/$id'
@@ -857,6 +877,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
   LandingAiIdRoute: LandingAiIdRoute,
   LandingpagesIdRoute: LandingpagesIdRoute,
+  LandingpagesProductenRoute: LandingpagesProductenRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
