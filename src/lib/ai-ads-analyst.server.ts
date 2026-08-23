@@ -97,6 +97,7 @@ const ResponseSchema = z.object({
 function applyGuardrails(
   advice: z.infer<typeof AdviceSchema>,
   budgetMaxPct: number,
+  facts: DecisionFacts,
 ): { row: Record<string, unknown>; note: string | null } {
   const type = (ADVICE_TYPES as readonly string[]).includes(advice.advice_type)
     ? (advice.advice_type as AdviceType)
@@ -118,7 +119,27 @@ function applyGuardrails(
   }
 
   const score = Math.round(advice.confidence_score);
-  const actionable = !INSIGHT_ONLY_TYPES.includes(type);
+  const decision = evaluateExecutionEligibility(
+    {
+      adviceType: type,
+      confidenceScore: score,
+      title: advice.title,
+      summary: advice.summary,
+      reasoning: advice.reasoning ?? null,
+      proposedAction: advice.proposed_action ?? null,
+      proposedPayload: payload,
+      evidence: advice.evidence ?? null,
+      dataMissing: advice.data_missing ?? null,
+    },
+    facts,
+  );
+
+  if (decision.executionEligibility === "BLOCKED") {
+    note = [note, `Uitvoering geblokkeerd: ${decision.reasonLabel}`].filter(Boolean).join(" ");
+  }
+
+  // Alleen wat door de deterministische guardrails komt, mag ooit uitvoerbaar zijn.
+  const actionable = !INSIGHT_ONLY_TYPES.includes(type) && decision.executionEligibility !== "BLOCKED";
 
   return {
     row: {
@@ -139,7 +160,16 @@ function applyGuardrails(
       data_available: advice.data_available ?? null,
       data_missing: advice.data_missing ?? null,
       actionable,
-      guardrail_notes: note,
+      guardrail_notes: note || null,
+      data_confidence_score: decision.dataConfidenceScore,
+      data_confidence_level: decision.dataConfidenceLevel,
+      execution_eligibility: decision.executionEligibility,
+      execution_block_reason: decision.reasonCode,
+      execution_block_reason_label: decision.reasonLabel,
+      execution_blockers: decision.blockers,
+      guardrail_version: decision.guardrailVersion,
+      decision_facts: facts,
+      guardrail_evaluated_at: new Date().toISOString(),
     },
     note,
   };
