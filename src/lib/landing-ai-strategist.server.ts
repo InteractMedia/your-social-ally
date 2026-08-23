@@ -1,0 +1,558 @@
+/**
+ * AI Landing Page Strategist & Designer (V1.6) — server engine.
+ *
+ * Hard boundaries:
+ *  - The model only produces configuration for the existing block/template
+ *    engine: block types, text fields, design tokens and form field states.
+ *  - No HTML, scripts or styling ever comes from the model.
+ *  - Nothing is published. Applying a proposal always creates a NEW draft page;
+ *    the existing page and its versions are never overwritten.
+ *  - Google Ads and offline conversions are never touched here.
+ */
+import { z } from "zod";
+
+import {
+  extractJsonObject,
+  resolveProvider,
+  runAiCompletionWithFallback,
+  type AiProvider,
+} from "./ai-provider.server";
+import { buildLandingAiDataset } from "./landing-ai-dataset.server";
+import {
+  aiProposalSchema,
+  computeDataConfidence,
+  LANDING_AI_DEFAULT_MODEL,
+  LANDING_AI_PROMPT_VERSION,
+  type AiProposalPayload,
+  type LandingAiMode,
+} from "./landing-ai-shared";
+import { BLOCK_TYPES, DEFAULT_FORM_FIELDS, type FormFieldConfig } from "./landing-shared";
+
+type Ctx = { supabase: any; userId: string; claims?: { email?: string } };
+
+/* ------------------------------------------------------------- prompts */
+
+const ROLE = `Je bent een senior B2B conversiestrateeg en landingspaginaontwerper voor ZoetBezorgen (zakelijke snoep- en chocoladegeschenken, Nederland).
+Je werkt data-gedreven en commercieel. Je schrijft Nederlandse B2B-copy: concreet, menselijk, zonder overdreven marketingtaal.
+
+Absolute regels:
+- Verzin NOOIT cijfers, klantnamen, reviews, prijzen, aantallen of garanties. Gebruik alleen feiten uit de dataset (brand, productLibrary, testimonials).
+- Ontbrekende data benoem je expliciet in missing_data. Nooit opvullen met aannames.
+- googleAds = platformdata van Google Ads. socialCockpit = onze eigen B2B lead-/klantdata. Nooit door elkaar halen of optellen.
+- Je hebt geen toegang tot Google Ads-wijzigingen, budgetten of conversieuploads. Adviseer daar niets over.
+- Je output is uitsluitend geldige JSON zonder toelichting eromheen.`;
+
+const RESEARCH_SYSTEM = `${ROLE}
+
+FASE 1 — STRATEGIE.
+Bepaal, op basis van de dataset, de commerciële strategie voor deze landingspagina.
+Denk als iemand die de bezoeker kent: wie is het, met welke aanleiding komt hij, wat moet hij binnen 5 seconden begrijpen, wat houdt hem tegen, en welk bewijs neemt de twijfel weg.
+Gebruik zoekintentiedata (keywords, zoektermen, PMax-categorieën) voor message match; classificeer intentie zelf als B2B of B2C waar relevant en zeg het als je het niet zeker weet.
+
+Antwoord met exact dit JSON-object:
+{
+  "audience": "wie is de bezoeker en in welke rol/koopfase",
+  "visit_intent": "waarom komt hij op deze pagina",
+  "pains": ["..."],
+  "core_proposition": "de belofte die bovenaan de pagina moet staan",
+  "key_proof": ["welk bewijs, alleen wat aantoonbaar bestaat"],
+  "primary_cta": "de gewenste actie",
+  "objections": ["bezwaren die de pagina moet wegnemen"],
+  "recommended_structure": ["blokvolgorde met korte reden per blok"],
+  "mobile_priorities": ["wat mobiel eerst zichtbaar moet zijn"],
+  "missing_data": ["welke data/content ontbreekt om dit sterker te maken"],
+  "confidence": 0-100
+}`;
+
+const BUILD_SYSTEM = `${ROLE}
+
+FASE 2 — PAGINA-ONTWERP.
+Bouw de landingspagina in onze block-engine op basis van de strategie uit fase 1.
+
+CRO-principes die je moet toepassen:
+- Boodschap boven de fold sluit aan op de zoekintentie (message match).
+- Eén duidelijke primaire actie; alle CTA's vragen hetzelfde.
+- Bewijs en risicoverlaging dicht bij elke CTA-zone.
+- Bezwaren wegnemen vóór het formulier.
+- Scanbaar: korte koppen, korte alinea's, opsommingen.
+- Zo weinig mogelijk formulierfrictie: alleen velden die de vervolgstap echt nodig heeft; de rest optioneel of hidden.
+- Mobiel-first: eerst propositie, dan bewijs, dan CTA.
+
+Ontwerpregels:
+- Gebruik alleen block_types uit engine.allowedBlockTypes. Mist er een blok dat je echt nodig hebt? Zet dat in new_block_type_requests en werk verder met bestaande blokken.
+- Per sectie mag je design-tokens kiezen uit engine.designSystem (layout, background, width, density, image_treatment, cta_style, emphasis). Varieer bewust zodat de pagina niet één grijze kolom wordt, maar blijf rustig en merkconform.
+- media_intent beschrijft welke foto/visual daar hoort (briefing voor ons, geen bestand).
+- cta_url alleen interne anchors zoals "#offerte" of "#producten".
+- Producten alleen kiezen uit productLibrary via product_id. Is de bibliotheek leeg, kies dan geen producten en zet dat in missing_data.
+- Formuliervelden: alleen keys uit engine.formFieldsAvailable, en per veld state required/optional/hidden. Bepaal ook de beste volgorde (de volgorde van de array is de weergaveorder). Verzin geen nieuwe velden.
+- Geen HTML, markdown-tabellen, scripts of CSS in tekstvelden.
+
+Antwoord met exact dit JSON-object (geen extra velden):
+{
+  "strategy": { ...exact het strategie-object uit fase 1... },
+  "page": {
+    "name": "voorstel paginanaam",
+    "seo_title": "max 60 tekens",
+    "seo_description": "max 155 tekens",
+    "sections": [
+      { "block_type": "hero", "enabled": true, "reason": "waarom dit blok hier",
+        "content": { "title": "...", "subtitle": "...", "body": "...", "cta_label": "...", "cta_url": "#offerte",
+                     "secondary_cta_label": "...", "secondary_cta_url": "#producten", "image_alt": "...",
+                     "items": [{ "title": "...", "text": "...", "badge": "..." }],
+                     "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
+                                 "image_treatment": "...", "cta_style": "...", "emphasis": "...",
+                                 "media_intent": "...", "mobile_note": "..." } } }
+    ]
+  },
+  "form": { "title": "...", "intro": "...", "submit_label": "...", "success_title": "...", "success_body": "...",
+            "fields": [{ "key": "company", "state": "required", "label": "...", "help": "...", "placeholder": "..." }],
+            "reason": "waarom deze veldopbouw" },
+  "products": [{ "product_id": "...", "reason": "..." }],
+  "rationale": [{ "topic": "...", "reason": "onderbouwing met verwijzing naar de data" }],
+  "visual_direction": { "overall": "...", "photography_needs": ["..."], "trust_placement": "...",
+                        "desktop_composition": "...", "mobile_composition": "...", "product_count": 0 },
+  "new_block_type_requests": [{ "name": "...", "purpose": "..." }],
+  "experiments": [{ "name": "...", "hypothesis": "...", "primary_metric": "...", "proposed_change": "...",
+                    "target_block": "hero", "expected_direction": "positief" }],
+  "ai_confidence": 0-100
+}`;
+
+const researchSchema = z.object({
+  audience: z.string(),
+  visit_intent: z.string(),
+  pains: z.array(z.string()).default([]),
+  core_proposition: z.string(),
+  key_proof: z.array(z.string()).default([]),
+  primary_cta: z.string(),
+  objections: z.array(z.string()).default([]),
+  recommended_structure: z.array(z.string()).default([]),
+  mobile_priorities: z.array(z.string()).default([]),
+  missing_data: z.array(z.string()).default([]),
+  confidence: z.number(),
+});
+
+/* ---------------------------------------------------------------- runner */
+
+export async function runLandingStrategist(args: {
+  ctx: Ctx;
+  workspaceId: string;
+  mode: LandingAiMode;
+  pageId?: string | null;
+  industryId?: string | null;
+  goal?: string | null;
+  brief?: string | null;
+  provider?: AiProvider;
+  model?: string;
+  periodDays?: number;
+}) {
+  const db = args.ctx.supabase;
+  const requestedProvider: AiProvider = args.provider ?? "anthropic";
+  const requestedModel = args.model ?? LANDING_AI_DEFAULT_MODEL;
+  const { provider, model, fallbackReason: preflightFallback } = resolveProvider(
+    requestedProvider,
+    requestedModel,
+  );
+
+  const built = await buildLandingAiDataset({
+    ctx: { supabase: db, userId: args.ctx.userId },
+    workspaceId: args.workspaceId,
+    mode: args.mode,
+    pageId: args.pageId ?? null,
+    industryId: args.industryId ?? null,
+    goal: args.goal ?? null,
+    brief: args.brief ?? null,
+    periodDays: args.periodDays,
+  });
+
+  const { data: run, error: runError } = await db
+    .from("landing_ai_runs")
+    .insert({
+      workspace_id: args.workspaceId,
+      user_id: args.ctx.userId,
+      landing_page_id: args.pageId ?? null,
+      industry_id: args.industryId ?? built.meta.industryName ? args.industryId ?? null : null,
+      mode: args.mode,
+      provider,
+      model,
+      prompt_version: LANDING_AI_PROMPT_VERSION,
+      goal: args.goal ?? null,
+      brief: args.brief ?? null,
+      status: "running",
+      dataset: built.dataset as never,
+      dataset_meta: built.meta as never,
+    })
+    .select("id")
+    .single();
+  if (runError) throw new Error(runError.message);
+
+  const datasetJson = JSON.stringify(built.dataset);
+  let totalIn = 0;
+  let totalOut = 0;
+  let totalCost = 0;
+  let totalMs = 0;
+  let fallbackReason = preflightFallback;
+
+  try {
+    /* fase 1 — strategie */
+    const phase1 = await runAiCompletionWithFallback({
+      provider,
+      model,
+      system: RESEARCH_SYSTEM,
+      user: `Modus: ${args.mode === "create" ? "nieuwe landingspagina" : "optimalisatie van bestaande pagina"}\nDoel: ${args.goal ?? "meer gekwalificeerde offerteaanvragen"}\nBriefing: ${args.brief ?? "(geen)"}\n\nDATASET:\n${datasetJson}`,
+      maxTokens: 4000,
+      temperature: 0.3,
+    });
+    totalIn += phase1.inputTokens ?? 0;
+    totalOut += phase1.outputTokens ?? 0;
+    totalCost += phase1.estimatedCostUsd ?? 0;
+    totalMs += phase1.runtimeMs;
+    fallbackReason = fallbackReason ?? phase1.fallbackReason;
+    const strategy = researchSchema.parse(extractJsonObject(phase1.text));
+
+    /* fase 2 — pagina-ontwerp */
+    const phase2 = await runAiCompletionWithFallback({
+      provider: phase1.provider,
+      model: phase1.model,
+      system: BUILD_SYSTEM,
+      user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nDATASET:\n${datasetJson}`,
+      maxTokens: 12000,
+      temperature: 0.4,
+    });
+    totalIn += phase2.inputTokens ?? 0;
+    totalOut += phase2.outputTokens ?? 0;
+    totalCost += phase2.estimatedCostUsd ?? 0;
+    totalMs += phase2.runtimeMs;
+    fallbackReason = fallbackReason ?? phase2.fallbackReason;
+
+    const parsed = aiProposalSchema.parse(dropNulls(extractJsonObject(phase2.text)));
+    const sanitized = sanitizeProposal(parsed, built.dataset, strategy);
+    const dataConfidence = computeDataConfidence(built.facts);
+
+    const title =
+      sanitized.page.name?.slice(0, 120) ||
+      `${args.mode === "create" ? "Nieuwe pagina" : "Optimalisatie"} — ${built.meta.industryName ?? "algemeen"}`;
+
+    const { data: proposal, error: proposalError } = await db
+      .from("landing_ai_proposals")
+      .insert({
+        workspace_id: args.workspaceId,
+        run_id: run.id,
+        landing_page_id: args.pageId ?? null,
+        industry_id: args.industryId ?? null,
+        mode: args.mode,
+        title,
+        status: "draft",
+        strategy: sanitized.strategy as never,
+        page_plan: sanitized.page as never,
+        form_plan: sanitized.form as never,
+        product_plan: sanitized.products as never,
+        rationale: sanitized.rationale as never,
+        visual_direction: sanitized.visual_direction as never,
+        missing_data: [
+          ...sanitized.strategy.missing_data,
+          ...dataConfidence.missing.map((m) => `Ontbrekend in dataset: ${m}`),
+        ] as never,
+        ai_confidence: Math.round(sanitized.ai_confidence),
+        data_confidence: dataConfidence.score,
+        data_confidence_reasons: dataConfidence.reasons as never,
+        performance_data_used: dataConfidence.used as never,
+      })
+      .select("id")
+      .single();
+    if (proposalError) throw new Error(proposalError.message);
+
+    if (sanitized.experiments.length) {
+      await db.from("landing_ai_experiments").insert(
+        sanitized.experiments.map((e) => ({
+          workspace_id: args.workspaceId,
+          proposal_id: proposal.id,
+          landing_page_id: args.pageId ?? null,
+          name: e.name,
+          hypothesis: e.hypothesis,
+          primary_metric: e.primary_metric,
+          proposed_change: { change: e.proposed_change } as never,
+          target_block: e.target_block ?? null,
+          expected_direction: e.expected_direction,
+          status: "proposed",
+        })),
+      );
+    }
+
+    await db
+      .from("landing_ai_runs")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        input_tokens: totalIn || null,
+        output_tokens: totalOut || null,
+        estimated_cost_usd: totalCost || null,
+        runtime_ms: totalMs,
+        provider: phase1.provider,
+        model: phase1.model,
+        fallback_reason: fallbackReason,
+      })
+      .eq("id", run.id);
+
+    return {
+      ok: true as const,
+      runId: run.id,
+      proposalId: proposal.id,
+      provider: phase1.provider,
+      model: phase1.model,
+      fallbackReason,
+      runtimeMs: totalMs,
+      inputTokens: totalIn,
+      outputTokens: totalOut,
+      estimatedCostUsd: Number(totalCost.toFixed(5)),
+      aiConfidence: Math.round(sanitized.ai_confidence),
+      dataConfidence,
+      sectionCount: sanitized.page.sections.length,
+      newBlockTypeRequests: sanitized.new_block_type_requests,
+      error: null as string | null,
+    };
+  } catch (err) {
+    const message = (err as Error).message.slice(0, 800);
+    await db
+      .from("landing_ai_runs")
+      .update({
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        error_message: message,
+        runtime_ms: totalMs,
+        input_tokens: totalIn || null,
+        output_tokens: totalOut || null,
+      })
+      .eq("id", run.id);
+    return { ok: false as const, runId: run.id, error: message };
+  }
+}
+
+/* ------------------------------------------------------------ sanitizing */
+
+/** Models happily emit null for "not applicable"; the schema treats that as absent. */
+function dropNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(dropNulls);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === null) continue;
+      out[k] = dropNulls(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+const stripMarkup = (v?: string) =>
+  v == null ? v : v.replace(/<[^>]*>/g, "").replace(/\{\{|\}\}/g, "").trim();
+
+/** Removes anything the engine may not render and drops invented references. */
+function sanitizeProposal(
+  parsed: AiProposalPayload,
+  dataset: any,
+  strategy: z.infer<typeof researchSchema>,
+): AiProposalPayload {
+  const allowedProducts = new Set<string>(
+    (dataset.productLibrary ?? []).map((p: any) => String(p.product_id)),
+  );
+  const allowedFieldKeys = new Set<string>(
+    (dataset.engine?.formFieldsAvailable ?? []).map((f: any) => String(f.key)),
+  );
+
+  const sections = parsed.page.sections
+    .filter((s) => (BLOCK_TYPES as readonly string[]).includes(s.block_type))
+    .map((s) => ({
+      ...s,
+      content: {
+        ...s.content,
+        title: stripMarkup(s.content.title),
+        subtitle: stripMarkup(s.content.subtitle),
+        body: stripMarkup(s.content.body),
+        cta_url: s.content.cta_url?.startsWith("#") ? s.content.cta_url : "#offerte",
+        secondary_cta_url: s.content.secondary_cta_url?.startsWith("#")
+          ? s.content.secondary_cta_url
+          : undefined,
+        items: (s.content.items ?? []).map((i) => ({
+          title: stripMarkup(i.title),
+          text: stripMarkup(i.text),
+          badge: stripMarkup(i.badge),
+        })),
+      },
+    }));
+
+  return {
+    ...parsed,
+    strategy: { ...parsed.strategy, ...strategy, confidence: Math.round(strategy.confidence) },
+    page: { ...parsed.page, sections },
+    form: {
+      ...parsed.form,
+      fields: parsed.form.fields.filter((f) => allowedFieldKeys.has(f.key)),
+    },
+    products: parsed.products.filter((p) => allowedProducts.has(p.product_id)),
+  };
+}
+
+/* -------------------------------------------------------------- applying */
+
+/**
+ * Turns a proposal into a NEW draft page (never overwriting the source) and
+ * writes the AI sections, form and product selection into that draft.
+ */
+export async function applyLandingProposal(args: {
+  ctx: Ctx;
+  workspaceId: string;
+  proposalId: string;
+  nameOverride?: string | null;
+  slugOverride?: string | null;
+}) {
+  const db = args.ctx.supabase;
+  const { data: proposal } = await db
+    .from("landing_ai_proposals")
+    .select("*")
+    .eq("id", args.proposalId)
+    .eq("workspace_id", args.workspaceId)
+    .maybeSingle();
+  if (!proposal) throw new Error("AI-voorstel niet gevonden");
+
+  const plan = proposal.page_plan as any;
+  const formPlan = proposal.form_plan as any;
+  const productPlan = (proposal.product_plan ?? []) as any[];
+
+  const { duplicatePage, createPageWithTemplate } = await import("./landing.server");
+
+  const baseName =
+    args.nameOverride ?? `${plan?.name ?? proposal.title} (AI-concept)`.slice(0, 120);
+  const stamp = new Date().toISOString().slice(5, 16).replace(/[-:T]/g, "");
+  let newPageId: string;
+
+  if (proposal.landing_page_id) {
+    const { data: source } = await db
+      .from("landing_pages")
+      .select("slug")
+      .eq("id", proposal.landing_page_id)
+      .maybeSingle();
+    newPageId = await duplicatePage({
+      workspaceId: args.workspaceId,
+      userId: args.ctx.userId,
+      sourceId: proposal.landing_page_id,
+      name: baseName,
+      slug: args.slugOverride ?? `${source?.slug ?? "pagina"}-ai-${stamp}`,
+    });
+  } else {
+    newPageId = await createPageWithTemplate({
+      workspaceId: args.workspaceId,
+      userId: args.ctx.userId,
+      name: baseName,
+      slug: args.slugOverride ?? `ai-concept-${stamp}`,
+      funnel: "quote",
+      industryId: proposal.industry_id ?? null,
+    });
+  }
+
+  const dbAdmin = db;
+
+  /* sections: replace the draft content with the AI plan */
+  await dbAdmin.from("landing_page_sections").delete().eq("landing_page_id", newPageId);
+  const sections = (plan?.sections ?? []) as any[];
+  if (sections.length) {
+    await dbAdmin.from("landing_page_sections").insert(
+      sections.map((s, index) => ({
+        workspace_id: args.workspaceId,
+        landing_page_id: newPageId,
+        block_type: s.block_type,
+        sort_order: index,
+        enabled: s.enabled !== false,
+        use_global: false,
+        global_key: null,
+        variant_key: "A",
+        content: s.content as never,
+      })),
+    );
+  }
+
+  /* form: keep keys/types from the current config, apply AI states + order */
+  const { data: currentForm } = await dbAdmin
+    .from("landing_page_forms")
+    .select("*")
+    .eq("landing_page_id", newPageId)
+    .maybeSingle();
+  const baseFields: FormFieldConfig[] =
+    (currentForm?.fields as FormFieldConfig[] | undefined) ?? DEFAULT_FORM_FIELDS;
+  const planned = (formPlan?.fields ?? []) as any[];
+  const orderedKeys = planned.map((f) => f.key);
+  const nextFields: FormFieldConfig[] = [
+    ...orderedKeys
+      .map((key) => baseFields.find((f) => f.key === key))
+      .filter(Boolean)
+      .map((f) => {
+        const p = planned.find((x) => x.key === f!.key);
+        return {
+          ...f!,
+          state: (["required", "optional", "hidden"].includes(p?.state) ? p.state : f!.state) as
+            | "required"
+            | "optional"
+            | "hidden",
+          label: p?.label ? String(p.label).slice(0, 160) : f!.label,
+          help: p?.help ? String(p.help).slice(0, 300) : f!.help,
+          placeholder: p?.placeholder ? String(p.placeholder).slice(0, 200) : f!.placeholder,
+        };
+      }),
+    ...baseFields.filter((f) => !orderedKeys.includes(f.key)),
+  ];
+
+  await dbAdmin
+    .from("landing_page_forms")
+    .update({
+      title: formPlan?.title ?? currentForm?.title,
+      intro: formPlan?.intro ?? currentForm?.intro,
+      submit_label: formPlan?.submit_label ?? currentForm?.submit_label,
+      success_title: formPlan?.success_title ?? currentForm?.success_title,
+      success_body: formPlan?.success_body ?? currentForm?.success_body,
+      fields: nextFields as never,
+    })
+    .eq("landing_page_id", newPageId);
+
+  /* products */
+  if (productPlan.length) {
+    await dbAdmin.from("landing_page_products").delete().eq("landing_page_id", newPageId);
+    await dbAdmin.from("landing_page_products").insert(
+      productPlan.map((p, index) => ({
+        workspace_id: args.workspaceId,
+        landing_page_id: newPageId,
+        product_id: p.product_id,
+        sort_order: index,
+        overrides: {} as never,
+      })),
+    );
+  }
+
+  /* page meta — draft only, never published */
+  await dbAdmin
+    .from("landing_pages")
+    .update({
+      seo_title: plan?.seo_title ?? null,
+      seo_description: plan?.seo_description ?? null,
+      status: "draft",
+      canonical_url: null,
+    })
+    .eq("id", newPageId);
+
+  await db
+    .from("landing_ai_proposals")
+    .update({
+      status: "applied",
+      applied_page_id: newPageId,
+      applied_at: new Date().toISOString(),
+      applied_by: args.ctx.userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", args.proposalId);
+
+  const { data: newPage } = await db
+    .from("landing_pages")
+    .select("id,name,slug,funnel_type")
+    .eq("id", newPageId)
+    .maybeSingle();
+
+  return { pageId: newPageId, page: newPage, sections: sections.length };
+}

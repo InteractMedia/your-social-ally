@@ -30,6 +30,7 @@ import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
+import { Route as LandingAiIdRouteImport } from './routes/landing-ai.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as CadeauplatformSlugRouteImport } from './routes/cadeauplatform.$slug'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
@@ -151,6 +152,11 @@ const LandingpagesIdRoute = LandingpagesIdRouteImport.update({
   path: '/landingpages/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingAiIdRoute = LandingAiIdRouteImport.update({
+  id: '/landing-ai/$id',
+  path: '/landing-ai/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/ads/compare': typeof AdsCompareRoute
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/ads/google'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/ads/google'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -467,6 +479,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrendsRoute: typeof TrendsRoute
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
+  LandingAiIdRoute: typeof LandingAiIdRoute
   LandingpagesIdRoute: typeof LandingpagesIdRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
@@ -623,6 +636,13 @@ declare module '@tanstack/react-router' {
       path: '/landingpages/$id'
       fullPath: '/landingpages/$id'
       preLoaderRoute: typeof LandingpagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing-ai/$id': {
+      id: '/landing-ai/$id'
+      path: '/landing-ai/$id'
+      fullPath: '/landing-ai/$id'
+      preLoaderRoute: typeof LandingAiIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitors/$id': {
@@ -815,6 +835,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrendsRoute: TrendsRoute,
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
+  LandingAiIdRoute: LandingAiIdRoute,
   LandingpagesIdRoute: LandingpagesIdRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
