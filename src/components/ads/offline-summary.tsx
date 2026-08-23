@@ -39,7 +39,7 @@ export function OfflineConversionSummary() {
         {query.isLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((s) => (
               <div key={s.label} className="rounded-lg border p-3">
                 <p className="text-2xl font-semibold tabular-nums">{s.value}</p>
