@@ -17,12 +17,23 @@ export type UploadStatus =
 
 export const UPLOAD_STATUS_LABELS: Record<string, string> = {
   pending: "Wacht op goedkeuring",
-  processing: "Bezig",
-  uploaded: "Geüpload",
+  submitted: "Verzonden naar Google",
+  processing: "Google verwerkt nog",
+  uploaded: "Bevestigd door Google",
   failed: "Mislukt",
   not_eligible: "Niet uploadbaar",
   disabled: "Uitgeschakeld",
 };
+
+/** Verwerkingsstatus zoals Google die teruggeeft voor een verzonden batch. */
+export const PROCESSING_STATUS_LABELS: Record<string, string> = {
+  PROCESSING: "In verwerking bij Google",
+  REQUEST_STATUS_UNKNOWN: "Status nog onbekend",
+  SUCCESS: "Verwerkt en geaccepteerd",
+  PARTIAL_SUCCESS: "Deels verwerkt",
+  FAILED: "Afgekeurd door Google",
+};
+
 
 /** Internal conversion events, in funnel order, with the advised initial usage. */
 export const OFFLINE_EVENTS = [
