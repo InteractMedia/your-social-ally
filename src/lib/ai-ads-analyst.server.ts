@@ -89,6 +89,7 @@ const AdviceSchema = z.object({
 
 const ResponseSchema = z.object({
   summary: z.string().default(""),
+  pmax_intent: z.array(z.unknown()).nullish(),
   advice: z.array(AdviceSchema).default([]),
 });
 
