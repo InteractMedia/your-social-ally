@@ -28,6 +28,7 @@ import { Route as OfferteSlugRouteImport } from './routes/offerte.$slug'
 import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
+import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
 import { Route as CadeauplatformSlugRouteImport } from './routes/cadeauplatform.$slug'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
@@ -139,6 +140,11 @@ const LeadsIdRoute = LeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => LeadsRoute,
 } as any)
+const LandingpagesIdRoute = LandingpagesIdRouteImport.update({
+  id: '/landingpages/$id',
+  path: '/landingpages/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByTo {
   '/ads/compare': typeof AdsCompareRoute
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/ads/google': typeof AdsGoogleRouteWithChildren
   '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/ads/google'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/ads/compare'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/ads/google'
     | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
+  LandingpagesIdRoute: typeof LandingpagesIdRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
@@ -584,6 +597,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/leads/$id'
       preLoaderRoute: typeof LeadsIdRouteImport
       parentRoute: typeof LeadsRoute
+    }
+    '/landingpages/$id': {
+      id: '/landingpages/$id'
+      path: '/landingpages/$id'
+      fullPath: '/landingpages/$id'
+      preLoaderRoute: typeof LandingpagesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/competitors/$id': {
       id: '/competitors/$id'
@@ -774,6 +794,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
+  LandingpagesIdRoute: LandingpagesIdRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
