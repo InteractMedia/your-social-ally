@@ -85,25 +85,63 @@ function Cta({
   );
 }
 
-function Media({
+/**
+ * Structured image slot.
+ *
+ * Every visual-carrying section has a slot. When the slot has an approved
+ * asset it renders the image; when the visual plan says an image is required
+ * but none exists yet, editors and previews see an explicit "AI VISUAL NEEDED"
+ * placeholder with the brief. Live visitors never see the placeholder — the
+ * section then falls back to its text layout.
+ */
+function MediaSlot({
   src,
   alt,
+  visual,
   design,
   eager,
+  showPlaceholder,
 }: {
   src?: string;
   alt?: string;
+  visual?: SectionVisual;
   design: Design;
   eager?: boolean;
+  showPlaceholder?: boolean;
 }) {
-  if (!src || design.image_treatment === "none") return null;
+  if (design.image_treatment === "none") return null;
+  const ratioClass = ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "4:3"] ?? "aspect-4/3";
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={alt ?? visual?.purpose ?? ""}
+        loading={eager ? "eager" : "lazy"}
+        className={cn(ratioClass, "w-full object-cover", design.imageClass)}
+      />
+    );
+  }
+  if (!showPlaceholder || !visualIsMissing(visual, src)) return null;
   return (
-    <img
-      src={src}
-      alt={alt ?? ""}
-      loading={eager ? "eager" : "lazy"}
-      className={cn("aspect-4/3 w-full", design.imageClass)}
-    />
+    <div
+      className={cn(
+        ratioClass,
+        "border-primary/40 bg-primary/5 text-primary flex w-full flex-col justify-center gap-2 rounded-xl border-2 border-dashed p-5",
+      )}
+    >
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
+        <ImageOff className="h-4 w-4" /> AI visual needed
+      </span>
+      <span className="text-foreground text-sm font-medium">
+        {VISUAL_TYPE_LABELS[visual?.visual_type ?? "product_lifestyle"]}
+      </span>
+      {visual?.purpose && <span className="text-muted-foreground text-xs">{visual.purpose}</span>}
+      {visual?.visual_brief && (
+        <span className="text-muted-foreground line-clamp-4 text-xs italic">
+          {visual.visual_brief}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -112,15 +150,21 @@ export function LandingBlock({
   page,
   onCtaClick,
   formSlot,
+  showVisualPlaceholders,
 }: {
   section: LandingSection;
   page: PublicPage;
   onCtaClick?: (label: string) => void;
   formSlot?: React.ReactNode;
+  /** Editors/previews see missing-visual placeholders; live visitors never do. */
+  showVisualPlaceholders?: boolean;
 }) {
   const c = section.content ?? {};
   const items = c.items ?? [];
   const design = resolveSectionDesign(c.design);
+  const visual = c.visual;
+  const slotVisible = Boolean(c.image_url) || (showVisualPlaceholders && visualIsMissing(visual));
+
 
   switch (section.block_type) {
     case "hero": {
