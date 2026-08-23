@@ -294,7 +294,7 @@ export const getLeadOfflineConversions = createServerFn({ method: "POST" })
     const { data: events, error } = await ctx.supabase
       .from("lead_conversion_events")
       .select(
-        "id,conversion_event,conversion_timestamp,google_upload_status,google_upload_reason,google_upload_timestamp,google_conversion_action_name,google_conversion_value,google_conversion_currency,click_identifier_type,google_upload_error",
+        "id,conversion_event,conversion_timestamp,google_upload_status,google_upload_reason,google_upload_timestamp,google_conversion_action_name,google_conversion_value,google_conversion_currency,click_identifier_type,google_upload_error,google_request_id,google_transaction_id,google_processing_status,google_processing_checked_at,google_upload_method",
       )
       .eq("lead_id", data.leadId)
       .order("conversion_timestamp", { ascending: true });
