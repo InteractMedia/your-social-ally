@@ -152,7 +152,7 @@ export const discardLandingAiProposal = createServerFn({ method: "POST" })
     const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
     const { error } = await ctx.supabase
       .from("landing_ai_proposals")
-      .update({ status: "discarded", updated_at: new Date().toISOString() })
+      .update({ status: "rejected", updated_at: new Date().toISOString() })
       .eq("id", data.proposalId)
       .eq("workspace_id", workspaceId);
     return { ok: !error, error: error?.message ?? null };

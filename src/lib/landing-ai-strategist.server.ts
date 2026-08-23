@@ -191,6 +191,7 @@ export async function runLandingStrategist(args: {
   let totalCost = 0;
   let totalMs = 0;
   let fallbackReason = preflightFallback;
+  let rawPhase2: string | null = null;
 
   try {
     /* fase 1 — strategie */
@@ -224,6 +225,7 @@ export async function runLandingStrategist(args: {
     totalMs += phase2.runtimeMs;
     fallbackReason = fallbackReason ?? phase2.fallbackReason;
 
+    rawPhase2 = phase2.text.slice(0, 200000);
     const parsed = aiProposalSchema.parse(dropNulls(extractJsonObject(phase2.text)));
     const sanitized = sanitizeProposal(parsed, built.dataset, strategy);
     const dataConfidence = computeDataConfidence(built.facts);
@@ -241,7 +243,7 @@ export async function runLandingStrategist(args: {
         industry_id: args.industryId ?? null,
         mode: args.mode,
         title,
-        status: "draft",
+        status: "proposed",
         strategy: sanitized.strategy as never,
         page_plan: sanitized.page as never,
         form_plan: sanitized.form as never,
@@ -318,6 +320,7 @@ export async function runLandingStrategist(args: {
         status: "failed",
         completed_at: new Date().toISOString(),
         error_message: message,
+        raw_output: rawPhase2,
         runtime_ms: totalMs,
         input_tokens: totalIn || null,
         output_tokens: totalOut || null,

@@ -1,0 +1,1 @@
+ALTER TABLE public.landing_ai_runs ADD COLUMN IF NOT EXISTS raw_output text;

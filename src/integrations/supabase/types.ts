@@ -971,6 +971,7 @@ export type Database = {
           output_tokens: number | null
           prompt_version: string
           provider: string
+          raw_output: string | null
           runtime_ms: number | null
           status: string
           user_id: string | null
@@ -995,6 +996,7 @@ export type Database = {
           output_tokens?: number | null
           prompt_version: string
           provider: string
+          raw_output?: string | null
           runtime_ms?: number | null
           status?: string
           user_id?: string | null
@@ -1019,6 +1021,7 @@ export type Database = {
           output_tokens?: number | null
           prompt_version?: string
           provider?: string
+          raw_output?: string | null
           runtime_ms?: number | null
           status?: string
           user_id?: string | null
