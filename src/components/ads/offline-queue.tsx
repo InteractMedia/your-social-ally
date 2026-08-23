@@ -32,23 +32,27 @@ import { formatDateTime, formatMoney } from "@/lib/ads-period";
 import {
   CLICK_ID_LABELS,
   OFFLINE_EVENT_LABELS,
+  PROCESSING_STATUS_LABELS,
   UPLOAD_STATUS_LABELS,
   reasonLabel,
 } from "@/lib/google-conversions-shared";
 import {
   approveOfflineConversions,
   getOfflineConversionQueue,
+  refreshOfflineConversionStatuses,
   skipOfflineConversions,
 } from "@/lib/google-conversions.functions";
 
-type Tab = "pending" | "uploaded" | "failed" | "skipped";
+type Tab = "pending" | "submitted" | "uploaded" | "failed" | "skipped";
 
 const TAB_LABELS: Record<Tab, string> = {
   pending: "Wachtend",
-  uploaded: "Geüpload",
+  submitted: "Verzonden",
+  uploaded: "Bevestigd",
   failed: "Mislukt",
   skipped: "Overgeslagen",
 };
+
 
 export function OfflineConversionQueue() {
   const [tab, setTab] = useState<Tab>("pending");
