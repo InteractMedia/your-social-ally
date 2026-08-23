@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   Eye,
+  GripVertical,
   History,
   Plus,
   Rocket,
@@ -52,6 +53,7 @@ import {
   upsertLandingProduct,
   upsertLandingTestimonial,
 } from "@/lib/landing.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/landingpages/$id")({
   head: () => ({
@@ -433,6 +435,18 @@ function FormEditor({
   const setField = (index: number, patch: Partial<FormFieldConfig>) =>
     setFields((f) => f.map((field, i) => (i === index ? { ...field, ...patch } : field)));
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  const moveField = (from: number, to: number) =>
+    setFields((f) => {
+      if (from === to || to < 0 || to >= f.length) return f;
+      const next = [...f];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item!);
+      return next;
+    });
+
   return (
     <Card>
       <CardHeader>
@@ -463,9 +477,62 @@ function FormEditor({
         </div>
 
         <div className="space-y-2">
-          <Label>Velden</Label>
+          <div className="flex items-center justify-between">
+            <Label>Velden</Label>
+            <span className="text-muted-foreground text-xs">Sleep om de volgorde te wijzigen</span>
+          </div>
           {fields.map((field, i) => (
-            <div key={field.key} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr]">
+            <div
+              key={field.key}
+              data-field-row={field.key}
+              draggable
+              onDragStart={(e) => {
+                setDragIndex(i);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (overIndex !== i) setOverIndex(i);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex !== null) moveField(dragIndex, i);
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              className={cn(
+                "grid gap-2 rounded-lg border p-3 md:grid-cols-[auto_2fr_1fr_1fr]",
+                dragIndex === i && "opacity-50",
+                overIndex === i && dragIndex !== null && dragIndex !== i && "border-primary",
+              )}
+            >
+              <div className="flex items-center gap-1">
+                <GripVertical className="text-muted-foreground h-4 w-4 cursor-grab" aria-hidden="true" />
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    aria-label={`Veld ${field.label} omhoog`}
+                    disabled={i === 0}
+                    onClick={() => moveField(i, i - 1)}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Veld ${field.label} omlaag`}
+                    disabled={i === fields.length - 1}
+                    onClick={() => moveField(i, i + 1)}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
               <Input value={field.label} onChange={(e) => setField(i, { label: e.target.value })} />
               <select
                 value={field.state}
@@ -485,7 +552,7 @@ function FormEditor({
               />
               {(field.type === "select" || field.type === "multiselect") && (
                 <Input
-                  className="md:col-span-3"
+                  className="md:col-span-4"
                   placeholder="Opties, gescheiden door komma's"
                   value={(field.options ?? []).join(", ")}
                   onChange={(e) =>
