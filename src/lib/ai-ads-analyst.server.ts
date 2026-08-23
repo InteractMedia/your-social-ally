@@ -270,7 +270,12 @@ export async function runAdsAnalysisForWorkspace(opts: {
         estimated_cost_usd: completion.estimatedCostUsd,
         runtime_ms: completion.runtimeMs,
         advice_count: rows.length,
-        snapshot: { summary: parsed.summary, meta: snapshot.meta, account: snapshot.account },
+        snapshot: {
+          summary: parsed.summary,
+          pmaxIntent: parsed.pmax_intent ?? null,
+          meta: snapshot.meta,
+          account: snapshot.account,
+        },
         completed_at: new Date().toISOString(),
       })
       .eq("id", runId);
