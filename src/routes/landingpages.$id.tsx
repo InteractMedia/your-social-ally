@@ -787,6 +787,7 @@ function SettingsEditor({
     name: string;
     slug: string;
     status: string;
+    funnel_type: string;
     industry_id: string | null;
     base_url: string | null;
     canonical_url: string | null;
