@@ -119,15 +119,26 @@ export const getOfflineConversionQueue = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ctx = context as any;
     const workspaceId = await workspaceOf(ctx);
-    const { listQueue } = await import("./google-offline-conversions.server");
+    const { listQueue, fetchConversionActions } = await import(
+      "./google-offline-conversions.server"
+    );
+    // Preflight: the queue judges every event against the LIVE conversion actions.
+    let liveActions: any[] | null = null;
+    let actionsError: string | null = null;
     try {
-      const items = await listQueue(ctx.supabase, workspaceId, data.tab);
-      return { ok: true as const, items, error: null as string | null };
+      liveActions = (await fetchConversionActions(ctx)).actions;
+    } catch (err) {
+      actionsError = (err as Error).message;
+    }
+    try {
+      const items = await listQueue(ctx.supabase, workspaceId, data.tab, 200, liveActions);
+      return { ok: true as const, items, error: null as string | null, actionsError };
     } catch (err) {
       console.error("[OfflineConv] queue failed", (err as Error).message);
-      return { ok: false as const, items: [], error: (err as Error).message };
+      return { ok: false as const, items: [], error: (err as Error).message, actionsError };
     }
   });
+
 
 /** Counters for the Google Ads dashboard block. */
 export const getOfflineConversionSummary = createServerFn({ method: "GET" })
