@@ -346,7 +346,7 @@ export async function buildLandingAiDataset(opts: {
     globalContentKeys: (globals ?? []).map((g: any) => g.key),
     landingAnalytics: {
       thisPage: opts.pageId ? funnelRow(page?.name ?? "deze pagina", pageFunnel) : null,
-      byPage: [...byPage.entries()].map(([id, f]) => funnelRow(pageNameById.get(id) ?? id, f)),
+      byPage: [...byPage.entries()].map(([id, f]) => funnelRow(String(pageNameById.get(id) ?? id), f)),
       byVariant: [...byVariant.entries()].map(([key, f]) => funnelRow(key.split("::")[1] ?? "A", f)),
       byTrafficSource: [...bySource.entries()].map(([src, f]) => funnelRow(src, f)),
       note:
