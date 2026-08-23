@@ -90,6 +90,15 @@ export async function listMappings(
   return out;
 }
 
+export type LiveAction = {
+  id: string;
+  name: string;
+  category: string | null;
+  type: string | null;
+  status: string | null;
+  supportsOfflineUpload: boolean;
+};
+
 /** Live conversion actions of the workspace's Google Ads account (never invented). */
 export async function fetchConversionActions(ctx: { supabase: any; userId: string }) {
   const cid = await resolveCustomerId(ctx);
@@ -101,19 +110,38 @@ export async function fetchConversionActions(ctx: { supabase: any; userId: strin
   );
   return {
     customerId: cid,
-    actions: (rows as any[]).map((r) => {
+    actions: (rows as any[]).map((r): LiveAction => {
       const a = r.conversionAction ?? {};
       return {
         id: String(a.id),
         name: a.name as string,
         category: a.category ? String(a.category).replace(/_/g, " ") : null,
         type: a.type ? String(a.type).replace(/_/g, " ") : null,
+        status: a.status ? String(a.status) : null,
         /** Only UPLOAD_CLICKS actions can receive offline click conversions. */
         supportsOfflineUpload: a.type === "UPLOAD_CLICKS",
       };
     }),
   };
 }
+
+/**
+ * Preflight: is this conversion action still usable for an offline click import?
+ * `actions` only ever contains ENABLED actions, so a missing id means removed,
+ * paused or hidden in Google Ads.
+ */
+export function checkActionUsable(
+  actions: LiveAction[] | null,
+  actionId: string | null,
+): string | null {
+  if (!actionId) return "conversion_action_missing";
+  if (!actions) return null; // live check unavailable — decided at upload time
+  const found = actions.find((a) => a.id === String(actionId));
+  if (!found) return "conversion_action_unavailable";
+  if (!found.supportsOfflineUpload) return "conversion_action_wrong_type";
+  return null;
+}
+
 
 /* -------------------------------------------------------------- eligibility */
 
@@ -131,9 +159,10 @@ export type Eligibility =
 
 /** Pure decision function — no side effects, safe to unit test. */
 export function evaluateEligibility(
-  event: { conversion_event: string; value: number | null },
+  event: { conversion_event: string; value: number | null; conversion_timestamp?: string },
   lead: LeadRow,
   mapping: MappingRow | undefined,
+  liveActions?: LiveAction[] | null,
 ): Eligibility {
   // 1. Hard test protection — server side, before anything else.
   if (lead.is_test) return { ok: false, status: "not_eligible", reason: "test_event" };
@@ -144,26 +173,38 @@ export function evaluateEligibility(
   if (!mapping.google_conversion_action_id)
     return { ok: false, status: "not_eligible", reason: "conversion_action_missing" };
 
+  // 2b. Preflight against the live account: still present, ENABLED, click-import type.
+  const actionProblem = checkActionUsable(
+    liveActions ?? null,
+    mapping.google_conversion_action_id,
+  );
+  if (actionProblem) return { ok: false, status: "not_eligible", reason: actionProblem };
+
   // 3. A real click identifier stored on the lead — never invented.
   const clickType = (["gclid", "gbraid", "wbraid"] as const).find((k) => lead[k]);
   if (!clickType) return { ok: false, status: "not_eligible", reason: "missing_click_identifier" };
+
+  // 3b. A usable business timestamp (the event moment, never the upload moment).
+  if (event.conversion_timestamp && !conversionDateTime(event.conversion_timestamp))
+    return { ok: false, status: "not_eligible", reason: "invalid_conversion_time" };
 
   // 4. Value according to the configured mode.
   let value: number | null = null;
   const currency = mapping.currency || "EUR";
   if (mapping.upload_value && mapping.value_source === "fixed") {
-    if (mapping.fixed_value == null)
+    if (mapping.fixed_value == null || Number(mapping.fixed_value) <= 0)
       return { ok: false, status: "not_eligible", reason: "missing_value" };
     value = Number(mapping.fixed_value);
   } else if (mapping.upload_value && mapping.value_source === "dynamic") {
-    const dynamic = event.value ?? lead.revenue ?? lead.order_value ?? null;
-    if (dynamic == null || Number(dynamic) <= 0) {
-      if (mapping.fixed_value != null) value = Number(mapping.fixed_value);
-      else return { ok: false, status: "not_eligible", reason: "missing_value" };
-    } else {
-      value = Number(dynamic);
-    }
+    // Priority: the event's own revenue, then the lead's revenue, then order value.
+    // NEVER a €0/€1 fallback — without a real value > 0 we simply do not upload.
+    const dynamic = [event.value, lead.revenue, lead.order_value].find(
+      (v) => v != null && Number(v) > 0,
+    );
+    if (dynamic == null) return { ok: false, status: "not_eligible", reason: "missing_value" };
+    value = Number(dynamic);
   }
+
 
   return {
     ok: true,
@@ -230,6 +271,7 @@ export async function listQueue(
   workspaceId: string,
   tab: keyof typeof STATUS_GROUPS,
   limit = 200,
+  liveActions?: LiveAction[] | null,
 ): Promise<QueueItem[]> {
   const mappings = await listMappings(supabase, workspaceId);
 
@@ -255,8 +297,10 @@ export async function listQueue(
   return ((events ?? []) as EventRow[]).flatMap((e) => {
     const lead = leadById.get(e.lead_id);
     if (!lead) return [];
-    const verdict = evaluateEligibility(e, lead, mappings[e.conversion_event]);
+    const verdict = evaluateEligibility(e, lead, mappings[e.conversion_event], liveActions ?? null);
     const mapping = mappings[e.conversion_event];
+    // Identifier presence is shown regardless of the verdict (priority gclid → gbraid → wbraid).
+    const storedClickType = (["gclid", "gbraid", "wbraid"] as const).find((k) => lead[k]) ?? null;
     return [
       {
         id: e.id,
@@ -265,15 +309,21 @@ export async function listQueue(
         event: e.conversion_event,
         occurredAt: e.conversion_timestamp,
         status: e.google_upload_status ?? "pending",
-        reason: e.google_upload_reason ?? (verdict.ok ? null : verdict.reason),
+        reason: verdict.ok ? (e.google_upload_reason ?? null) : verdict.reason,
         error: e.google_upload_error,
         actionId: e.google_conversion_action_id ?? mapping?.google_conversion_action_id ?? null,
         actionName:
           e.google_conversion_action_name ?? mapping?.google_conversion_action_name ?? null,
-        clickType: e.click_identifier_type ?? (verdict.ok ? verdict.clickType : null),
-        clickMasked: verdict.ok ? maskClickId(verdict.clickId) : null,
+        clickType: e.click_identifier_type ?? storedClickType,
+        clickMasked: storedClickType ? maskClickId(String(lead[storedClickType])) : null,
         value: e.google_conversion_value ?? (verdict.ok ? verdict.value : null),
-        currency: e.google_conversion_currency ?? (verdict.ok ? verdict.currency : null),
+        currency:
+          e.google_conversion_currency ??
+          (verdict.ok
+            ? verdict.value == null
+              ? null
+              : verdict.currency
+            : (mapping?.currency ?? null)),
         uploadedAt: e.google_upload_timestamp,
         attempts: e.google_upload_attempts ?? 0,
         isTest: lead.is_test,
@@ -284,6 +334,7 @@ export async function listQueue(
   });
 }
 
+
 /* ------------------------------------------------------------------ upload */
 
 const RETRY_MINUTES = [5, 15, 45, 120, 360];
@@ -291,6 +342,8 @@ const RETRY_MINUTES = [5, 15, 45, 120, 360];
 function classifyFailure(status: number, body: string): { reason: string; retryable: boolean } {
   if (status === 401 || status === 403) return { reason: "api_auth_error", retryable: false };
   if (status === 429 || status >= 500) return { reason: "api_unavailable", retryable: true };
+  if (/NOT_ALLOWLISTED|Data Manager API/i.test(body))
+    return { reason: "not_allowlisted", retryable: false };
   if (/CONVERSION_PRECEDES|INVALID_CONVERSION_DATE|EXPIRED_CLICK|TOO_RECENT/i.test(body))
     return { reason: "invalid_conversion_time", retryable: false };
   return { reason: "api_error", retryable: false };
@@ -348,7 +401,20 @@ export async function uploadConversionEvent(args: {
   const l = lead as unknown as LeadRow;
 
   const mappings = await listMappings(db, workspaceId);
-  const verdict = evaluateEligibility(e, l, mappings[e.conversion_event]);
+
+  // Preflight against the live Google Ads account: the mapped conversion action
+  // must still exist, be ENABLED and accept offline click imports.
+  let liveActions: LiveAction[] | null = null;
+  try {
+    liveActions = (await fetchConversionActions(args.ctx)).actions;
+  } catch (err) {
+    console.error("[OfflineConv] preflight actions failed", (err as Error).message);
+    await failEvent(eventId, (e.google_upload_attempts ?? 0) + 1, "api_unavailable", (err as Error).message, true);
+    return { eventId, status: "failed", reason: "api_unavailable", message: (err as Error).message };
+  }
+
+  const verdict = evaluateEligibility(e, l, mappings[e.conversion_event], liveActions);
+
 
   if (!verdict.ok) {
     await db
@@ -597,4 +663,49 @@ export async function autoUploadIfEnabled(workspaceId: string, eventId: string) 
   } catch (err) {
     console.error("[OfflineConv] automatic upload failed", (err as Error).message);
   }
+}
+
+/* ------------------------------------------------------ validate-only check */
+
+/**
+ * Sends a SYNTHETIC conversion with validateOnly: true to Google Ads. Google
+ * only validates the payload; nothing is ever recorded in the account. Used to
+ * prove a mapping's payload shape before the first real upload.
+ */
+export async function validateOnlyCheck(args: {
+  ctx: { supabase: any; userId: string };
+  actionId: string;
+  withValue: boolean;
+  currency?: string;
+}): Promise<{
+  actionId: string;
+  ok: boolean;
+  status: number;
+  validateOnly: true;
+  payload: string;
+  message: string | null;
+}> {
+  const cid = await resolveCustomerId(args.ctx);
+  const when = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const conversion: Record<string, unknown> = {
+    conversionAction: `customers/${cid}/conversionActions/${args.actionId}`,
+    conversionDateTime: conversionDateTime(when),
+    // Synthetic, deliberately invalid click id — never a real customer lead.
+    gclid: "SOCIALCOCKPIT_VALIDATE_ONLY_SYNTHETIC",
+  };
+  if (args.withValue) {
+    conversion["conversionValue"] = 123.45;
+    conversion["currencyCode"] = args.currency || "EUR";
+  }
+  const body = { conversions: [conversion], partialFailure: true, validateOnly: true };
+  const res = await adsPost(`customers/${cid}:uploadClickConversions`, body);
+  const partial = res.json?.partialFailureError ?? null;
+  return {
+    actionId: args.actionId,
+    ok: res.ok,
+    status: res.status,
+    validateOnly: true,
+    payload: JSON.stringify(body),
+    message: partial ? JSON.stringify(partial).slice(0, 1200) : res.raw.slice(0, 1200) || null,
+  };
 }
