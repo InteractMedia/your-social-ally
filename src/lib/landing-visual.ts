@@ -42,10 +42,19 @@ export const VISUAL_TYPE_LABELS: Record<VisualType, string> = {
 };
 
 /** Asset types of the central image library (no "none" — an asset always is something). */
-export const ASSET_TYPES = VISUAL_TYPES.filter((t) => t !== "none") as readonly Exclude<
-  VisualType,
-  "none"
->[];
+export const ASSET_TYPES = [
+  "product_cutout",
+  "product_group",
+  "personalized_product",
+  "product_lifestyle",
+  "business_context",
+  "industry_context",
+  "personalization_example",
+  "customer_logo",
+  "testimonial",
+  "illustration",
+  "decorative",
+] as const;
 export type AssetType = (typeof ASSET_TYPES)[number];
 
 export const ASSET_SOURCES = ["upload", "ai", "external"] as const;
