@@ -17,9 +17,11 @@ export function OfflineConversionSummary() {
 
   const stats = [
     { label: "Wacht op goedkeuring", value: query.data?.pending ?? 0 },
-    { label: "Vandaag geüpload", value: query.data?.uploadedToday ?? 0 },
+    { label: "Verzonden, wacht op Google", value: query.data?.submitted ?? 0 },
+    { label: "Vandaag bevestigd", value: query.data?.uploadedToday ?? 0 },
     { label: "Mislukt", value: query.data?.failed ?? 0 },
   ];
+
 
   return (
     <Card>
