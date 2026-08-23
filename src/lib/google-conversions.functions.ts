@@ -311,7 +311,7 @@ export const getOfflineUploadLog = createServerFn({ method: "GET" })
     const { data, error } = await ctx.supabase
       .from("google_conversion_upload_log")
       .select(
-        "id,created_at,internal_event_name,google_conversion_action_name,click_identifier_type,value,currency,result,error_code,error_message,mode,approved_by_email,lead_id",
+        "id,created_at,internal_event_name,google_conversion_action_name,click_identifier_type,value,currency,result,error_code,error_message,mode,approved_by_email,lead_id,upload_method,google_request_id,google_transaction_id,processing_status",
       )
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
