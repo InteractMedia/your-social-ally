@@ -126,7 +126,13 @@ export function OfflineConversionQueue() {
     <Card>
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Offline conversies naar Google Ads</CardTitle>
+          <div>
+            <CardTitle className="text-base">Offline conversies naar Google Ads</CardTitle>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Verzending via de Google Data Manager API. Google verwerkt conversies asynchroon:
+              een verzonden conversie telt pas mee zodra Google die bevestigt.
+            </p>
+          </div>
           <Tabs value={tab} onValueChange={(v) => { setTab(v as Tab); setSelected([]); }}>
             <TabsList>
               {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
@@ -137,36 +143,50 @@ export function OfflineConversionQueue() {
             </TabsList>
           </Tabs>
         </div>
-        {tab === "pending" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={eligibleIds.length === 0}
-              onClick={() => setSelected(selected.length === eligibleIds.length ? [] : eligibleIds)}
-            >
-              {selected.length === eligibleIds.length && eligibleIds.length > 0
-                ? "Selectie wissen"
-                : "Selecteer alles"}
-            </Button>
-            <Button
-              size="sm"
-              disabled={selected.length === 0 || approve.isPending}
-              onClick={() => setConfirmOpen(true)}
-            >
-              <CloudUpload className="mr-1 h-4 w-4" /> Upload geselecteerde ({selected.length})
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={selected.length === 0 || skip.isPending}
-              onClick={() => skip.mutate(selected)}
-            >
-              <SkipForward className="mr-1 h-4 w-4" /> Overslaan
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {tab === "pending" ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={eligibleIds.length === 0}
+                onClick={() =>
+                  setSelected(selected.length === eligibleIds.length ? [] : eligibleIds)
+                }
+              >
+                {selected.length === eligibleIds.length && eligibleIds.length > 0
+                  ? "Selectie wissen"
+                  : "Selecteer alles"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={selected.length === 0 || approve.isPending}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <CloudUpload className="mr-1 h-4 w-4" /> Verstuur geselecteerde ({selected.length})
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={selected.length === 0 || skip.isPending}
+                onClick={() => skip.mutate(selected)}
+              >
+                <SkipForward className="mr-1 h-4 w-4" /> Overslaan
+              </Button>
+            </>
+          ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={statuses.isPending}
+            onClick={() => statuses.mutate()}
+          >
+            <RefreshCw className={`mr-1 h-4 w-4 ${statuses.isPending ? "animate-spin" : ""}`} />
+            Status bij Google ophalen
+          </Button>
+        </div>
       </CardHeader>
+
       <CardContent className="p-0 pb-4">
         {query.isLoading ? (
           <div className="space-y-2 p-4">
