@@ -151,8 +151,9 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
     const workspaceId = await workspaceOf(ctx);
     const { listQueue } = await import("./google-offline-conversions.server");
     try {
-      const [pending, uploaded, failed] = await Promise.all([
+      const [pending, submitted, uploaded, failed] = await Promise.all([
         listQueue(ctx.supabase, workspaceId, "pending"),
+        listQueue(ctx.supabase, workspaceId, "submitted"),
         listQueue(ctx.supabase, workspaceId, "uploaded"),
         listQueue(ctx.supabase, workspaceId, "failed"),
       ]);
@@ -160,6 +161,7 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
       return {
         ok: true as const,
         pending: pending.length,
+        submitted: submitted.length,
         uploadedToday: uploaded.filter((i) => (i.uploadedAt ?? "").slice(0, 10) === today).length,
         failed: failed.length,
         error: null as string | null,
@@ -168,6 +170,7 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
       return {
         ok: false as const,
         pending: 0,
+        submitted: 0,
         uploadedToday: 0,
         failed: 0,
         error: (err as Error).message,
@@ -176,6 +179,31 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
   });
 
 /**
+ * Asks Google what happened to the events it accepted earlier. Only a SUCCESS
+ * status marks a conversion as really uploaded.
+ */
+export const refreshOfflineConversionStatuses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as any;
+    const workspaceId = await workspaceOf(ctx);
+    const { refreshSubmittedStatuses } = await import("./google-offline-conversions.server");
+    try {
+      const result = await refreshSubmittedStatuses(workspaceId);
+      return { ok: true as const, ...result, error: null as string | null };
+    } catch (err) {
+      return {
+        ok: false as const,
+        checked: 0,
+        confirmed: 0,
+        failed: 0,
+        pendingStill: 0,
+        error: (err as Error).message,
+      };
+    }
+  });
+
+
  * Explicit user approval → the ONLY path that calls the Google Ads upload API
  * from the UI. The frontend never talks to Google directly.
  */
