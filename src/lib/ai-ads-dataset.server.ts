@@ -303,35 +303,53 @@ export async function buildAdsAnalysisSnapshot(opts: {
   /* ---------- Performance Max search-term insights (categorieën) ---------- */
 
   const pmaxServing = servingNow.filter((c) => c.rawType === "PERFORMANCE_MAX");
-  const pmaxInsightResults = await Promise.all(
-    pmaxServing.slice(0, 5).map(async (c) => {
-      // campaign_search_term_insight ondersteunt GEEN cost_micros, average_cpc, ctr,
-      // all_conversions of all_conversions_value: die metrics laten Google de query
-      // afwijzen (PROHIBITED_METRIC_IN_SELECT_OR_WHERE_CLAUSE) en leverden 0 rijen op.
-      const rows = await gaql(
-        cid,
-        `SELECT campaign_search_term_insight.id, campaign_search_term_insight.category_label,
-                campaign_search_term_insight.campaign_id, ${INSIGHT_METRIC_FIELDS}
-         FROM campaign_search_term_insight
-         WHERE ${dateFilter(start, end)}
-           AND campaign_search_term_insight.campaign_id = ${c.id}
-         ORDER BY metrics.impressions DESC LIMIT ${INSIGHT_N}`,
-      ).catch((err) => {
-        console.error("[AiDataset] pmax search insights query failed", (err as Error).message);
-        return [];
-      });
-      return (rows as any[]).map((r) => {
-        const label = r.campaignSearchTermInsight?.categoryLabel;
-        return {
-          campaign: c.name,
-          campaignType: c.type,
-          categoryLabel: label && label !== "" ? label : "(overige/niet-gecategoriseerd)",
-          ...slimMetrics(mapMetrics(r.metrics)),
-        };
-      });
-    }),
-  );
-  const pmaxSearchInsights = pmaxInsightResults.flat();
+  const pmaxPrevServing = servingPrev.filter((c) => c.rawType === "PERFORMANCE_MAX");
+
+  async function fetchPmaxInsights(
+    campaigns: typeof campaignStructure,
+    from: string,
+    to: string,
+  ) {
+    const results = await Promise.all(
+      campaigns.slice(0, 5).map(async (c) => {
+        // campaign_search_term_insight ondersteunt GEEN cost_micros, average_cpc, ctr,
+        // all_conversions of all_conversions_value: die metrics laten Google de query
+        // afwijzen (PROHIBITED_METRIC_IN_SELECT_OR_WHERE_CLAUSE) en leverden 0 rijen op.
+        const rows = await gaql(
+          cid,
+          `SELECT campaign_search_term_insight.id, campaign_search_term_insight.category_label,
+                  campaign_search_term_insight.campaign_id, ${INSIGHT_METRIC_FIELDS}
+           FROM campaign_search_term_insight
+           WHERE ${dateFilter(from, to)}
+             AND campaign_search_term_insight.campaign_id = ${c.id}
+           ORDER BY metrics.impressions DESC LIMIT ${INSIGHT_N}`,
+        ).catch((err) => {
+          console.error("[AiDataset] pmax search insights query failed", (err as Error).message);
+          return [];
+        });
+        return (rows as any[]).map((r) => {
+          const label = r.campaignSearchTermInsight?.categoryLabel;
+          const m = slimMetrics(mapMetrics(r.metrics));
+          return {
+            campaign: c.name,
+            campaignType: c.type,
+            categoryLabel: label && label !== "" ? label : "(overige/niet-gecategoriseerd)",
+            impressions: m.impressions,
+            clicks: m.clicks,
+            conversions: m.conversions,
+            conversionsValue: m.conversionsValue,
+            costAvailable: false,
+          };
+        });
+      }),
+    );
+    return results.flat();
+  }
+
+  const [pmaxSearchInsights, pmaxSearchInsightsPrevious] = await Promise.all([
+    fetchPmaxInsights(pmaxServing, start, end),
+    fetchPmaxInsights(pmaxPrevServing, prev.start, prev.end),
+  ]);
 
   /* ---------- Google Ads conversion actions ---------- */
 
