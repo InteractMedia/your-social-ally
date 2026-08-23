@@ -85,34 +85,88 @@ export async function buildLandingAiDataset(opts: {
 
   /* ------------------------------------------------- content & products */
 
-  const [{ data: products }, { data: testimonials }, { data: globals }, { data: otherPages }] =
-    await Promise.all([
-      db
-        .from("landing_products")
-        .select("id,name,short_text,price_from,personalization_options,image_url,active")
-        .eq("workspace_id", opts.workspaceId),
-      db
-        .from("landing_page_testimonials")
-        .select("author,role_title,company,quote,enabled")
-        .eq("workspace_id", opts.workspaceId),
-      db.from("landing_global_content").select("key,content").eq("workspace_id", opts.workspaceId),
-      db
-        .from("landing_pages")
-        .select("id,name,slug,funnel_type,status,industry_id")
-        .eq("workspace_id", opts.workspaceId)
-        .neq("status", "archived"),
-    ]);
+  const [
+    { data: products },
+    { data: productImages },
+    { data: assets },
+    { data: testimonials },
+    { data: globals },
+    { data: otherPages },
+  ] = await Promise.all([
+    db
+      .from("landing_products")
+      .select(
+        "id,name,sku,category,short_text,long_text,min_quantity,price_from,personalization_options,occasions,industries,tags,letterbox_friendly,individually_shippable,featured,image_url,active",
+      )
+      .eq("workspace_id", opts.workspaceId),
+    db
+      .from("landing_product_images")
+      .select("product_id,asset_id,url,alt_text,image_type,is_primary")
+      .eq("workspace_id", opts.workspaceId),
+    db
+      .from("landing_assets")
+      .select("id,name,asset_type,alt_text,product_id,industry_id,tags,desktop_ok,mobile_ok,active,approval_status")
+      .eq("workspace_id", opts.workspaceId),
+    db
+      .from("landing_page_testimonials")
+      .select("author,role_title,company,quote,enabled")
+      .eq("workspace_id", opts.workspaceId),
+    db.from("landing_global_content").select("key,content").eq("workspace_id", opts.workspaceId),
+    db
+      .from("landing_pages")
+      .select("id,name,slug,funnel_type,status,industry_id")
+      .eq("workspace_id", opts.workspaceId)
+      .neq("status", "archived"),
+  ]);
+
+  const imagesByProduct = new Map<string, any[]>();
+  for (const img of productImages ?? []) {
+    const list = imagesByProduct.get(img.product_id) ?? [];
+    list.push(img);
+    imagesByProduct.set(img.product_id, list);
+  }
 
   const productLibrary = (products ?? [])
     .filter((p: any) => p.active !== false)
-    .map((p: any) => ({
-      product_id: p.id,
-      name: p.name,
-      short_text: p.short_text,
-      price_from: p.price_from,
-      personalization_options: p.personalization_options ?? [],
-      has_image: Boolean(p.image_url),
+    .map((p: any) => {
+      const images = imagesByProduct.get(p.id) ?? [];
+      return {
+        product_id: p.id,
+        name: p.name,
+        sku: p.sku ?? null,
+        category: p.category ?? null,
+        short_text: p.short_text,
+        long_text: p.long_text ?? null,
+        min_quantity: p.min_quantity ?? null,
+        price_from: p.price_from,
+        personalization_options: p.personalization_options ?? [],
+        occasions: p.occasions ?? [],
+        industries: p.industries ?? [],
+        tags: p.tags ?? [],
+        letterbox_friendly: p.letterbox_friendly,
+        individually_shippable: p.individually_shippable,
+        featured: Boolean(p.featured),
+        has_image: Boolean(p.image_url) || images.length > 0,
+        image_types: [...new Set(images.map((i: any) => i.image_type))],
+        image_count: images.length + (p.image_url && !images.length ? 1 : 0),
+      };
+    });
+
+  /* Beeldbank: only approved, active assets may be referenced by the AI. */
+  const assetLibrary = (assets ?? [])
+    .filter((a: any) => a.active !== false && a.approval_status === "approved")
+    .map((a: any) => ({
+      asset_id: a.id,
+      name: a.name,
+      asset_type: a.asset_type,
+      alt_text: a.alt_text,
+      product_id: a.product_id,
+      industry_id: a.industry_id,
+      tags: a.tags ?? [],
+      desktop_ok: a.desktop_ok !== false,
+      mobile_ok: a.mobile_ok !== false,
     }));
+
 
   /* ----------------------------------------------- landing page analytics */
 
@@ -337,6 +391,10 @@ export async function buildLandingAiDataset(opts: {
       : null,
     productLibrary,
     productLibraryEmpty: productLibrary.length === 0,
+    assetLibrary,
+    assetLibraryEmpty: assetLibrary.length === 0,
+    visualNote:
+      "Je mag alleen asset_id's uit assetLibrary gebruiken. Bestaat de gewenste visual niet? Laat asset_id leeg en schrijf een concrete visual_brief; de pagina toont dan een expliciete 'AI VISUAL NEEDED'-plek voor onze fotograaf of latere beeldgeneratie.",
     testimonials: (testimonials ?? []).map((t: any) => ({
       role_title: t.role_title,
       company_known: Boolean(t.company),
@@ -377,6 +435,19 @@ export async function buildLandingAiDataset(opts: {
   const industryLeadHistory = industryName
     ? (dataset.socialCockpit.byIndustry.find((i) => i.industry === industryName)?.leads ?? 0) > 0
     : false;
+
+  /* Content readiness: deterministic facts about what content actually exists. */
+  const { buildContentReadiness } = await import("./landing-readiness.server");
+  const readinessResult = await buildContentReadiness({
+    db,
+    workspaceId: opts.workspaceId,
+    pageId: opts.pageId ?? null,
+  });
+  (dataset as Record<string, unknown>)["contentReadiness"] = {
+    score: readinessResult.readiness.score,
+    items: readinessResult.readiness.items,
+    missingVisualsOnPage: readinessResult.missingVisuals,
+  };
 
   return {
     dataset,

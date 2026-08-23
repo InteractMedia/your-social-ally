@@ -1051,6 +1051,103 @@ export type Database = {
           },
         ]
       }
+      landing_assets: {
+        Row: {
+          active: boolean
+          alt_text: string | null
+          approval_status: string
+          asset_type: string
+          created_at: string
+          created_by: string | null
+          desktop_ok: boolean
+          height: number | null
+          id: string
+          industry_id: string | null
+          mime_type: string | null
+          mobile_ok: boolean
+          name: string
+          product_id: string | null
+          source: string
+          storage_path: string | null
+          tags: string[]
+          updated_at: string
+          url: string
+          visual_brief_id: string | null
+          width: number | null
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          alt_text?: string | null
+          approval_status?: string
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          desktop_ok?: boolean
+          height?: number | null
+          id?: string
+          industry_id?: string | null
+          mime_type?: string | null
+          mobile_ok?: boolean
+          name: string
+          product_id?: string | null
+          source?: string
+          storage_path?: string | null
+          tags?: string[]
+          updated_at?: string
+          url: string
+          visual_brief_id?: string | null
+          width?: number | null
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          alt_text?: string | null
+          approval_status?: string
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          desktop_ok?: boolean
+          height?: number | null
+          id?: string
+          industry_id?: string | null
+          mime_type?: string | null
+          mobile_ok?: boolean
+          name?: string
+          product_id?: string | null
+          source?: string
+          storage_path?: string | null
+          tags?: string[]
+          updated_at?: string
+          url?: string
+          visual_brief_id?: string | null
+          width?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_assets_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "landing_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_assets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_form_submissions: {
         Row: {
           created_at: string
@@ -1684,67 +1781,281 @@ export type Database = {
           },
         ]
       }
+      landing_product_images: {
+        Row: {
+          alt_text: string | null
+          asset_id: string | null
+          created_at: string
+          id: string
+          image_type: string
+          is_primary: boolean
+          product_id: string
+          sort_order: number
+          url: string
+          workspace_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          asset_id?: string | null
+          created_at?: string
+          id?: string
+          image_type?: string
+          is_primary?: boolean
+          product_id: string
+          sort_order?: number
+          url: string
+          workspace_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          asset_id?: string | null
+          created_at?: string
+          id?: string
+          image_type?: string
+          is_primary?: boolean
+          product_id?: string
+          sort_order?: number
+          url?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_product_images_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "landing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "landing_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_product_images_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_products: {
         Row: {
           active: boolean
+          ai_suggestions: Json
+          category: string | null
           created_at: string
           cta_label: string | null
           cta_url: string | null
           external_id: string | null
           external_source: string | null
+          featured: boolean
           id: string
           image_alt: string | null
           image_url: string | null
+          individually_shippable: boolean | null
+          industries: string[]
+          letterbox_friendly: boolean | null
+          long_text: string | null
+          min_quantity: number | null
           name: string
+          notes: string | null
+          occasions: string[]
           personalization_options: string[]
           price_from: number | null
+          product_url: string | null
           short_text: string | null
+          sku: string | null
           slug: string
           sort_order: number
+          tags: string[]
           updated_at: string
           workspace_id: string
         }
         Insert: {
           active?: boolean
+          ai_suggestions?: Json
+          category?: string | null
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
           external_id?: string | null
           external_source?: string | null
+          featured?: boolean
           id?: string
           image_alt?: string | null
           image_url?: string | null
+          individually_shippable?: boolean | null
+          industries?: string[]
+          letterbox_friendly?: boolean | null
+          long_text?: string | null
+          min_quantity?: number | null
           name: string
+          notes?: string | null
+          occasions?: string[]
           personalization_options?: string[]
           price_from?: number | null
+          product_url?: string | null
           short_text?: string | null
+          sku?: string | null
           slug: string
           sort_order?: number
+          tags?: string[]
           updated_at?: string
           workspace_id: string
         }
         Update: {
           active?: boolean
+          ai_suggestions?: Json
+          category?: string | null
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
           external_id?: string | null
           external_source?: string | null
+          featured?: boolean
           id?: string
           image_alt?: string | null
           image_url?: string | null
+          individually_shippable?: boolean | null
+          industries?: string[]
+          letterbox_friendly?: boolean | null
+          long_text?: string | null
+          min_quantity?: number | null
           name?: string
+          notes?: string | null
+          occasions?: string[]
           personalization_options?: string[]
           price_from?: number | null
+          product_url?: string | null
           short_text?: string | null
+          sku?: string | null
           slug?: string
           sort_order?: number
+          tags?: string[]
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "landing_products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_visual_briefs: {
+        Row: {
+          approval_status: string
+          aspect_ratio: string | null
+          asset_id: string | null
+          asset_status: string
+          background_treatment: string | null
+          block_type: string | null
+          brief_text: string | null
+          composition: string | null
+          created_at: string
+          created_by: string | null
+          desktop_position: string | null
+          generation_status: string
+          id: string
+          landing_page_id: string | null
+          mobile_position: string | null
+          product_ids: string[]
+          proposal_id: string | null
+          purpose: string | null
+          section_id: string | null
+          title: string
+          updated_at: string
+          visual_type: string
+          workspace_id: string
+        }
+        Insert: {
+          approval_status?: string
+          aspect_ratio?: string | null
+          asset_id?: string | null
+          asset_status?: string
+          background_treatment?: string | null
+          block_type?: string | null
+          brief_text?: string | null
+          composition?: string | null
+          created_at?: string
+          created_by?: string | null
+          desktop_position?: string | null
+          generation_status?: string
+          id?: string
+          landing_page_id?: string | null
+          mobile_position?: string | null
+          product_ids?: string[]
+          proposal_id?: string | null
+          purpose?: string | null
+          section_id?: string | null
+          title: string
+          updated_at?: string
+          visual_type?: string
+          workspace_id: string
+        }
+        Update: {
+          approval_status?: string
+          aspect_ratio?: string | null
+          asset_id?: string | null
+          asset_status?: string
+          background_treatment?: string | null
+          block_type?: string | null
+          brief_text?: string | null
+          composition?: string | null
+          created_at?: string
+          created_by?: string | null
+          desktop_position?: string | null
+          generation_status?: string
+          id?: string
+          landing_page_id?: string | null
+          mobile_position?: string | null
+          product_ids?: string[]
+          proposal_id?: string | null
+          purpose?: string | null
+          section_id?: string | null
+          title?: string
+          updated_at?: string
+          visual_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_visual_briefs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "landing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_visual_briefs_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_visual_briefs_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "landing_ai_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_visual_briefs_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_visual_briefs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"

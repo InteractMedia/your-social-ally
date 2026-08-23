@@ -6,6 +6,7 @@
  */
 
 import type { SectionDesign } from "./landing-design-system";
+import type { ProductImageType, SectionVisual } from "./landing-visual";
 
 export type LandingFunnel = "quote" | "platform";
 
@@ -79,6 +80,8 @@ export type BlockItem = {
 export type BlockContent = {
   /** Controlled visual direction (design system variants only). */
   design?: SectionDesign;
+  /** Structured visual plan — the section's image slot. */
+  visual?: SectionVisual;
   title?: string;
   subtitle?: string;
   body?: string;
@@ -336,3 +339,97 @@ export function paragraphs(text?: string | null): string[] {
     .map((p) => p.trim())
     .filter(Boolean);
 }
+
+/* ------------------------------------------------- central product library */
+
+export type LandingProductImageRow = {
+  id: string;
+  product_id: string;
+  asset_id: string | null;
+  url: string;
+  alt_text: string | null;
+  image_type: ProductImageType;
+  is_primary: boolean;
+  sort_order: number;
+};
+
+export type LandingProductRow = {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string | null;
+  category: string | null;
+  short_text: string | null;
+  long_text: string | null;
+  min_quantity: number | null;
+  price_from: number | null;
+  personalization_options: string[];
+  occasions: string[];
+  industries: string[];
+  tags: string[];
+  letterbox_friendly: boolean | null;
+  individually_shippable: boolean | null;
+  featured: boolean;
+  product_url: string | null;
+  notes: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+  active: boolean;
+  sort_order: number;
+  ai_suggestions: Record<string, unknown>;
+  images?: LandingProductImageRow[];
+};
+
+export type LandingAssetRow = {
+  id: string;
+  name: string;
+  url: string;
+  storage_path: string | null;
+  asset_type: string;
+  alt_text: string | null;
+  product_id: string | null;
+  industry_id: string | null;
+  tags: string[];
+  desktop_ok: boolean;
+  mobile_ok: boolean;
+  source: string;
+  approval_status: string;
+  active: boolean;
+  created_at: string;
+};
+
+export type LandingVisualBriefRow = {
+  id: string;
+  landing_page_id: string | null;
+  section_id: string | null;
+  block_type: string | null;
+  title: string;
+  visual_type: string;
+  purpose: string | null;
+  composition: string | null;
+  desktop_position: string | null;
+  mobile_position: string | null;
+  aspect_ratio: string | null;
+  background_treatment: string | null;
+  product_ids: string[];
+  brief_text: string | null;
+  asset_status: string;
+  asset_id: string | null;
+  generation_status: string;
+  approval_status: string;
+  created_at: string;
+};
+
+/** Occasions/use cases we support as suggestions in the manager UI. */
+export const PRODUCT_OCCASIONS = [
+  "Kerst",
+  "Jubileum",
+  "Oplevering / project",
+  "Teamwaardering",
+  "Relatiegeschenk",
+  "Beurs / event",
+  "Welkomstpakket",
+  "Sinterklaas",
+  "Pasen",
+  "Excuus / herstel",
+] as const;

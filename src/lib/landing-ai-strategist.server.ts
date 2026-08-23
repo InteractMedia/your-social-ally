@@ -81,11 +81,19 @@ CRO-principes die je moet toepassen:
 Ontwerpregels:
 - Gebruik alleen block_types uit engine.allowedBlockTypes. Mist er een blok dat je echt nodig hebt? Zet dat in new_block_type_requests en werk verder met bestaande blokken.
 - Per sectie mag je design-tokens kiezen uit engine.designSystem (layout, background, width, density, image_treatment, cta_style, emphasis). Varieer bewust zodat de pagina niet één grijze kolom wordt, maar blijf rustig en merkconform.
-- media_intent beschrijft welke foto/visual daar hoort (briefing voor ons, geen bestand).
 - cta_url alleen interne anchors zoals "#offerte" of "#producten".
 - Producten alleen kiezen uit productLibrary via product_id. Is de bibliotheek leeg, kies dan geen producten en zet dat in missing_data.
 - Formuliervelden: alleen keys uit engine.formFieldsAvailable, en per veld state required/optional/hidden. Bepaal ook de beste volgorde (de volgorde van de array is de weergaveorder). Verzin geen nieuwe velden.
 - Geen HTML, markdown-tabellen, scripts of CSS in tekstvelden.
+
+VISUAL-FIRST REGIE (verplicht):
+- Je bent ook art director. Elke sectie die visueel iets moet doen krijgt een "visual"-object in content. Denk in beeld, niet alleen in tekst.
+- visual_type kiezen uit: product_cutout, product_group, personalized_product, product_lifestyle, business_context, industry_context, personalization_example, customer_logo, testimonial, illustration, decorative, none.
+- Per visual: purpose (welk bezwaar of belofte bewijst dit beeld), composition (concreet: onderwerp, kadrering, licht, sfeer), desktop_position en mobile_position, aspect_ratio, background_treatment.
+- asset_id mag je ALLEEN vullen met een bestaande asset_id uit assetLibrary die past bij visual_type. Bestaat die niet, laat asset_id leeg (null) en schrijf een concrete visual_brief die een fotograaf of beeldgenerator direct kan uitvoeren.
+- product_ids in visual alleen uit productLibrary.
+- Een sectie zonder beeldbehoefte krijgt visual_type "none" met visual_required false. Gebruik dat spaarzaam: een sterke B2B-pagina is visueel, niet één tekstkolom.
+- Zeg in missing_data expliciet welke visuals ontbreken om de pagina echt commercieel sterk te maken.
 
 Antwoord met exact dit JSON-object (geen extra velden):
 {
@@ -101,7 +109,11 @@ Antwoord met exact dit JSON-object (geen extra velden):
                      "items": [{ "title": "...", "text": "...", "badge": "..." }],
                      "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
                                  "image_treatment": "...", "cta_style": "...", "emphasis": "...",
-                                 "media_intent": "...", "mobile_note": "..." } } }
+                                 "media_intent": "...", "mobile_note": "..." },
+                     "visual": { "visual_required": true, "visual_type": "...", "purpose": "...",
+                                 "composition": "...", "desktop_position": "...", "mobile_position": "...",
+                                 "aspect_ratio": "...", "background_treatment": "...",
+                                 "product_ids": ["..."], "asset_id": null, "visual_brief": "..." } } }
     ]
   },
   "form": { "title": "...", "intro": "...", "submit_label": "...", "success_title": "...", "success_body": "...",
@@ -361,6 +373,10 @@ function sanitizeProposal(
   const allowedFieldKeys = new Set<string>(
     (dataset.engine?.formFieldsAvailable ?? []).map((f: any) => String(f.key)),
   );
+  /* Only approved assets from the Beeldbank may ever be referenced. */
+  const allowedAssets = new Map<string, string>(
+    (dataset.assetLibrary ?? []).map((a: any) => [String(a.asset_id), String(a.asset_type)]),
+  );
 
   const sections = parsed.page.sections
     .filter((s) => (BLOCK_TYPES as readonly string[]).includes(s.block_type))
@@ -380,6 +396,7 @@ function sanitizeProposal(
           text: stripMarkup(i.text),
           badge: stripMarkup(i.badge),
         })),
+        visual: sanitizeVisual(s.content.visual, allowedAssets, allowedProducts),
       },
     }));
 
@@ -392,6 +409,38 @@ function sanitizeProposal(
       fields: parsed.form.fields.filter((f) => allowedFieldKeys.has(f.key)),
     },
     products: parsed.products.filter((p) => allowedProducts.has(p.product_id)),
+  };
+}
+
+
+/**
+ * A visual may only point at content that really exists. An unknown asset_id
+ * becomes a missing visual with a brief, so the page shows an honest visual gap
+ * instead of a broken image.
+ */
+function sanitizeVisual(
+  visual: any,
+  allowedAssets: Map<string, string>,
+  allowedProducts: Set<string>,
+) {
+  if (!visual) return undefined;
+  const assetId =
+    visual.asset_id && allowedAssets.has(String(visual.asset_id)) ? String(visual.asset_id) : null;
+  const type = visual.visual_type ?? "product_lifestyle";
+  const required = type !== "none" && visual.visual_required !== false;
+  return {
+    visual_required: required,
+    visual_type: type,
+    purpose: stripMarkup(visual.purpose) || undefined,
+    composition: stripMarkup(visual.composition) || undefined,
+    desktop_position: visual.desktop_position ?? "right",
+    mobile_position: visual.mobile_position ?? "above",
+    aspect_ratio: visual.aspect_ratio ?? "4:3",
+    background_treatment: stripMarkup(visual.background_treatment) || undefined,
+    product_ids: (visual.product_ids ?? []).filter((id: string) => allowedProducts.has(id)),
+    asset_id: assetId,
+    asset_status: assetId ? ("existing" as const) : ("missing" as const),
+    visual_brief: stripMarkup(visual.visual_brief) || undefined,
   };
 }
 
@@ -458,19 +507,51 @@ export async function applyLandingProposal(args: {
   await dbAdmin.from("landing_page_sections").delete().eq("landing_page_id", newPageId);
   const sections = (plan?.sections ?? []) as any[];
   if (sections.length) {
-    await dbAdmin.from("landing_page_sections").insert(
-      sections.map((s, index) => ({
+    const { data: insertedSections } = await dbAdmin
+      .from("landing_page_sections")
+      .insert(
+        sections.map((s, index) => ({
+          workspace_id: args.workspaceId,
+          landing_page_id: newPageId,
+          block_type: s.block_type,
+          sort_order: index,
+          enabled: s.enabled !== false,
+          use_global: false,
+          global_key: null,
+          variant_key: "A",
+          content: s.content as never,
+        })),
+      )
+      .select("id,block_type,sort_order,content");
+
+    /* Every planned visual without an existing asset becomes a visual brief. */
+    const briefRows = (insertedSections ?? [])
+      .map((section: any) => ({ section, visual: section.content?.visual }))
+      .filter(({ visual }: any) => visual && visual.visual_type !== "none" && !visual.asset_id)
+      .map(({ section, visual }: any) => ({
         workspace_id: args.workspaceId,
         landing_page_id: newPageId,
-        block_type: s.block_type,
-        sort_order: index,
-        enabled: s.enabled !== false,
-        use_global: false,
-        global_key: null,
-        variant_key: "A",
-        content: s.content as never,
-      })),
-    );
+        section_id: section.id,
+        block_type: section.block_type,
+        proposal_id: args.proposalId,
+        title: `${section.block_type} — ${visual.visual_type}`.slice(0, 200),
+        visual_type: visual.visual_type,
+        purpose: visual.purpose ?? null,
+        composition: visual.composition ?? null,
+        desktop_position: visual.desktop_position ?? null,
+        mobile_position: visual.mobile_position ?? null,
+        aspect_ratio: visual.aspect_ratio ?? null,
+        background_treatment: visual.background_treatment ?? null,
+        product_ids: visual.product_ids ?? [],
+        brief_text: visual.visual_brief ?? null,
+        asset_status: "missing",
+        generation_status: "not_started",
+        approval_status: "pending",
+        created_by: args.ctx.userId,
+      }));
+    if (briefRows.length) {
+      await dbAdmin.from("landing_visual_briefs").insert(briefRows as never);
+    }
   }
 
   /* form: keep keys/types from the current config, apply AI states + order */
