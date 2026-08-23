@@ -203,8 +203,10 @@ export const refreshOfflineConversionStatuses = createServerFn({ method: "POST" 
     }
   });
 
+/**
+ * Explicit user approval → the ONLY path that sends conversions to Google.
+ * The frontend never talks to Google directly.
 
- * Explicit user approval → the ONLY path that calls the Google Ads upload API
  * from the UI. The frontend never talks to Google directly.
  */
 export const approveOfflineConversions = createServerFn({ method: "POST" })
