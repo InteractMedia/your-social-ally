@@ -90,6 +90,15 @@ export async function listMappings(
   return out;
 }
 
+export type LiveAction = {
+  id: string;
+  name: string;
+  category: string | null;
+  type: string | null;
+  status: string | null;
+  supportsOfflineUpload: boolean;
+};
+
 /** Live conversion actions of the workspace's Google Ads account (never invented). */
 export async function fetchConversionActions(ctx: { supabase: any; userId: string }) {
   const cid = await resolveCustomerId(ctx);
@@ -101,19 +110,38 @@ export async function fetchConversionActions(ctx: { supabase: any; userId: strin
   );
   return {
     customerId: cid,
-    actions: (rows as any[]).map((r) => {
+    actions: (rows as any[]).map((r): LiveAction => {
       const a = r.conversionAction ?? {};
       return {
         id: String(a.id),
         name: a.name as string,
         category: a.category ? String(a.category).replace(/_/g, " ") : null,
         type: a.type ? String(a.type).replace(/_/g, " ") : null,
+        status: a.status ? String(a.status) : null,
         /** Only UPLOAD_CLICKS actions can receive offline click conversions. */
         supportsOfflineUpload: a.type === "UPLOAD_CLICKS",
       };
     }),
   };
 }
+
+/**
+ * Preflight: is this conversion action still usable for an offline click import?
+ * `actions` only ever contains ENABLED actions, so a missing id means removed,
+ * paused or hidden in Google Ads.
+ */
+export function checkActionUsable(
+  actions: LiveAction[] | null,
+  actionId: string | null,
+): string | null {
+  if (!actionId) return "conversion_action_missing";
+  if (!actions) return null; // live check unavailable — decided at upload time
+  const found = actions.find((a) => a.id === String(actionId));
+  if (!found) return "conversion_action_unavailable";
+  if (!found.supportsOfflineUpload) return "conversion_action_wrong_type";
+  return null;
+}
+
 
 /* -------------------------------------------------------------- eligibility */
 
