@@ -131,6 +131,7 @@ function LandingPageEditor() {
             <TabsTrigger value="content">Inhoud</TabsTrigger>
             <TabsTrigger value="form">Formulier</TabsTrigger>
             <TabsTrigger value="products">Producten & cases</TabsTrigger>
+            <TabsTrigger value="performance">Prestaties</TabsTrigger>
             <TabsTrigger value="settings">Instellingen & SEO</TabsTrigger>
             <TabsTrigger value="versions">Versies</TabsTrigger>
           </TabsList>
@@ -150,6 +151,10 @@ function LandingPageEditor() {
               selected={query.data!.selectedProductIds}
             />
             <TestimonialsEditor pageId={id} testimonials={query.data!.testimonials} />
+          </TabsContent>
+
+          <TabsContent value="performance" className="mt-6">
+            <PerformancePanel pageId={id} />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
