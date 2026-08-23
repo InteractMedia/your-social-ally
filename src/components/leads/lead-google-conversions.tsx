@@ -8,9 +8,11 @@ import { formatDateTime, formatMoney } from "@/lib/ads-period";
 import {
   CLICK_ID_LABELS,
   OFFLINE_EVENT_LABELS,
+  PROCESSING_STATUS_LABELS,
   UPLOAD_STATUS_LABELS,
   reasonLabel,
 } from "@/lib/google-conversions-shared";
+
 import { getLeadOfflineConversions } from "@/lib/google-conversions.functions";
 
 export function LeadGoogleConversions({ leadId }: { leadId: string }) {
@@ -69,9 +71,20 @@ export function LeadGoogleConversions({ leadId }: { leadId: string }) {
                   ? ` · ${CLICK_ID_LABELS[e.click_identifier_type] ?? e.click_identifier_type}`
                   : " · geen click-ID"}
                 {e.google_upload_timestamp
-                  ? ` · geüpload ${formatDateTime(e.google_upload_timestamp)}`
+                  ? ` · verzonden ${formatDateTime(e.google_upload_timestamp)}`
                   : ""}
               </p>
+              {e.google_processing_status ? (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {PROCESSING_STATUS_LABELS[e.google_processing_status] ??
+                    e.google_processing_status}
+                  {e.google_processing_checked_at
+                    ? ` · gecheckt ${formatDateTime(e.google_processing_checked_at)}`
+                    : ""}
+                  {e.google_request_id ? ` · verzoek ${e.google_request_id}` : ""}
+                </p>
+              ) : null}
+
               {reasonLabel(e.google_upload_reason) ? (
                 <p className="text-muted-foreground mt-1 text-xs">
                   {reasonLabel(e.google_upload_reason)}

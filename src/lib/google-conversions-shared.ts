@@ -17,12 +17,23 @@ export type UploadStatus =
 
 export const UPLOAD_STATUS_LABELS: Record<string, string> = {
   pending: "Wacht op goedkeuring",
-  processing: "Bezig",
-  uploaded: "Geüpload",
+  submitted: "Verzonden naar Google",
+  processing: "Google verwerkt nog",
+  uploaded: "Bevestigd door Google",
   failed: "Mislukt",
   not_eligible: "Niet uploadbaar",
   disabled: "Uitgeschakeld",
 };
+
+/** Verwerkingsstatus zoals Google die teruggeeft voor een verzonden batch. */
+export const PROCESSING_STATUS_LABELS: Record<string, string> = {
+  PROCESSING: "In verwerking bij Google",
+  REQUEST_STATUS_UNKNOWN: "Status nog onbekend",
+  SUCCESS: "Verwerkt en geaccepteerd",
+  PARTIAL_SUCCESS: "Deels verwerkt",
+  FAILED: "Afgekeurd door Google",
+};
+
 
 /** Internal conversion events, in funnel order, with the advised initial usage. */
 export const OFFLINE_EVENTS = [
@@ -126,12 +137,15 @@ export const REASON_LABELS: Record<string, string> = {
   api_auth_error: "Google Ads-koppeling vereist opnieuw autorisatie.",
   skipped_by_user: "Handmatig overgeslagen.",
   no_google_account: "Er is geen Google Ads-account gekoppeld.",
-  api_error: "Google Ads gaf een fout terug bij het uploaden.",
-  api_unavailable: "Google Ads was tijdelijk niet bereikbaar.",
+  api_error: "Google gaf een fout terug bij het verzenden van de conversie.",
+  api_unavailable: "Google was tijdelijk niet bereikbaar.",
   dry_run: "Alleen gecontroleerd (geen upload).",
+  processing_rejected:
+    "Google heeft de conversie na verwerking afgekeurd — zie de diagnose bij dit event.",
   not_allowlisted:
-    "Google staat offline click-uploads via deze API niet toe voor dit account; nieuwe integraties moeten de Data Manager API gebruiken.",
+    "Deze conversie kon niet via de oude Google Ads upload-API worden verstuurd; SocialCockpit gebruikt nu de Data Manager API.",
 };
+
 
 
 export function reasonLabel(reason?: string | null): string | null {

@@ -17,9 +17,11 @@ export function OfflineConversionSummary() {
 
   const stats = [
     { label: "Wacht op goedkeuring", value: query.data?.pending ?? 0 },
-    { label: "Vandaag geüpload", value: query.data?.uploadedToday ?? 0 },
+    { label: "Verzonden, wacht op Google", value: query.data?.submitted ?? 0 },
+    { label: "Vandaag bevestigd", value: query.data?.uploadedToday ?? 0 },
     { label: "Mislukt", value: query.data?.failed ?? 0 },
   ];
+
 
   return (
     <Card>
@@ -37,7 +39,7 @@ export function OfflineConversionSummary() {
         {query.isLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((s) => (
               <div key={s.label} className="rounded-lg border p-3">
                 <p className="text-2xl font-semibold tabular-nums">{s.value}</p>

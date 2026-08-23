@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CloudUpload, SkipForward } from "lucide-react";
+import { CloudUpload, RefreshCw, SkipForward } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -32,23 +32,27 @@ import { formatDateTime, formatMoney } from "@/lib/ads-period";
 import {
   CLICK_ID_LABELS,
   OFFLINE_EVENT_LABELS,
+  PROCESSING_STATUS_LABELS,
   UPLOAD_STATUS_LABELS,
   reasonLabel,
 } from "@/lib/google-conversions-shared";
 import {
   approveOfflineConversions,
   getOfflineConversionQueue,
+  refreshOfflineConversionStatuses,
   skipOfflineConversions,
 } from "@/lib/google-conversions.functions";
 
-type Tab = "pending" | "uploaded" | "failed" | "skipped";
+type Tab = "pending" | "submitted" | "uploaded" | "failed" | "skipped";
 
 const TAB_LABELS: Record<Tab, string> = {
   pending: "Wachtend",
-  uploaded: "Geüpload",
+  submitted: "Verzonden",
+  uploaded: "Bevestigd",
   failed: "Mislukt",
   skipped: "Overgeslagen",
 };
+
 
 export function OfflineConversionQueue() {
   const [tab, setTab] = useState<Tab>("pending");
@@ -59,6 +63,7 @@ export function OfflineConversionQueue() {
   const queueFn = useServerFn(getOfflineConversionQueue);
   const approveFn = useServerFn(approveOfflineConversions);
   const skipFn = useServerFn(skipOfflineConversions);
+  const statusFn = useServerFn(refreshOfflineConversionStatuses);
 
   const query = useQuery({
     queryKey: ["offline-conversions", "queue", tab],
@@ -76,12 +81,32 @@ export function OfflineConversionQueue() {
     mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
     onSuccess: (res) => {
       toast.success(
-        `${res.uploaded} geüpload · ${res.failed} mislukt · ${res.skipped} niet uploadbaar`,
+        `${res.submitted} verzonden naar Google · ${res.failed} mislukt · ${res.skipped} niet uploadbaar`,
+        {
+          description:
+            res.submitted > 0
+              ? "Google verwerkt conversies asynchroon. Vraag de verwerkingsstatus op via 'Status bij Google ophalen'."
+              : undefined,
+        },
       );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const statuses = useMutation({
+    mutationFn: () => statusFn({}),
+    onSuccess: (res) => {
+      if (res.error) toast.error(res.error);
+      else
+        toast.success(
+          `${res.checked} opgevraagd · ${res.confirmed} bevestigd · ${res.failed} afgekeurd · ${res.pendingStill} nog in verwerking`,
+        );
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const skip = useMutation({
     mutationFn: (ids: string[]) => skipFn({ data: { ids } }),
@@ -101,7 +126,13 @@ export function OfflineConversionQueue() {
     <Card>
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Offline conversies naar Google Ads</CardTitle>
+          <div>
+            <CardTitle className="text-base">Offline conversies naar Google Ads</CardTitle>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Verzending via de Google Data Manager API. Google verwerkt conversies asynchroon:
+              een verzonden conversie telt pas mee zodra Google die bevestigt.
+            </p>
+          </div>
           <Tabs value={tab} onValueChange={(v) => { setTab(v as Tab); setSelected([]); }}>
             <TabsList>
               {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
@@ -112,36 +143,50 @@ export function OfflineConversionQueue() {
             </TabsList>
           </Tabs>
         </div>
-        {tab === "pending" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={eligibleIds.length === 0}
-              onClick={() => setSelected(selected.length === eligibleIds.length ? [] : eligibleIds)}
-            >
-              {selected.length === eligibleIds.length && eligibleIds.length > 0
-                ? "Selectie wissen"
-                : "Selecteer alles"}
-            </Button>
-            <Button
-              size="sm"
-              disabled={selected.length === 0 || approve.isPending}
-              onClick={() => setConfirmOpen(true)}
-            >
-              <CloudUpload className="mr-1 h-4 w-4" /> Upload geselecteerde ({selected.length})
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={selected.length === 0 || skip.isPending}
-              onClick={() => skip.mutate(selected)}
-            >
-              <SkipForward className="mr-1 h-4 w-4" /> Overslaan
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {tab === "pending" ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={eligibleIds.length === 0}
+                onClick={() =>
+                  setSelected(selected.length === eligibleIds.length ? [] : eligibleIds)
+                }
+              >
+                {selected.length === eligibleIds.length && eligibleIds.length > 0
+                  ? "Selectie wissen"
+                  : "Selecteer alles"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={selected.length === 0 || approve.isPending}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <CloudUpload className="mr-1 h-4 w-4" /> Verstuur geselecteerde ({selected.length})
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={selected.length === 0 || skip.isPending}
+                onClick={() => skip.mutate(selected)}
+              >
+                <SkipForward className="mr-1 h-4 w-4" /> Overslaan
+              </Button>
+            </>
+          ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={statuses.isPending}
+            onClick={() => statuses.mutate()}
+          >
+            <RefreshCw className={`mr-1 h-4 w-4 ${statuses.isPending ? "animate-spin" : ""}`} />
+            Status bij Google ophalen
+          </Button>
+        </div>
       </CardHeader>
+
       <CardContent className="p-0 pb-4">
         {query.isLoading ? (
           <div className="space-y-2 p-4">
@@ -171,7 +216,9 @@ export function OfflineConversionQueue() {
                   <TableHead>Valuta</TableHead>
                   <TableHead>Preflight</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Uploadtijd</TableHead>
+                  <TableHead>Verwerking bij Google</TableHead>
+                  <TableHead>Verzonden</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -253,10 +300,41 @@ export function OfflineConversionQueue() {
                         ) : null}
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm">
+                      {item.processingStatus ? (
+                        <div className="space-y-1">
+                          <Badge
+                            variant={
+                              item.processingStatus === "SUCCESS"
+                                ? "default"
+                                : item.processingStatus === "FAILED"
+                                  ? "destructive"
+                                  : "outline"
+                            }
+                          >
+                            {PROCESSING_STATUS_LABELS[item.processingStatus] ??
+                              item.processingStatus}
+                          </Badge>
+                          {item.processingCheckedAt ? (
+                            <p className="text-muted-foreground text-xs">
+                              gecheckt {formatDateTime(item.processingCheckedAt)}
+                            </p>
+                          ) : null}
+                          {item.requestId ? (
+                            <p className="text-muted-foreground max-w-[200px] truncate text-xs">
+                              verzoek {item.requestId}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-sm">
                       {item.uploadedAt ? formatDateTime(item.uploadedAt) : "—"}
                     </TableCell>
                   </TableRow>
+
                 ))}
               </TableBody>
             </Table>
@@ -268,11 +346,13 @@ export function OfflineConversionQueue() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conversies uploaden naar Google Ads</AlertDialogTitle>
+            <AlertDialogTitle>Conversies naar Google Ads versturen</AlertDialogTitle>
             <AlertDialogDescription>
               Je staat op het punt {selected.length} offline{" "}
-              {selected.length === 1 ? "conversie" : "conversies"} naar Google Ads te uploaden. Dit
-              kan niet worden teruggedraaid.
+              {selected.length === 1 ? "conversie" : "conversies"} naar Google Ads te versturen.
+              Google verwerkt ze asynchroon en bevestigt ze pas daarna; versturen kan niet worden
+              teruggedraaid. Elke conversie krijgt een vast transactienummer, zodat een herhaalde
+              poging nooit dubbel wordt geteld.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -283,8 +363,9 @@ export function OfflineConversionQueue() {
                 approve.mutate(selected);
               }}
             >
-              {selected.length} {selected.length === 1 ? "conversie" : "conversies"} uploaden
+              {selected.length} {selected.length === 1 ? "conversie" : "conversies"} versturen
             </AlertDialogAction>
+
           </AlertDialogFooter>
         </AlertDialogContent>
 

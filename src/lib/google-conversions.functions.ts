@@ -110,12 +110,15 @@ export const setOfflineUploadMode = createServerFn({ method: "POST" })
     return { ok: true as const, error: null as string | null };
   });
 
-/** Queue tab: pending / uploaded / failed / skipped. */
+/** Queue tab: pending / submitted / uploaded / failed / skipped. */
 export const getOfflineConversionQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ tab: z.enum(["pending", "uploaded", "failed", "skipped"]) }).parse(d),
+    z
+      .object({ tab: z.enum(["pending", "submitted", "uploaded", "failed", "skipped"]) })
+      .parse(d),
   )
+
   .handler(async ({ context, data }) => {
     const ctx = context as any;
     const workspaceId = await workspaceOf(ctx);
@@ -148,8 +151,9 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
     const workspaceId = await workspaceOf(ctx);
     const { listQueue } = await import("./google-offline-conversions.server");
     try {
-      const [pending, uploaded, failed] = await Promise.all([
+      const [pending, submitted, uploaded, failed] = await Promise.all([
         listQueue(ctx.supabase, workspaceId, "pending"),
+        listQueue(ctx.supabase, workspaceId, "submitted"),
         listQueue(ctx.supabase, workspaceId, "uploaded"),
         listQueue(ctx.supabase, workspaceId, "failed"),
       ]);
@@ -157,6 +161,7 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
       return {
         ok: true as const,
         pending: pending.length,
+        submitted: submitted.length,
         uploadedToday: uploaded.filter((i) => (i.uploadedAt ?? "").slice(0, 10) === today).length,
         failed: failed.length,
         error: null as string | null,
@@ -165,6 +170,7 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
       return {
         ok: false as const,
         pending: 0,
+        submitted: 0,
         uploadedToday: 0,
         failed: 0,
         error: (err as Error).message,
@@ -173,7 +179,34 @@ export const getOfflineConversionSummary = createServerFn({ method: "GET" })
   });
 
 /**
- * Explicit user approval → the ONLY path that calls the Google Ads upload API
+ * Asks Google what happened to the events it accepted earlier. Only a SUCCESS
+ * status marks a conversion as really uploaded.
+ */
+export const refreshOfflineConversionStatuses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as any;
+    const workspaceId = await workspaceOf(ctx);
+    const { refreshSubmittedStatuses } = await import("./google-offline-conversions.server");
+    try {
+      const result = await refreshSubmittedStatuses(workspaceId);
+      return { ok: true as const, ...result, error: null as string | null };
+    } catch (err) {
+      return {
+        ok: false as const,
+        checked: 0,
+        confirmed: 0,
+        failed: 0,
+        pendingStill: 0,
+        error: (err as Error).message,
+      };
+    }
+  });
+
+/**
+ * Explicit user approval → the ONLY path that sends conversions to Google.
+ * The frontend never talks to Google directly.
+
  * from the UI. The frontend never talks to Google directly.
  */
 export const approveOfflineConversions = createServerFn({ method: "POST" })
@@ -209,11 +242,15 @@ export const approveOfflineConversions = createServerFn({ method: "POST" })
     }
     return {
       ok: true as const,
+      submitted: results.filter((r) => r.status === "submitted").length,
       uploaded: results.filter((r) => r.status === "uploaded").length,
       failed: results.filter((r) => r.status === "failed").length,
-      skipped: results.filter((r) => r.status !== "uploaded" && r.status !== "failed").length,
+      skipped: results.filter(
+        (r) => !["uploaded", "submitted", "failed"].includes(r.status),
+      ).length,
       results,
     };
+
   });
 
 /** Skip: never uploaded, kept for the audit trail. */
@@ -240,7 +277,9 @@ export const skipOfflineConversions = createServerFn({ method: "POST" })
       })
       .in("id", data.ids)
       .in("lead_id", leadIds)
-      .neq("google_upload_status", "uploaded")
+      // An event Google already accepted can never be skipped afterwards.
+      .not("google_upload_status", "in", "(uploaded,submitted,processing)")
+
       .select("id");
     if (error) return { ok: false as const, skipped: 0, error: error.message };
     return { ok: true as const, skipped: updated?.length ?? 0 };
@@ -255,7 +294,7 @@ export const getLeadOfflineConversions = createServerFn({ method: "POST" })
     const { data: events, error } = await ctx.supabase
       .from("lead_conversion_events")
       .select(
-        "id,conversion_event,conversion_timestamp,google_upload_status,google_upload_reason,google_upload_timestamp,google_conversion_action_name,google_conversion_value,google_conversion_currency,click_identifier_type,google_upload_error",
+        "id,conversion_event,conversion_timestamp,google_upload_status,google_upload_reason,google_upload_timestamp,google_conversion_action_name,google_conversion_value,google_conversion_currency,click_identifier_type,google_upload_error,google_request_id,google_transaction_id,google_processing_status,google_processing_checked_at,google_upload_method",
       )
       .eq("lead_id", data.leadId)
       .order("conversion_timestamp", { ascending: true });
@@ -272,7 +311,7 @@ export const getOfflineUploadLog = createServerFn({ method: "GET" })
     const { data, error } = await ctx.supabase
       .from("google_conversion_upload_log")
       .select(
-        "id,created_at,internal_event_name,google_conversion_action_name,click_identifier_type,value,currency,result,error_code,error_message,mode,approved_by_email,lead_id",
+        "id,created_at,internal_event_name,google_conversion_action_name,click_identifier_type,value,currency,result,error_code,error_message,mode,approved_by_email,lead_id,upload_method,google_request_id,google_transaction_id,processing_status",
       )
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
