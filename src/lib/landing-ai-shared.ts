@@ -33,125 +33,177 @@ export const LANDING_AI_MODE_LABELS: Record<LandingAiMode, string> = {
 
 /* ---------------------------------------------------------------- schemas */
 
-const shortText = z.string().trim().max(400);
-const longText = z.string().trim().max(6000);
+/**
+ * Tolerant primitives. A single Claude run costs minutes, so the contract
+ * repairs cosmetic deviations (too-long text, a paraphrased enum value)
+ * instead of rejecting the whole proposal. Structure stays strict.
+ */
+const clampedText = (max: number) =>
+  z.preprocess((v) => {
+    if (typeof v === "number" || typeof v === "boolean") v = String(v);
+    if (typeof v !== "string") return v;
+    const t = v.trim();
+    return t.length > max ? t.slice(0, max) : t;
+  }, z.string().max(max));
+
+function tolerantEnum<T extends readonly [string, ...string[]]>(values: T, fallback?: T[number]) {
+  const map = (v: unknown) => {
+    if (typeof v !== "string") return fallback;
+    const s = v.trim().toLowerCase();
+    return (
+      values.find((o) => o.toLowerCase() === s) ??
+      values.find((o) => s.startsWith(o.toLowerCase()) || s.includes(o.toLowerCase())) ??
+      fallback
+    );
+  };
+  return fallback === undefined
+    ? z.preprocess(map, z.enum(values).optional())
+    : z.preprocess(map, z.enum(values).default(fallback));
+}
+
+const score = (fallback = 50) =>
+  z.preprocess((v) => {
+    const n = typeof v === "string" ? Number.parseFloat(v.replace(/[^0-9.]/g, "")) : v;
+    if (typeof n !== "number" || Number.isNaN(n)) return fallback;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }, z.number().int().min(0).max(100));
+
+const shortText = clampedText(400);
+const longText = clampedText(6000);
 
 export const aiSectionDesignSchema = z.object({
-  layout: z.enum(SECTION_LAYOUTS).optional(),
-  background: z.enum(SECTION_BACKGROUNDS).optional(),
-  width: z.enum(SECTION_WIDTHS).optional(),
-  density: z.enum(SECTION_DENSITIES).optional(),
-  image_treatment: z.enum(IMAGE_TREATMENTS).optional(),
-  cta_style: z.enum(CTA_STYLES).optional(),
-  emphasis: z.enum(EMPHASIS_LEVELS).optional(),
-  media_intent: z.string().trim().max(500).optional(),
-  mobile_note: z.string().trim().max(500).optional(),
+  layout: tolerantEnum(SECTION_LAYOUTS),
+  background: tolerantEnum(SECTION_BACKGROUNDS),
+  width: tolerantEnum(SECTION_WIDTHS),
+  density: tolerantEnum(SECTION_DENSITIES),
+  image_treatment: tolerantEnum(IMAGE_TREATMENTS),
+  cta_style: tolerantEnum(CTA_STYLES),
+  emphasis: tolerantEnum(EMPHASIS_LEVELS),
+  media_intent: clampedText(500).optional(),
+  mobile_note: clampedText(500).optional(),
 });
+
 
 export const aiSectionSchema = z.object({
   block_type: z.enum(BLOCK_TYPES),
-  enabled: z.boolean().default(true),
+  enabled: z.preprocess((v) => (typeof v === "boolean" ? v : true), z.boolean().default(true)),
   content: z.object({
     title: shortText.optional(),
-    subtitle: z.string().trim().max(1000).optional(),
+    subtitle: clampedText(1000).optional(),
     body: longText.optional(),
     image_alt: shortText.optional(),
-    cta_label: z.string().trim().max(120).optional(),
-    cta_url: z.string().trim().max(200).optional(),
-    secondary_cta_label: z.string().trim().max(120).optional(),
-    secondary_cta_url: z.string().trim().max(200).optional(),
+    cta_label: clampedText(120).optional(),
+    cta_url: clampedText(200).optional(),
+    secondary_cta_label: clampedText(120).optional(),
+    secondary_cta_url: clampedText(200).optional(),
     items: z
       .array(
         z.object({
           title: shortText.optional(),
-          text: z.string().trim().max(2000).optional(),
-          badge: z.string().trim().max(60).optional(),
+          text: clampedText(2000).optional(),
+          badge: clampedText(60).optional(),
         }),
       )
-      .max(12)
       .optional(),
     design: aiSectionDesignSchema.optional(),
   }),
-  reason: z.string().trim().max(500).optional(),
+  reason: clampedText(500).optional(),
 });
 
 export const aiFormFieldSchema = z.object({
-  key: z.string().trim().max(60),
-  state: z.enum(["required", "optional", "hidden"]),
-  label: z.string().trim().max(160).optional(),
-  help: z.string().trim().max(300).optional(),
-  placeholder: z.string().trim().max(200).optional(),
+  key: clampedText(60),
+  state: tolerantEnum(["required", "optional", "hidden"] as const, "optional"),
+  label: clampedText(160).optional(),
+  help: clampedText(300).optional(),
+  placeholder: clampedText(200).optional(),
 });
+
+/** Drops sections whose block_type is not renderable instead of failing the run. */
+const sectionsArray = z.preprocess(
+  (v) =>
+    Array.isArray(v)
+      ? v.filter(
+          (s) =>
+            s &&
+            typeof s === "object" &&
+            (BLOCK_TYPES as readonly string[]).includes((s as { block_type?: string }).block_type ?? ""),
+        )
+      : v,
+  z.array(aiSectionSchema).min(3),
+);
 
 export const aiProposalSchema = z.object({
   strategy: z.object({
     audience: longText,
     visit_intent: longText,
-    pains: z.array(shortText).max(10).default([]),
+    pains: z.array(shortText).default([]),
     core_proposition: longText,
-    key_proof: z.array(shortText).max(10).default([]),
+    key_proof: z.array(shortText).default([]),
     primary_cta: shortText,
-    objections: z.array(shortText).max(10).default([]),
-    recommended_structure: z.array(shortText).max(20).default([]),
-    missing_data: z.array(shortText).max(20).default([]),
-    mobile_priorities: z.array(shortText).max(10).default([]),
-    confidence: z.number().int().min(0).max(100),
+    objections: z.array(shortText).default([]),
+    recommended_structure: z.array(shortText).default([]),
+    missing_data: z.array(shortText).default([]),
+    mobile_priorities: z.array(shortText).default([]),
+    confidence: score(),
   }),
   page: z.object({
     name: shortText.optional(),
-    seo_title: z.string().trim().max(200).optional(),
-    seo_description: z.string().trim().max(400).optional(),
-    sections: z.array(aiSectionSchema).min(3).max(16),
+    seo_title: clampedText(200).optional(),
+    seo_description: clampedText(400).optional(),
+    sections: sectionsArray,
   }),
   form: z.object({
     title: shortText.optional(),
-    intro: z.string().trim().max(1000).optional(),
-    submit_label: z.string().trim().max(120).optional(),
+    intro: clampedText(1000).optional(),
+    submit_label: clampedText(120).optional(),
     success_title: shortText.optional(),
-    success_body: z.string().trim().max(1000).optional(),
-    fields: z.array(aiFormFieldSchema).max(40).default([]),
-    reason: z.string().trim().max(800).optional(),
+    success_body: clampedText(1000).optional(),
+    fields: z.array(aiFormFieldSchema).default([]),
+    reason: clampedText(800).optional(),
   }),
   products: z
     .array(
       z.object({
-        product_id: z.string().trim().max(60),
+        product_id: clampedText(60),
         reason: shortText.optional(),
       }),
     )
-    .max(12)
     .default([]),
-  rationale: z
-    .array(z.object({ topic: shortText, reason: z.string().trim().max(800) }))
-    .max(12)
-    .default([]),
+  rationale: z.array(z.object({ topic: shortText, reason: clampedText(800) })).default([]),
   visual_direction: z.object({
     overall: longText,
-    photography_needs: z.array(shortText).max(10).default([]),
+    photography_needs: z.array(shortText).default([]),
     trust_placement: shortText.optional(),
     desktop_composition: longText.optional(),
     mobile_composition: longText.optional(),
-    product_count: z.number().int().min(0).max(20).optional(),
+    product_count: z
+      .preprocess((v) => {
+        const n = typeof v === "string" ? Number.parseInt(v, 10) : v;
+        return typeof n === "number" && !Number.isNaN(n) ? Math.max(0, Math.min(20, n)) : undefined;
+      }, z.number().int().min(0).max(20).optional())
+      .optional(),
   }),
   new_block_type_requests: z
-    .array(z.object({ name: shortText, purpose: z.string().trim().max(600) }))
-    .max(5)
+    .array(z.object({ name: shortText, purpose: clampedText(600) }))
     .default([]),
   experiments: z
     .array(
       z.object({
         name: shortText,
-        hypothesis: z.string().trim().max(800),
+        hypothesis: clampedText(800),
         primary_metric: shortText,
-        proposed_change: z.string().trim().max(1000),
-        target_block: z.string().trim().max(60).optional(),
-        expected_direction: z.enum(["positief", "neutraal", "onbekend"]).default("onbekend"),
+        proposed_change: clampedText(1000),
+        target_block: clampedText(60).optional(),
+        expected_direction: tolerantEnum(
+          ["positief", "neutraal", "onbekend"] as const,
+          "onbekend",
+        ),
       }),
     )
-    .max(6)
     .default([]),
-  ai_confidence: z.number().int().min(0).max(100),
+  ai_confidence: score(),
 });
+
 
 export type AiProposalPayload = z.infer<typeof aiProposalSchema>;
 
