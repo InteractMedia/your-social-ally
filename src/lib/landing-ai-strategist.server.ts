@@ -337,9 +337,9 @@ export async function runLandingStrategist(args: {
      * an untested best practice as proven for ZoetBezorgen. */
     const gradedDecisions = sanitized.decisions.map((d, index) => {
       const graded = gradeDecision({
-        decision_area: d.decision_area,
+        decision_area: d.decision_area ?? "page_structure",
         decision: d.decision,
-        evidence_source: d.evidence_source,
+        evidence_source: d.evidence_source ?? "ai_hypothesis",
         evidence_level: d.evidence_level,
         sample_size: d.sample_size ?? null,
         metric: d.metric ?? null,
