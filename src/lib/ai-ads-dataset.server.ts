@@ -548,7 +548,9 @@ export async function buildAdsAnalysisSnapshot(opts: {
         "googleAds.keywords": "Klassieke Search-zoekwoorden (alleen rijen die impressies hadden).",
         "googleAds.searchTerms": "Klassieke Search-zoektermen; bestaan alleen bij Search-campagnes.",
         "googleAds.pmaxSearchInsights":
-          "Performance Max search-term insights: zoekcategorieën, geen individuele zoektermen.",
+          "Performance Max search-term insights voor de huidige periode: zoekcategorieën (clusters van queries), NOOIT individuele zoektermen. Google levert voor deze resource geen kosten, CPC of CPA per categorie: verzin die niet en bereken geen categorie-CPA.",
+        "googleAds.pmaxSearchInsightsPrevious":
+          "Dezelfde PMax-zoekcategorieën voor de vorige periode, voor periodevergelijking.",
         socialCockpitB2B:
           "Onze eigen B2B lead-/klantdata uit SocialCockpit. Nooit gelijkstellen aan Google Ads-conversies.",
       },
