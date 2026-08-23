@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Building2, Check, Copy, KeyRound, Link2, Loader2, Megaphone, Plug, Sparkles, Stethoscope, X } from "lucide-react";
+import { AlertTriangle, Brain, Building2, Check, Copy, KeyRound, Link2, Loader2, Megaphone, Plug, Sparkles, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -18,6 +18,14 @@ import { getGoogleAdsConnection } from "@/lib/google-ads.functions";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
 import { createIngestKey, getMyWorkspace, revokeIngestKey } from "@/lib/workspaces.functions";
 import { checkMetaScopes, debugMetaToken, getMetaStatus, REQUIRED_META_SCOPES } from "@/lib/meta.functions";
+import { getAiAdsSettings, updateAiAdsSettings } from "@/lib/ai-ads.functions";
+import {
+  AI_PROVIDERS,
+  ANALYSIS_PERIOD_OPTIONS,
+  CLAUDE_MODEL_OPTIONS,
+  LOVABLE_MODEL_OPTIONS,
+  type AiSettings,
+} from "@/lib/ai-analyst-shared";
 
 
 export const Route = createFileRoute("/settings")({
@@ -140,11 +148,179 @@ function Settings() {
           </CardContent>
         </Card>
 
+        <AiAnalystCard />
+
         <WorkspaceCard />
 
         <MetaDebugCard />
       </div>
     </AppShell>
+  );
+}
+
+/** AI Ads Analyst: model, analyseperiode en veiligheidsgrenzen. */
+function AiAnalystCard() {
+  const getFn = useServerFn(getAiAdsSettings);
+  const saveFn = useServerFn(updateAiAdsSettings);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["ai-settings"], queryFn: () => getFn({}) });
+  const [draft, setDraft] = useState<AiSettings | null>(null);
+
+  const settings = draft ?? data?.settings ?? null;
+  const availability = data?.availability;
+
+  const save = useMutation({
+    mutationFn: (s: AiSettings) =>
+      saveFn({
+        data: {
+          enabled: s.enabled,
+          provider: s.provider,
+          model: s.model,
+          defaultPeriodDays: s.defaultPeriodDays as 7 | 30 | 90,
+          minConfidence: s.minConfidence,
+          budgetChangeMaxPct: s.budgetChangeMaxPct,
+        },
+      }),
+    onSuccess: (res) => {
+      if (!res.ok) return toast.error(res.error ?? "Opslaan mislukt");
+      toast.success("AI-instellingen opgeslagen");
+      qc.invalidateQueries({ queryKey: ["ai-settings"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const patch = (p: Partial<AiSettings>) =>
+    settings && setDraft({ ...settings, ...p } as AiSettings);
+
+  const modelOptions =
+    settings?.provider === "anthropic" ? CLAUDE_MODEL_OPTIONS : LOVABLE_MODEL_OPTIONS;
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Brain className="h-4 w-4 text-primary" /> AI Ads Analyst
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading || !settings ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Instellingen laden…
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <Label className="text-xs">AI-provider</Label>
+                <select
+                  value={settings.provider}
+                  onChange={(e) => {
+                    const provider = e.target.value as AiSettings["provider"];
+                    const fallbackModel =
+                      provider === "anthropic" ? CLAUDE_MODEL_OPTIONS[0] : LOVABLE_MODEL_OPTIONS[0];
+                    patch({ provider, model: fallbackModel });
+                  }}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {AI_PROVIDERS.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                {availability && availability[settings.provider] === false && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                    <AlertTriangle className="h-3 w-3" /> Sleutel ontbreekt — analyses gebruiken het
+                    fallbackmodel.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-xs">Model</Label>
+                <select
+                  value={settings.model}
+                  onChange={(e) => patch({ model: e.target.value })}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {[...new Set([settings.model, ...modelOptions])].map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Standaard analyseperiode</Label>
+                <select
+                  value={settings.defaultPeriodDays}
+                  onChange={(e) => patch({ defaultPeriodDays: Number(e.target.value) })}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {ANALYSIS_PERIOD_OPTIONS.map((d) => (
+                    <option key={d} value={d}>
+                      Laatste {d} dagen
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Minimale betrouwbaarheid (%)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={settings.minConfidence}
+                  onChange={(e) => patch({ minConfidence: Number(e.target.value) })}
+                  className="mt-1 bg-background"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Max. budgetstap per advies (%)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={settings.budgetChangeMaxPct}
+                  onChange={(e) => patch({ budgetChangeMaxPct: Number(e.target.value) })}
+                  className="mt-1 bg-background"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={settings.enabled}
+                    onChange={(e) => patch({ enabled: e.target.checked })}
+                    className="h-4 w-4"
+                  />
+                  Analyses toegestaan
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-md border border-border bg-surface p-3 text-xs text-muted-foreground">
+              AI mag uitsluitend analyseren en voorstellen doen. Automatisch doorvoeren in Google Ads is
+              uitgeschakeld en kan hier niet aangezet worden.
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => save.mutate(settings)} disabled={save.isPending}>
+                {save.isPending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                Opslaan
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/ads/google/advice">Open adviesinbox</Link>
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

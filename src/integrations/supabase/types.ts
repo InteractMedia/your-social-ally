@@ -14,6 +14,329 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_advice: {
+        Row: {
+          actionable: boolean
+          advice_type: string
+          analysis_period_end: string | null
+          analysis_period_start: string | null
+          confidence_level: string
+          confidence_score: number
+          created_at: string
+          data_available: Json | null
+          data_missing: Json | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          evidence: Json | null
+          expected_impact: string | null
+          guardrail_notes: string | null
+          id: string
+          is_test: boolean
+          model_name: string
+          model_provider: string
+          outcome_measured_at: string | null
+          outcome_snapshot: Json | null
+          platform: string
+          prompt_version: string
+          proposed_action: string | null
+          proposed_payload: Json | null
+          reasoning: string | null
+          rejection_notes: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: string
+          run_id: string | null
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          actionable?: boolean
+          advice_type: string
+          analysis_period_end?: string | null
+          analysis_period_start?: string | null
+          confidence_level?: string
+          confidence_score?: number
+          created_at?: string
+          data_available?: Json | null
+          data_missing?: Json | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          evidence?: Json | null
+          expected_impact?: string | null
+          guardrail_notes?: string | null
+          id?: string
+          is_test?: boolean
+          model_name: string
+          model_provider: string
+          outcome_measured_at?: string | null
+          outcome_snapshot?: Json | null
+          platform?: string
+          prompt_version: string
+          proposed_action?: string | null
+          proposed_payload?: Json | null
+          reasoning?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string
+          run_id?: string | null
+          status?: string
+          summary: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          actionable?: boolean
+          advice_type?: string
+          analysis_period_end?: string | null
+          analysis_period_start?: string | null
+          confidence_level?: string
+          confidence_score?: number
+          created_at?: string
+          data_available?: Json | null
+          data_missing?: Json | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          evidence?: Json | null
+          expected_impact?: string | null
+          guardrail_notes?: string | null
+          id?: string
+          is_test?: boolean
+          model_name?: string
+          model_provider?: string
+          outcome_measured_at?: string | null
+          outcome_snapshot?: Json | null
+          platform?: string
+          prompt_version?: string
+          proposed_action?: string | null
+          proposed_payload?: Json | null
+          reasoning?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string
+          run_id?: string | null
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_advice_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_analysis_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_advice_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_advice_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          advice_id: string | null
+          created_at: string
+          detail: Json | null
+          id: string
+          run_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          advice_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          run_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          advice_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          run_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_advice_audit_advice_id_fkey"
+            columns: ["advice_id"]
+            isOneToOne: false
+            referencedRelation: "ai_advice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_advice_audit_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_analysis_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_advice_audit_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_analysis_runs: {
+        Row: {
+          advice_count: number
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          data_quality: Json | null
+          error: string | null
+          estimated_cost_usd: number | null
+          id: string
+          input_tokens: number | null
+          is_test: boolean
+          model_name: string
+          model_provider: string
+          output_tokens: number | null
+          period_days: number
+          period_end: string
+          period_start: string
+          platform: string
+          prompt_version: string
+          runtime_ms: number | null
+          snapshot: Json | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          advice_count?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          data_quality?: Json | null
+          error?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          is_test?: boolean
+          model_name: string
+          model_provider: string
+          output_tokens?: number | null
+          period_days: number
+          period_end: string
+          period_start: string
+          platform?: string
+          prompt_version: string
+          runtime_ms?: number | null
+          snapshot?: Json | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          advice_count?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          data_quality?: Json | null
+          error?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          is_test?: boolean
+          model_name?: string
+          model_provider?: string
+          output_tokens?: number | null
+          period_days?: number
+          period_end?: string
+          period_start?: string
+          platform?: string
+          prompt_version?: string
+          runtime_ms?: number | null
+          snapshot?: Json | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analysis_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_analysis_settings: {
+        Row: {
+          auto_execute: boolean
+          budget_change_max_pct: number
+          created_at: string
+          default_period_days: number
+          enabled: boolean
+          min_confidence: number
+          model: string
+          provider: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          auto_execute?: boolean
+          budget_change_max_pct?: number
+          created_at?: string
+          default_period_days?: number
+          enabled?: boolean
+          min_confidence?: number
+          model?: string
+          provider?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          auto_execute?: boolean
+          budget_change_max_pct?: number
+          created_at?: string
+          default_period_days?: number
+          enabled?: boolean
+          min_confidence?: number
+          model?: string
+          provider?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analysis_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversion_definitions: {
         Row: {
           created_at: string

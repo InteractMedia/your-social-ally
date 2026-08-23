@@ -19,6 +19,7 @@ import {
   PlusCircle,
   GitCompare,
   Briefcase,
+  Brain,
 
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -85,6 +86,7 @@ const nav: NavSection[] = [
     icon: Megaphone,
     children: [
       { to: "/ads/google", label: "Google Ads", icon: BarChart3 },
+      { to: "/ads/google/advice", label: "AI Ads Analyst", icon: Brain },
       { to: "/ads/google/new", label: "Nieuwe campagne", icon: PlusCircle },
       { to: "/ads/google/conversions", label: "Conversies", icon: Target },
       { to: "/ads/compare", label: "Vergelijk concurrent", icon: GitCompare },

@@ -36,6 +36,7 @@ import { Route as ApiPublicLeadStatusRouteImport } from './routes/api/public/lea
 import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleConversionsRouteImport } from './routes/ads.google.conversions'
+import { Route as AdsGoogleAdviceRouteImport } from './routes/ads.google.advice'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
 import { Route as ApiPublicLeadIngestQuoteRouteImport } from './routes/api/public/lead-ingest.quote'
 import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/public/lead-ingest.platform'
@@ -175,6 +176,11 @@ const AdsGoogleConversionsRoute = AdsGoogleConversionsRouteImport.update({
   path: '/conversions',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
+const AdsGoogleAdviceRoute = AdsGoogleAdviceRouteImport.update({
+  id: '/advice',
+  path: '/advice',
+  getParentRoute: () => AdsGoogleRoute,
+} as any)
 const AdsGoogleCampaignIdRoute = AdsGoogleCampaignIdRouteImport.update({
   id: '/$campaignId',
   path: '/$campaignId',
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/competitors': typeof CompetitorsIndexRoute
   '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
+  '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/leads/'
     | '/ads/google/$campaignId'
+    | '/ads/google/advice'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/leads'
     | '/ads/google/$campaignId'
+    | '/ads/google/advice'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/leads/'
     | '/ads/google/$campaignId'
+    | '/ads/google/advice'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -590,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleConversionsRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
+    '/ads/google/advice': {
+      id: '/ads/google/advice'
+      path: '/advice'
+      fullPath: '/ads/google/advice'
+      preLoaderRoute: typeof AdsGoogleAdviceRouteImport
+      parentRoute: typeof AdsGoogleRoute
+    }
     '/ads/google/$campaignId': {
       id: '/ads/google/$campaignId'
       path: '/$campaignId'
@@ -616,6 +635,7 @@ declare module '@tanstack/react-router' {
 
 interface AdsGoogleRouteChildren {
   AdsGoogleCampaignIdRoute: typeof AdsGoogleCampaignIdRoute
+  AdsGoogleAdviceRoute: typeof AdsGoogleAdviceRoute
   AdsGoogleConversionsRoute: typeof AdsGoogleConversionsRoute
   AdsGoogleNewRoute: typeof AdsGoogleNewRoute
   AdsGoogleStatsRoute: typeof AdsGoogleStatsRoute
@@ -624,6 +644,7 @@ interface AdsGoogleRouteChildren {
 
 const AdsGoogleRouteChildren: AdsGoogleRouteChildren = {
   AdsGoogleCampaignIdRoute: AdsGoogleCampaignIdRoute,
+  AdsGoogleAdviceRoute: AdsGoogleAdviceRoute,
   AdsGoogleConversionsRoute: AdsGoogleConversionsRoute,
   AdsGoogleNewRoute: AdsGoogleNewRoute,
   AdsGoogleStatsRoute: AdsGoogleStatsRoute,
