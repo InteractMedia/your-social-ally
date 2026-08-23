@@ -263,14 +263,22 @@ export type QueueItem = {
   isTest: boolean;
   campaign: string | null;
   eligible: boolean;
+  requestId: string | null;
+  transactionId: string | null;
+  processingStatus: string | null;
+  processingCheckedAt: string | null;
+  uploadMethod: string | null;
+  diagnostics: string | null;
 };
 
 const STATUS_GROUPS: Record<string, string[]> = {
-  pending: ["pending", "processing"],
+  pending: ["pending"],
+  submitted: ["submitted", "processing"],
   uploaded: ["uploaded"],
   failed: ["failed"],
   skipped: ["not_eligible", "disabled"],
 };
+
 
 /**
  * Workspace-scoped queue. Uses the caller's RLS client so a user can never see
