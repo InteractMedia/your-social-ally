@@ -30,6 +30,7 @@ import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 import { Route as LandingpagesProductenRouteImport } from './routes/landingpages.producten'
+import { Route as LandingpagesEvidenceRouteImport } from './routes/landingpages.evidence'
 import { Route as LandingpagesBeeldbankRouteImport } from './routes/landingpages.beeldbank'
 import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
 import { Route as LandingAiIdRouteImport } from './routes/landing-ai.$id'
@@ -155,6 +156,11 @@ const LandingpagesProductenRoute = LandingpagesProductenRouteImport.update({
   path: '/landingpages/producten',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingpagesEvidenceRoute = LandingpagesEvidenceRouteImport.update({
+  id: '/landingpages/evidence',
+  path: '/landingpages/evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LandingpagesBeeldbankRoute = LandingpagesBeeldbankRouteImport.update({
   id: '/landingpages/beeldbank',
   path: '/landingpages/beeldbank',
@@ -274,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
+  '/landingpages/evidence': typeof LandingpagesEvidenceRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
+  '/landingpages/evidence': typeof LandingpagesEvidenceRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
   '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
+  '/landingpages/evidence': typeof LandingpagesEvidenceRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/landingpages/beeldbank'
+    | '/landingpages/evidence'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/landingpages/beeldbank'
+    | '/landingpages/evidence'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -479,6 +490,7 @@ export interface FileRouteTypes {
     | '/landing-ai/$id'
     | '/landingpages/$id'
     | '/landingpages/beeldbank'
+    | '/landingpages/evidence'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -518,6 +530,7 @@ export interface RootRouteChildren {
   LandingAiIdRoute: typeof LandingAiIdRoute
   LandingpagesIdRoute: typeof LandingpagesIdRoute
   LandingpagesBeeldbankRoute: typeof LandingpagesBeeldbankRoute
+  LandingpagesEvidenceRoute: typeof LandingpagesEvidenceRoute
   LandingpagesProductenRoute: typeof LandingpagesProductenRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       path: '/landingpages/producten'
       fullPath: '/landingpages/producten'
       preLoaderRoute: typeof LandingpagesProductenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landingpages/evidence': {
+      id: '/landingpages/evidence'
+      path: '/landingpages/evidence'
+      fullPath: '/landingpages/evidence'
+      preLoaderRoute: typeof LandingpagesEvidenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landingpages/beeldbank': {
@@ -898,6 +918,7 @@ const rootRouteChildren: RootRouteChildren = {
   LandingAiIdRoute: LandingAiIdRoute,
   LandingpagesIdRoute: LandingpagesIdRoute,
   LandingpagesBeeldbankRoute: LandingpagesBeeldbankRoute,
+  LandingpagesEvidenceRoute: LandingpagesEvidenceRoute,
   LandingpagesProductenRoute: LandingpagesProductenRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
