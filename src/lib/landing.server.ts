@@ -310,7 +310,7 @@ export async function createPageWithTemplate(args: {
       industry_id: args.industryId ?? null,
       status: "draft",
       template_key: TEMPLATE_KEY,
-      base_url: args.baseUrl ?? null,
+      base_url: args.baseUrl ?? LANDING_PRODUCTION_BASE_URL,
       noindex: true,
       seo_title: `${args.name} — ZoetBezorgen zakelijk`,
       active: true,
