@@ -83,6 +83,22 @@ export const GUARDRAIL_REASON_LABELS: Record<GuardrailReasonCode, string> = {
     "V1.4A voert niets uit: goedkeuren legt alleen je beslissing vast voor een latere uitvoerfase.",
 };
 
+/** Meest verklarende reden eerst: bewijsvoering vóór generieke datagebreken. */
+const REASON_PRIORITY: GuardrailReasonCode[] = [
+  "insufficient_evidence_for_campaign_pause",
+  "advice_contradicts_own_evidence",
+  "measurement_technically_active",
+  "tracking_issue_not_technically_proven",
+  "insufficient_sample_size",
+  "no_b2b_lead_data",
+  "no_revenue_attribution",
+  "weak_campaign_attribution",
+  "traffic_shift_vs_previous_period",
+  "conversion_lag_risk",
+  "data_quality_warnings",
+  "no_execution_layer_in_v14a",
+];
+
 export type GuardrailBlocker = {
   code: GuardrailReasonCode;
   severity: "block" | "review";
@@ -358,9 +374,12 @@ export function evaluateExecutionEligibility(
     eligibility = "ALLOWED";
   }
 
+  const ranked = [...blockers].sort(
+    (a, b) => REASON_PRIORITY.indexOf(a.code) - REASON_PRIORITY.indexOf(b.code),
+  );
   const primary =
-    blockers.find((b) => b.severity === "block") ??
-    blockers[0] ??
+    ranked.find((b) => b.severity === "block") ??
+    ranked[0] ??
     (write ? null : { code: "no_execution_layer_in_v14a" as GuardrailReasonCode, severity: "review" as const, label: GUARDRAIL_REASON_LABELS.no_execution_layer_in_v14a });
 
   return {
@@ -369,8 +388,14 @@ export function evaluateExecutionEligibility(
     dataConfidenceLevel: data.level,
     reasonCode: primary?.code ?? null,
     reasonLabel: primary?.label ?? null,
-    blockers,
-    contradiction,
+    blockers: ranked,
+    contradiction:
+      contradiction ||
+      ranked.some(
+        (b) =>
+          b.code === "insufficient_evidence_for_campaign_pause" ||
+          b.code === "advice_contradicts_own_evidence",
+      ),
     guardrailVersion: GUARDRAIL_VERSION,
   };
 }
