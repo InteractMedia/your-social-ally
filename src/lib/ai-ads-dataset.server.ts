@@ -37,6 +37,14 @@ export type AnalysisSnapshot = Awaited<ReturnType<typeof buildAdsAnalysisSnapsho
 const TOP_N = 40;
 const INSIGHT_N = 25;
 
+/** Alleen deze metrics zijn toegestaan op campaign_search_term_insight. */
+const INSIGHT_METRIC_FIELDS = [
+  "metrics.impressions",
+  "metrics.clicks",
+  "metrics.conversions",
+  "metrics.conversions_value",
+].join(", ");
+
 function shiftPeriod(start: string, end: string) {
   const s = new Date(`${start}T00:00:00Z`);
   const e = new Date(`${end}T00:00:00Z`);
