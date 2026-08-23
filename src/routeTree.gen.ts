@@ -28,6 +28,7 @@ import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
+import { Route as CadeauplatformSlugRouteImport } from './routes/cadeauplatform.$slug'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
 import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
@@ -137,6 +138,11 @@ const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CompetitorsRoute,
 } as any)
+const CadeauplatformSlugRoute = CadeauplatformSlugRouteImport.update({
+  id: '/cadeauplatform/$slug',
+  path: '/cadeauplatform/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdsGoogleRoute = AdsGoogleRouteImport.update({
   id: '/google',
   path: '/google',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -321,6 +330,7 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/ads/google'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -385,6 +396,7 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/ads/google'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
     | '/leads/$id'
     | '/leads/branches'
@@ -417,6 +429,7 @@ export interface RootRouteChildren {
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
+  CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
@@ -558,6 +571,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/competitors/$id'
       preLoaderRoute: typeof CompetitorsIdRouteImport
       parentRoute: typeof CompetitorsRoute
+    }
+    '/cadeauplatform/$slug': {
+      id: '/cadeauplatform/$slug'
+      path: '/cadeauplatform/$slug'
+      fullPath: '/cadeauplatform/$slug'
+      preLoaderRoute: typeof CadeauplatformSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/ads/google': {
       id: '/ads/google'
@@ -733,6 +753,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
+  CadeauplatformSlugRoute: CadeauplatformSlugRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,

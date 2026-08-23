@@ -1,7 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { LandingPageView } from "@/components/landing/landing-page-view";
-import { landingUrl } from "@/lib/landing-shared";
 import { getPublicLandingPage } from "@/lib/landing.functions";
 
 export const Route = createFileRoute("/offerte/$slug")({
@@ -59,5 +58,3 @@ function QuoteLandingPage() {
   const { preview } = Route.useSearch();
   return <LandingPageView page={page} previewToken={preview ?? null} />;
 }
-
-export const publicUrlFor = (base: string | null, slug: string) => landingUrl(base, "quote", slug);
