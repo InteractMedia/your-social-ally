@@ -51,6 +51,8 @@ export type PublicPage = {
   seo_title: string | null;
   seo_description: string | null;
   canonical: string | null;
+  /** Absolute productie-URL van deze pagina (null in preview). */
+  page_url: string | null;
   noindex: boolean;
   og_title: string | null;
   og_description: string | null;
