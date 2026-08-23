@@ -399,7 +399,20 @@ export async function uploadConversionEvent(args: {
   const l = lead as unknown as LeadRow;
 
   const mappings = await listMappings(db, workspaceId);
-  const verdict = evaluateEligibility(e, l, mappings[e.conversion_event]);
+
+  // Preflight against the live Google Ads account: the mapped conversion action
+  // must still exist, be ENABLED and accept offline click imports.
+  let liveActions: LiveAction[] | null = null;
+  try {
+    liveActions = (await fetchConversionActions(args.ctx)).actions;
+  } catch (err) {
+    console.error("[OfflineConv] preflight actions failed", (err as Error).message);
+    await failEvent(eventId, (e.google_upload_attempts ?? 0) + 1, "api_unavailable", (err as Error).message, true);
+    return { eventId, status: "failed", reason: "api_unavailable", message: (err as Error).message };
+  }
+
+  const verdict = evaluateEligibility(e, l, mappings[e.conversion_event], liveActions);
+
 
   if (!verdict.ok) {
     await db
