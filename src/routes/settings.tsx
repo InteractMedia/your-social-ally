@@ -18,6 +18,14 @@ import { getGoogleAdsConnection } from "@/lib/google-ads.functions";
 import { getLinkedInProfile } from "@/lib/linkedin.functions";
 import { createIngestKey, getMyWorkspace, revokeIngestKey } from "@/lib/workspaces.functions";
 import { checkMetaScopes, debugMetaToken, getMetaStatus, REQUIRED_META_SCOPES } from "@/lib/meta.functions";
+import { getAiAdsSettings, updateAiAdsSettings } from "@/lib/ai-ads.functions";
+import {
+  AI_PROVIDERS,
+  ANALYSIS_PERIOD_OPTIONS,
+  CLAUDE_MODEL_OPTIONS,
+  LOVABLE_MODEL_OPTIONS,
+  type AiSettings,
+} from "@/lib/ai-analyst-shared";
 
 
 export const Route = createFileRoute("/settings")({
