@@ -517,6 +517,77 @@ export type Database = {
         }
         Relationships: []
       }
+      cro_evidence: {
+        Row: {
+          active: boolean
+          applies_to: string[]
+          context: string | null
+          created_at: string
+          created_by: string | null
+          evidence_level: string
+          id: string
+          limitations: string | null
+          metric: string | null
+          principle: string
+          published_at: string | null
+          recommended_application: string | null
+          source_name: string | null
+          source_url: string | null
+          tags: string[]
+          topic: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string[]
+          context?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence_level?: string
+          id?: string
+          limitations?: string | null
+          metric?: string | null
+          principle: string
+          published_at?: string | null
+          recommended_application?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          tags?: string[]
+          topic: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string[]
+          context?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence_level?: string
+          id?: string
+          limitations?: string | null
+          metric?: string | null
+          principle?: string
+          published_at?: string | null
+          recommended_application?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          tags?: string[]
+          topic?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cro_evidence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_ads_accounts: {
         Row: {
           created_at: string
@@ -757,47 +828,153 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_ai_decisions: {
+        Row: {
+          ab_test_recommended: boolean
+          applicability: string | null
+          confidence: number
+          created_at: string
+          decision: string
+          decision_area: string
+          downgrade_reason: string | null
+          downgraded_from: string | null
+          evidence_level: string
+          evidence_refs: Json
+          evidence_source: string
+          id: string
+          metric: string | null
+          observed_result: string | null
+          proposal_id: string | null
+          reasoning_summary: string | null
+          run_id: string | null
+          sample_size: number | null
+          sort_order: number
+          workspace_id: string
+        }
+        Insert: {
+          ab_test_recommended?: boolean
+          applicability?: string | null
+          confidence?: number
+          created_at?: string
+          decision: string
+          decision_area: string
+          downgrade_reason?: string | null
+          downgraded_from?: string | null
+          evidence_level: string
+          evidence_refs?: Json
+          evidence_source: string
+          id?: string
+          metric?: string | null
+          observed_result?: string | null
+          proposal_id?: string | null
+          reasoning_summary?: string | null
+          run_id?: string | null
+          sample_size?: number | null
+          sort_order?: number
+          workspace_id: string
+        }
+        Update: {
+          ab_test_recommended?: boolean
+          applicability?: string | null
+          confidence?: number
+          created_at?: string
+          decision?: string
+          decision_area?: string
+          downgrade_reason?: string | null
+          downgraded_from?: string | null
+          evidence_level?: string
+          evidence_refs?: Json
+          evidence_source?: string
+          id?: string
+          metric?: string | null
+          observed_result?: string | null
+          proposal_id?: string | null
+          reasoning_summary?: string | null
+          run_id?: string | null
+          sample_size?: number | null
+          sort_order?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_ai_decisions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "landing_ai_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_decisions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "landing_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_decisions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_ai_experiments: {
         Row: {
           created_at: string
           expected_direction: string | null
+          guardrail_metric: string | null
           hypothesis: string
           id: string
           landing_page_id: string | null
+          min_data_confidence: number | null
+          min_sample_size: number | null
           name: string
           primary_metric: string
           proposal_id: string
           proposed_change: Json
           status: string
           target_block: string | null
+          variant_a: string | null
+          variant_b: string | null
           workspace_id: string
         }
         Insert: {
           created_at?: string
           expected_direction?: string | null
+          guardrail_metric?: string | null
           hypothesis: string
           id?: string
           landing_page_id?: string | null
+          min_data_confidence?: number | null
+          min_sample_size?: number | null
           name: string
           primary_metric: string
           proposal_id: string
           proposed_change?: Json
           status?: string
           target_block?: string | null
+          variant_a?: string | null
+          variant_b?: string | null
           workspace_id: string
         }
         Update: {
           created_at?: string
           expected_direction?: string | null
+          guardrail_metric?: string | null
           hypothesis?: string
           id?: string
           landing_page_id?: string | null
+          min_data_confidence?: number | null
+          min_sample_size?: number | null
           name?: string
           primary_metric?: string
           proposal_id?: string
           proposed_change?: Json
           status?: string
           target_block?: string | null
+          variant_a?: string | null
+          variant_b?: string | null
           workspace_id?: string
         }
         Relationships: [

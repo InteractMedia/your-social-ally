@@ -8,6 +8,7 @@
 import { z } from "zod";
 
 import { BLOCK_TYPES } from "./landing-shared";
+import { DECISION_AREAS, EVIDENCE_LEVELS, EVIDENCE_SOURCES } from "./landing-cro-evidence";
 import {
   CTA_STYLES,
   EMPHASIS_LEVELS,
@@ -226,6 +227,51 @@ export const aiProposalSchema = z.object({
         expected_direction: tolerantEnum(
           ["positief", "neutraal", "onbekend"] as const,
           "onbekend",
+        ),
+        variant_a: clampedText(600).optional(),
+        variant_b: clampedText(600).optional(),
+        guardrail_metric: shortText.optional(),
+        min_sample_size: z
+          .preprocess((v) => {
+            const n = typeof v === "string" ? Number.parseInt(v.replace(/\D/g, ""), 10) : v;
+            return typeof n === "number" && !Number.isNaN(n) ? Math.max(0, n) : undefined;
+          }, z.number().int().min(0).max(1_000_000).optional())
+          .optional(),
+      }),
+    )
+    .default([]),
+  /**
+   * Evidence per commercial decision (V1.6C). The model reports the layer it
+   * used; the server re-grades the level deterministically, so an untested best
+   * practice can never end up presented as proven for ZoetBezorgen.
+   */
+  decisions: z
+    .array(
+      z.object({
+        decision_area: tolerantEnum(DECISION_AREAS, "page_structure"),
+        decision: clampedText(600),
+        evidence_source: tolerantEnum(EVIDENCE_SOURCES, "ai_hypothesis"),
+        evidence_level: tolerantEnum(EVIDENCE_LEVELS, "HYPOTHESIS"),
+        sample_size: z
+          .preprocess((v) => {
+            const n = typeof v === "string" ? Number.parseInt(v.replace(/\D/g, ""), 10) : v;
+            return typeof n === "number" && !Number.isNaN(n) ? Math.max(0, n) : undefined;
+          }, z.number().int().min(0).max(10_000_000).optional())
+          .optional(),
+        metric: clampedText(120).optional(),
+        observed_result: clampedText(600).optional(),
+        applicability: clampedText(600).optional(),
+        confidence: score(),
+        reasoning_summary: clampedText(800).optional(),
+        evidence_refs: z
+          .preprocess(
+            (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, 10) : []),
+            z.array(z.string().max(200)).default([]),
+          )
+          .optional(),
+        ab_test_recommended: z.preprocess(
+          (v) => (typeof v === "boolean" ? v : false),
+          z.boolean().default(false),
         ),
       }),
     )
