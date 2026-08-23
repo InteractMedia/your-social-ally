@@ -300,10 +300,41 @@ export function OfflineConversionQueue() {
                         ) : null}
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm">
+                      {item.processingStatus ? (
+                        <div className="space-y-1">
+                          <Badge
+                            variant={
+                              item.processingStatus === "SUCCESS"
+                                ? "default"
+                                : item.processingStatus === "FAILED"
+                                  ? "destructive"
+                                  : "outline"
+                            }
+                          >
+                            {PROCESSING_STATUS_LABELS[item.processingStatus] ??
+                              item.processingStatus}
+                          </Badge>
+                          {item.processingCheckedAt ? (
+                            <p className="text-muted-foreground text-xs">
+                              gecheckt {formatDateTime(item.processingCheckedAt)}
+                            </p>
+                          ) : null}
+                          {item.requestId ? (
+                            <p className="text-muted-foreground max-w-[200px] truncate text-xs">
+                              verzoek {item.requestId}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-sm">
                       {item.uploadedAt ? formatDateTime(item.uploadedAt) : "—"}
                     </TableCell>
                   </TableRow>
+
                 ))}
               </TableBody>
             </Table>
