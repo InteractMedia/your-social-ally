@@ -242,11 +242,15 @@ export const approveOfflineConversions = createServerFn({ method: "POST" })
     }
     return {
       ok: true as const,
+      submitted: results.filter((r) => r.status === "submitted").length,
       uploaded: results.filter((r) => r.status === "uploaded").length,
       failed: results.filter((r) => r.status === "failed").length,
-      skipped: results.filter((r) => r.status !== "uploaded" && r.status !== "failed").length,
+      skipped: results.filter(
+        (r) => !["uploaded", "submitted", "failed"].includes(r.status),
+      ).length,
       results,
     };
+
   });
 
 /** Skip: never uploaded, kept for the audit trail. */
