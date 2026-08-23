@@ -192,7 +192,7 @@ export async function runAdsAnalysisForWorkspace(opts: {
   ].join("\n");
 
   try {
-    const completion = await runAiCompletion({
+    const completion = await runAiCompletionWithFallback({
       provider: resolved.provider,
       model: resolved.model,
       system: SYSTEM_PROMPT,
@@ -200,6 +200,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
       temperature: 0.2,
       maxTokens: 8000,
     });
+    const usedProvider = completion.provider;
+    const usedModel = completion.model;
+    const fallbackReason = completion.fallbackReason ?? resolved.fallbackReason;
 
     const parsed = ResponseSchema.parse(extractJsonObject(completion.text));
     const rows = parsed.advice.map((a) => {
@@ -211,8 +214,8 @@ export async function runAdsAnalysisForWorkspace(opts: {
         platform: "google_ads",
         analysis_period_start: opts.start,
         analysis_period_end: opts.end,
-        model_provider: resolved.provider,
-        model_name: resolved.model,
+        model_provider: usedProvider,
+        model_name: usedModel,
         prompt_version: PROMPT_VERSION,
         status: "new",
         is_test: Boolean(opts.isTest),
