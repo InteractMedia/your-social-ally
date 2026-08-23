@@ -757,42 +757,621 @@ export type Database = {
         }
         Relationships: []
       }
-      landing_pages: {
+      landing_form_submissions: {
+        Row: {
+          created_at: string
+          external_event_id: string
+          id: string
+          ip_hash: string | null
+          is_test: boolean
+          landing_page_id: string
+          landing_page_version_id: string | null
+          lead_id: string | null
+          payload: Json
+          reject_reason: string | null
+          session_id: string | null
+          status: string
+          variant_key: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_event_id: string
+          id?: string
+          ip_hash?: string | null
+          is_test?: boolean
+          landing_page_id: string
+          landing_page_version_id?: string | null
+          lead_id?: string | null
+          payload?: Json
+          reject_reason?: string | null
+          session_id?: string | null
+          status?: string
+          variant_key?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          external_event_id?: string
+          id?: string
+          ip_hash?: string | null
+          is_test?: boolean
+          landing_page_id?: string
+          landing_page_version_id?: string | null
+          lead_id?: string | null
+          payload?: Json
+          reject_reason?: string | null
+          session_id?: string | null
+          status?: string
+          variant_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_form_submissions_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_form_submissions_landing_page_version_id_fkey"
+            columns: ["landing_page_version_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_form_submissions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_form_submissions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_global_content: {
+        Row: {
+          block_type: string
+          content: Json
+          created_at: string
+          id: string
+          key: string
+          label: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          block_type: string
+          content?: Json
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          block_type?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_global_content_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_events: {
+        Row: {
+          attribution: Json
+          created_at: string
+          event_type: string
+          id: string
+          is_preview: boolean
+          is_test: boolean
+          landing_page_id: string
+          landing_page_version_id: string | null
+          meta: Json
+          path: string | null
+          session_id: string
+          variant_key: string
+          workspace_id: string
+        }
+        Insert: {
+          attribution?: Json
+          created_at?: string
+          event_type: string
+          id?: string
+          is_preview?: boolean
+          is_test?: boolean
+          landing_page_id: string
+          landing_page_version_id?: string | null
+          meta?: Json
+          path?: string | null
+          session_id: string
+          variant_key?: string
+          workspace_id: string
+        }
+        Update: {
+          attribution?: Json
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_preview?: boolean
+          is_test?: boolean
+          landing_page_id?: string
+          landing_page_version_id?: string | null
+          meta?: Json
+          path?: string | null
+          session_id?: string
+          variant_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_events_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_events_landing_page_version_id_fkey"
+            columns: ["landing_page_version_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_forms: {
+        Row: {
+          created_at: string
+          fields: Json
+          id: string
+          intro: string | null
+          landing_page_id: string
+          submit_label: string
+          success_body: string
+          success_title: string
+          title: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          fields?: Json
+          id?: string
+          intro?: string | null
+          landing_page_id: string
+          submit_label?: string
+          success_body?: string
+          success_title?: string
+          title?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          fields?: Json
+          id?: string
+          intro?: string | null
+          landing_page_id?: string
+          submit_label?: string
+          success_body?: string
+          success_title?: string
+          title?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_forms_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_forms_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_products: {
+        Row: {
+          created_at: string
+          id: string
+          landing_page_id: string
+          overrides: Json
+          product_id: string
+          sort_order: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          landing_page_id: string
+          overrides?: Json
+          product_id: string
+          sort_order?: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          landing_page_id?: string
+          overrides?: Json
+          product_id?: string
+          sort_order?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_products_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "landing_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_sections: {
+        Row: {
+          block_type: string
+          content: Json
+          created_at: string
+          enabled: boolean
+          global_key: string | null
+          id: string
+          landing_page_id: string
+          sort_order: number
+          updated_at: string
+          use_global: boolean
+          variant_key: string
+          workspace_id: string
+        }
+        Insert: {
+          block_type: string
+          content?: Json
+          created_at?: string
+          enabled?: boolean
+          global_key?: string | null
+          id?: string
+          landing_page_id: string
+          sort_order?: number
+          updated_at?: string
+          use_global?: boolean
+          variant_key?: string
+          workspace_id: string
+        }
+        Update: {
+          block_type?: string
+          content?: Json
+          created_at?: string
+          enabled?: boolean
+          global_key?: string | null
+          id?: string
+          landing_page_id?: string
+          sort_order?: number
+          updated_at?: string
+          use_global?: boolean
+          variant_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_sections_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_sections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_testimonials: {
+        Row: {
+          author: string
+          company: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          image_url: string | null
+          landing_page_id: string
+          quote: string
+          role_title: string | null
+          sort_order: number
+          workspace_id: string
+        }
+        Insert: {
+          author: string
+          company?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          landing_page_id: string
+          quote: string
+          role_title?: string | null
+          sort_order?: number
+          workspace_id: string
+        }
+        Update: {
+          author?: string
+          company?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          landing_page_id?: string
+          quote?: string
+          role_title?: string | null
+          sort_order?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_testimonials_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_testimonials_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_variants: {
         Row: {
           active: boolean
           created_at: string
-          funnel_type: string
           id: string
-          industry_id: string | null
+          landing_page_id: string
           name: string
-          slug: string
-          updated_at: string
-          url: string | null
-          user_id: string | null
+          variant_key: string
+          weight: number
+          workspace_id: string
         }
         Insert: {
           active?: boolean
           created_at?: string
-          funnel_type?: string
           id?: string
-          industry_id?: string | null
-          name: string
-          slug: string
-          updated_at?: string
-          url?: string | null
-          user_id?: string | null
+          landing_page_id: string
+          name?: string
+          variant_key?: string
+          weight?: number
+          workspace_id: string
         }
         Update: {
           active?: boolean
           created_at?: string
+          id?: string
+          landing_page_id?: string
+          name?: string
+          variant_key?: string
+          weight?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_variants_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_variants_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_versions: {
+        Row: {
+          created_at: string
+          id: string
+          landing_page_id: string
+          note: string | null
+          published_at: string
+          published_by: string | null
+          published_by_email: string | null
+          snapshot: Json
+          version_number: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          landing_page_id: string
+          note?: string | null
+          published_at?: string
+          published_by?: string | null
+          published_by_email?: string | null
+          snapshot: Json
+          version_number: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          landing_page_id?: string
+          note?: string | null
+          published_at?: string
+          published_by?: string | null
+          published_by_email?: string | null
+          snapshot?: Json
+          version_number?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_versions_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_pages: {
+        Row: {
+          active: boolean
+          base_url: string | null
+          canonical_url: string | null
+          created_at: string
+          current_version_id: string | null
+          funnel_type: string
+          id: string
+          industry_id: string | null
+          is_test: boolean
+          name: string
+          noindex: boolean
+          notify_channel: string | null
+          notify_target: string | null
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          preview_token: string
+          published_at: string | null
+          published_by: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          status: string
+          template_key: string
+          theme: Json
+          updated_at: string
+          url: string | null
+          user_id: string | null
+          version_counter: number
+          workspace_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          base_url?: string | null
+          canonical_url?: string | null
+          created_at?: string
+          current_version_id?: string | null
           funnel_type?: string
           id?: string
           industry_id?: string | null
-          name?: string
-          slug?: string
+          is_test?: boolean
+          name: string
+          noindex?: boolean
+          notify_channel?: string | null
+          notify_target?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          preview_token?: string
+          published_at?: string | null
+          published_by?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: string
+          template_key?: string
+          theme?: Json
           updated_at?: string
           url?: string | null
           user_id?: string | null
+          version_counter?: number
+          workspace_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          base_url?: string | null
+          canonical_url?: string | null
+          created_at?: string
+          current_version_id?: string | null
+          funnel_type?: string
+          id?: string
+          industry_id?: string | null
+          is_test?: boolean
+          name?: string
+          noindex?: boolean
+          notify_channel?: string | null
+          notify_target?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          preview_token?: string
+          published_at?: string | null
+          published_by?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: string
+          template_key?: string
+          theme?: Json
+          updated_at?: string
+          url?: string | null
+          user_id?: string | null
+          version_counter?: number
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -800,6 +1379,81 @@ export type Database = {
             columns: ["industry_id"]
             isOneToOne: false
             referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_pages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_products: {
+        Row: {
+          active: boolean
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          external_id: string | null
+          external_source: string | null
+          id: string
+          image_alt: string | null
+          image_url: string | null
+          name: string
+          personalization_options: string[]
+          price_from: number | null
+          short_text: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url?: string | null
+          name: string
+          personalization_options?: string[]
+          price_from?: number | null
+          short_text?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url?: string | null
+          name?: string
+          personalization_options?: string[]
+          price_from?: number | null
+          short_text?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1026,6 +1680,7 @@ export type Database = {
           external_order_id: string | null
           external_source: string | null
           fbclid: string | null
+          first_landing_at: string | null
           first_order_date: string | null
           first_touch: Json | null
           funnel_type: string
@@ -1041,7 +1696,9 @@ export type Database = {
           kvk_number: string | null
           landing_page: string | null
           landing_page_id: string | null
+          landing_page_slug: string | null
           landing_page_variant: string | null
+          landing_page_version_id: string | null
           lead_quality: string
           lead_type: string
           li_fat_id: string | null
@@ -1057,6 +1714,7 @@ export type Database = {
           poor_reason_id: string | null
           poor_reason_label: string | null
           poor_reason_notes: string | null
+          quote_details: Json
           raw: Json | null
           received_at: string
           referrer: string | null
@@ -1064,6 +1722,7 @@ export type Database = {
           search_term: string | null
           source: string | null
           status: string
+          status_history: Json
           ttclid: string | null
           updated_at: string
           user_id: string | null
@@ -1098,6 +1757,7 @@ export type Database = {
           external_order_id?: string | null
           external_source?: string | null
           fbclid?: string | null
+          first_landing_at?: string | null
           first_order_date?: string | null
           first_touch?: Json | null
           funnel_type?: string
@@ -1113,7 +1773,9 @@ export type Database = {
           kvk_number?: string | null
           landing_page?: string | null
           landing_page_id?: string | null
+          landing_page_slug?: string | null
           landing_page_variant?: string | null
+          landing_page_version_id?: string | null
           lead_quality?: string
           lead_type?: string
           li_fat_id?: string | null
@@ -1129,6 +1791,7 @@ export type Database = {
           poor_reason_id?: string | null
           poor_reason_label?: string | null
           poor_reason_notes?: string | null
+          quote_details?: Json
           raw?: Json | null
           received_at?: string
           referrer?: string | null
@@ -1136,6 +1799,7 @@ export type Database = {
           search_term?: string | null
           source?: string | null
           status?: string
+          status_history?: Json
           ttclid?: string | null
           updated_at?: string
           user_id?: string | null
@@ -1170,6 +1834,7 @@ export type Database = {
           external_order_id?: string | null
           external_source?: string | null
           fbclid?: string | null
+          first_landing_at?: string | null
           first_order_date?: string | null
           first_touch?: Json | null
           funnel_type?: string
@@ -1185,7 +1850,9 @@ export type Database = {
           kvk_number?: string | null
           landing_page?: string | null
           landing_page_id?: string | null
+          landing_page_slug?: string | null
           landing_page_variant?: string | null
+          landing_page_version_id?: string | null
           lead_quality?: string
           lead_type?: string
           li_fat_id?: string | null
@@ -1201,6 +1868,7 @@ export type Database = {
           poor_reason_id?: string | null
           poor_reason_label?: string | null
           poor_reason_notes?: string | null
+          quote_details?: Json
           raw?: Json | null
           received_at?: string
           referrer?: string | null
@@ -1208,6 +1876,7 @@ export type Database = {
           search_term?: string | null
           source?: string | null
           status?: string
+          status_history?: Json
           ttclid?: string | null
           updated_at?: string
           user_id?: string | null
