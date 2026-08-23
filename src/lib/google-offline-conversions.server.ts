@@ -662,3 +662,48 @@ export async function autoUploadIfEnabled(workspaceId: string, eventId: string) 
     console.error("[OfflineConv] automatic upload failed", (err as Error).message);
   }
 }
+
+/* ------------------------------------------------------ validate-only check */
+
+/**
+ * Sends a SYNTHETIC conversion with validateOnly: true to Google Ads. Google
+ * only validates the payload; nothing is ever recorded in the account. Used to
+ * prove a mapping's payload shape before the first real upload.
+ */
+export async function validateOnlyCheck(args: {
+  ctx: { supabase: any; userId: string };
+  actionId: string;
+  withValue: boolean;
+  currency?: string;
+}): Promise<{
+  actionId: string;
+  ok: boolean;
+  status: number;
+  validateOnly: true;
+  payload: Record<string, unknown>;
+  message: string | null;
+}> {
+  const cid = await resolveCustomerId(args.ctx);
+  const when = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const conversion: Record<string, unknown> = {
+    conversionAction: `customers/${cid}/conversionActions/${args.actionId}`,
+    conversionDateTime: conversionDateTime(when),
+    // Synthetic, deliberately invalid click id — never a real customer lead.
+    gclid: "SOCIALCOCKPIT_VALIDATE_ONLY_SYNTHETIC",
+  };
+  if (args.withValue) {
+    conversion["conversionValue"] = 123.45;
+    conversion["currencyCode"] = args.currency || "EUR";
+  }
+  const body = { conversions: [conversion], partialFailure: true, validateOnly: true };
+  const res = await adsPost(`customers/${cid}:uploadClickConversions`, body);
+  const partial = res.json?.partialFailureError ?? null;
+  return {
+    actionId: args.actionId,
+    ok: res.ok,
+    status: res.status,
+    validateOnly: true,
+    payload: body,
+    message: partial ? JSON.stringify(partial).slice(0, 1200) : res.raw.slice(0, 1200) || null,
+  };
+}
