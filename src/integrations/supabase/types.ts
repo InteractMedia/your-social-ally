@@ -757,6 +757,297 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_ai_experiments: {
+        Row: {
+          created_at: string
+          expected_direction: string | null
+          hypothesis: string
+          id: string
+          landing_page_id: string | null
+          name: string
+          primary_metric: string
+          proposal_id: string
+          proposed_change: Json
+          status: string
+          target_block: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          expected_direction?: string | null
+          hypothesis: string
+          id?: string
+          landing_page_id?: string | null
+          name: string
+          primary_metric: string
+          proposal_id: string
+          proposed_change?: Json
+          status?: string
+          target_block?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          expected_direction?: string | null
+          hypothesis?: string
+          id?: string
+          landing_page_id?: string | null
+          name?: string
+          primary_metric?: string
+          proposal_id?: string
+          proposed_change?: Json
+          status?: string
+          target_block?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_ai_experiments_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_experiments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "landing_ai_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_experiments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_ai_proposals: {
+        Row: {
+          ai_confidence: number
+          applied_at: string | null
+          applied_by: string | null
+          applied_page_id: string | null
+          applied_version_id: string | null
+          created_at: string
+          data_confidence: number
+          data_confidence_reasons: Json
+          form_plan: Json
+          id: string
+          industry_id: string | null
+          landing_page_id: string | null
+          missing_data: Json
+          mode: string
+          page_plan: Json
+          performance_data_used: Json
+          product_plan: Json
+          rationale: Json
+          run_id: string
+          status: string
+          strategy: Json
+          title: string
+          updated_at: string
+          visual_direction: Json
+          workspace_id: string
+        }
+        Insert: {
+          ai_confidence?: number
+          applied_at?: string | null
+          applied_by?: string | null
+          applied_page_id?: string | null
+          applied_version_id?: string | null
+          created_at?: string
+          data_confidence?: number
+          data_confidence_reasons?: Json
+          form_plan?: Json
+          id?: string
+          industry_id?: string | null
+          landing_page_id?: string | null
+          missing_data?: Json
+          mode: string
+          page_plan?: Json
+          performance_data_used?: Json
+          product_plan?: Json
+          rationale?: Json
+          run_id: string
+          status?: string
+          strategy?: Json
+          title: string
+          updated_at?: string
+          visual_direction?: Json
+          workspace_id: string
+        }
+        Update: {
+          ai_confidence?: number
+          applied_at?: string | null
+          applied_by?: string | null
+          applied_page_id?: string | null
+          applied_version_id?: string | null
+          created_at?: string
+          data_confidence?: number
+          data_confidence_reasons?: Json
+          form_plan?: Json
+          id?: string
+          industry_id?: string | null
+          landing_page_id?: string | null
+          missing_data?: Json
+          mode?: string
+          page_plan?: Json
+          performance_data_used?: Json
+          product_plan?: Json
+          rationale?: Json
+          run_id?: string
+          status?: string
+          strategy?: Json
+          title?: string
+          updated_at?: string
+          visual_direction?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_ai_proposals_applied_page_id_fkey"
+            columns: ["applied_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_proposals_applied_version_id_fkey"
+            columns: ["applied_version_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_proposals_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_proposals_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_proposals_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "landing_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_proposals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_ai_runs: {
+        Row: {
+          brief: string | null
+          completed_at: string | null
+          created_at: string
+          dataset: Json
+          dataset_meta: Json
+          error_message: string | null
+          estimated_cost_usd: number | null
+          fallback_reason: string | null
+          goal: string | null
+          id: string
+          industry_id: string | null
+          input_tokens: number | null
+          landing_page_id: string | null
+          mode: string
+          model: string
+          output_tokens: number | null
+          prompt_version: string
+          provider: string
+          runtime_ms: number | null
+          status: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          brief?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dataset?: Json
+          dataset_meta?: Json
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          fallback_reason?: string | null
+          goal?: string | null
+          id?: string
+          industry_id?: string | null
+          input_tokens?: number | null
+          landing_page_id?: string | null
+          mode: string
+          model: string
+          output_tokens?: number | null
+          prompt_version: string
+          provider: string
+          runtime_ms?: number | null
+          status?: string
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          brief?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dataset?: Json
+          dataset_meta?: Json
+          error_message?: string | null
+          estimated_cost_usd?: number | null
+          fallback_reason?: string | null
+          goal?: string | null
+          id?: string
+          industry_id?: string | null
+          input_tokens?: number | null
+          landing_page_id?: string | null
+          mode?: string
+          model?: string
+          output_tokens?: number | null
+          prompt_version?: string
+          provider?: string
+          runtime_ms?: number | null
+          status?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_ai_runs_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_runs_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_ai_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_form_submissions: {
         Row: {
           created_at: string
