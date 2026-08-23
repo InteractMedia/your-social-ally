@@ -168,6 +168,8 @@ export function OfflineConversionQueue() {
                   <TableHead>Conversion action</TableHead>
                   <TableHead>Click-ID</TableHead>
                   <TableHead className="text-right">Waarde</TableHead>
+                  <TableHead>Valuta</TableHead>
+                  <TableHead>Preflight</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Uploadtijd</TableHead>
                 </TableRow>
@@ -202,12 +204,36 @@ export function OfflineConversionQueue() {
                       {item.actionName ?? "—"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.clickMasked
-                        ? `${CLICK_ID_LABELS[item.clickType ?? ""] ?? "Click-ID"}: ${item.clickMasked}`
-                        : "—"}
+                      {item.clickMasked ? (
+                        <span>
+                          <Badge variant="outline">
+                            {CLICK_ID_LABELS[item.clickType ?? ""] ?? "Click-ID"}
+                          </Badge>{" "}
+                          {item.clickMasked}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">nee</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {item.value == null ? "—" : formatMoney(item.value)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {item.value == null ? "—" : (item.currency ?? "EUR")}
+                    </TableCell>
+                    <TableCell>
+                      {item.eligible ? (
+                        <Badge variant="default">Klaar voor upload</Badge>
+                      ) : (
+                        <div className="space-y-1">
+                          <Badge variant="secondary">Geblokkeerd</Badge>
+                          {reasonLabel(item.reason) ? (
+                            <p className="text-muted-foreground max-w-[240px] text-xs">
+                              {reasonLabel(item.reason)}
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -222,10 +248,8 @@ export function OfflineConversionQueue() {
                         >
                           {UPLOAD_STATUS_LABELS[item.status] ?? item.status}
                         </Badge>
-                        {reasonLabel(item.reason) ? (
-                          <p className="text-muted-foreground max-w-[240px] text-xs">
-                            {reasonLabel(item.reason)}
-                          </p>
+                        {item.error ? (
+                          <p className="text-destructive max-w-[240px] text-xs">{item.error}</p>
                         ) : null}
                       </div>
                     </TableCell>
@@ -237,6 +261,7 @@ export function OfflineConversionQueue() {
               </TableBody>
             </Table>
           </div>
+
         )}
       </CardContent>
 
