@@ -507,19 +507,51 @@ export async function applyLandingProposal(args: {
   await dbAdmin.from("landing_page_sections").delete().eq("landing_page_id", newPageId);
   const sections = (plan?.sections ?? []) as any[];
   if (sections.length) {
-    await dbAdmin.from("landing_page_sections").insert(
-      sections.map((s, index) => ({
+    const { data: insertedSections } = await dbAdmin
+      .from("landing_page_sections")
+      .insert(
+        sections.map((s, index) => ({
+          workspace_id: args.workspaceId,
+          landing_page_id: newPageId,
+          block_type: s.block_type,
+          sort_order: index,
+          enabled: s.enabled !== false,
+          use_global: false,
+          global_key: null,
+          variant_key: "A",
+          content: s.content as never,
+        })),
+      )
+      .select("id,block_type,sort_order,content");
+
+    /* Every planned visual without an existing asset becomes a visual brief. */
+    const briefRows = (insertedSections ?? [])
+      .map((section: any) => ({ section, visual: section.content?.visual }))
+      .filter(({ visual }) => visual && visual.visual_type !== "none" && !visual.asset_id)
+      .map(({ section, visual }) => ({
         workspace_id: args.workspaceId,
         landing_page_id: newPageId,
-        block_type: s.block_type,
-        sort_order: index,
-        enabled: s.enabled !== false,
-        use_global: false,
-        global_key: null,
-        variant_key: "A",
-        content: s.content as never,
-      })),
-    );
+        section_id: section.id,
+        block_type: section.block_type,
+        proposal_id: args.proposalId,
+        title: `${section.block_type} — ${visual.visual_type}`.slice(0, 200),
+        visual_type: visual.visual_type,
+        purpose: visual.purpose ?? null,
+        composition: visual.composition ?? null,
+        desktop_position: visual.desktop_position ?? null,
+        mobile_position: visual.mobile_position ?? null,
+        aspect_ratio: visual.aspect_ratio ?? null,
+        background_treatment: visual.background_treatment ?? null,
+        product_ids: visual.product_ids ?? [],
+        brief_text: visual.visual_brief ?? null,
+        asset_status: "missing",
+        generation_status: "not_started",
+        approval_status: "pending",
+        created_by: args.ctx.userId,
+      }));
+    if (briefRows.length) {
+      await dbAdmin.from("landing_visual_briefs").insert(briefRows as never);
+    }
   }
 
   /* form: keep keys/types from the current config, apply AI states + order */
