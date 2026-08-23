@@ -348,3 +348,8 @@ export const sectionVisualUpdateInput = z.object({
   image_url: z.string().max(1000).optional().nullable(),
   image_alt: z.string().max(300).optional().nullable(),
 });
+
+export const uploadUrlInput = z.object({
+  filename: z.string().min(1).max(200),
+  mime_type: z.string().max(120).optional().nullable(),
+});

@@ -18,6 +18,7 @@ import {
   productLibraryInput,
   quickProductInput,
   sectionVisualUpdateInput,
+  uploadUrlInput,
   visualBriefInput,
 } from "./landing-schemas";
 import { slugify } from "./landing-shared";
@@ -493,4 +494,25 @@ export const getLandingContentReadiness = createServerFn({ method: "GET" })
       workspaceId,
       pageId: data?.id ?? null,
     });
+  });
+
+/* ------------------------------------------------------ storage uploads */
+
+/**
+ * Signed upload URL inside the workspace folder of the private
+ * `landing-assets` bucket. Landing pages read the file back through the public
+ * streaming route, so URLs stay stable and never expire.
+ */
+export const createAssetUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => uploadUrlInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
+    const safeName = data.filename.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80);
+    const path = `${workspaceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+    const { data: signed, error } = await context.supabase.storage
+      .from("landing-assets")
+      .createSignedUploadUrl(path);
+    if (error) throw new Error(error.message);
+    return { path, token: signed.token, signedUrl: signed.signedUrl };
   });
