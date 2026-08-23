@@ -5,6 +5,8 @@
  * configuration (sections + form + products). Adding a page never requires code.
  */
 
+import type { SectionDesign } from "./landing-design-system";
+
 export type LandingFunnel = "quote" | "platform";
 
 export const LANDING_FUNNEL_LABELS: Record<LandingFunnel, string> = {
@@ -75,6 +77,8 @@ export type BlockItem = {
 };
 
 export type BlockContent = {
+  /** Controlled visual direction (design system variants only). */
+  design?: SectionDesign;
   title?: string;
   subtitle?: string;
   body?: string;
