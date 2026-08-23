@@ -10,6 +10,17 @@ import {
   SECTION_LAYOUTS,
   SECTION_WIDTHS,
 } from "./landing-design-system";
+import {
+  APPROVAL_STATUSES,
+  ASPECT_RATIOS,
+  ASSET_SOURCES,
+  ASSET_STATUSES,
+  ASSET_TYPES,
+  GENERATION_STATUSES,
+  PRODUCT_IMAGE_TYPES,
+  VISUAL_POSITIONS,
+  VISUAL_TYPES,
+} from "./landing-visual";
 
 const uuid = z.string().uuid();
 
@@ -27,8 +38,24 @@ export const sectionDesignSchema = z.object({
   mobile_note: z.string().max(500).optional(),
 });
 
+export const sectionVisualSchema = z.object({
+  visual_required: z.boolean().optional(),
+  visual_type: z.enum(VISUAL_TYPES).optional(),
+  purpose: z.string().max(600).optional(),
+  composition: z.string().max(1200).optional(),
+  desktop_position: z.enum(VISUAL_POSITIONS).optional(),
+  mobile_position: z.enum(VISUAL_POSITIONS).optional(),
+  aspect_ratio: z.enum(ASPECT_RATIOS).optional(),
+  background_treatment: z.string().max(400).optional(),
+  product_ids: z.array(uuid).max(12).optional(),
+  asset_id: uuid.nullable().optional(),
+  asset_status: z.enum(ASSET_STATUSES).optional(),
+  visual_brief: z.string().max(2000).optional(),
+});
+
 export const blockContentSchema = z.object({
   design: sectionDesignSchema.optional(),
+  visual: sectionVisualSchema.optional(),
   title: z.string().max(300).optional(),
   subtitle: z.string().max(1000).optional(),
   body: z.string().max(8000).optional(),
