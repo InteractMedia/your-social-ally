@@ -6,6 +6,7 @@
  */
 
 import type { SectionDesign } from "./landing-design-system";
+import type { ProductImageType, SectionVisual } from "./landing-visual";
 
 export type LandingFunnel = "quote" | "platform";
 
@@ -79,6 +80,8 @@ export type BlockItem = {
 export type BlockContent = {
   /** Controlled visual direction (design system variants only). */
   design?: SectionDesign;
+  /** Structured visual plan — the section's image slot. */
+  visual?: SectionVisual;
   title?: string;
   subtitle?: string;
   body?: string;
