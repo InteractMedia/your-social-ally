@@ -527,8 +527,8 @@ export async function applyLandingProposal(args: {
     /* Every planned visual without an existing asset becomes a visual brief. */
     const briefRows = (insertedSections ?? [])
       .map((section: any) => ({ section, visual: section.content?.visual }))
-      .filter(({ visual }) => visual && visual.visual_type !== "none" && !visual.asset_id)
-      .map(({ section, visual }) => ({
+      .filter(({ visual }: any) => visual && visual.visual_type !== "none" && !visual.asset_id)
+      .map(({ section, visual }: any) => ({
         workspace_id: args.workspaceId,
         landing_page_id: newPageId,
         section_id: section.id,
