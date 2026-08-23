@@ -271,6 +271,7 @@ export async function listQueue(
   workspaceId: string,
   tab: keyof typeof STATUS_GROUPS,
   limit = 200,
+  liveActions?: LiveAction[] | null,
 ): Promise<QueueItem[]> {
   const mappings = await listMappings(supabase, workspaceId);
 
@@ -296,8 +297,10 @@ export async function listQueue(
   return ((events ?? []) as EventRow[]).flatMap((e) => {
     const lead = leadById.get(e.lead_id);
     if (!lead) return [];
-    const verdict = evaluateEligibility(e, lead, mappings[e.conversion_event]);
+    const verdict = evaluateEligibility(e, lead, mappings[e.conversion_event], liveActions ?? null);
     const mapping = mappings[e.conversion_event];
+    // Identifier presence is shown regardless of the verdict (priority gclid → gbraid → wbraid).
+    const storedClickType = (["gclid", "gbraid", "wbraid"] as const).find((k) => lead[k]) ?? null;
     return [
       {
         id: e.id,
@@ -306,15 +309,21 @@ export async function listQueue(
         event: e.conversion_event,
         occurredAt: e.conversion_timestamp,
         status: e.google_upload_status ?? "pending",
-        reason: e.google_upload_reason ?? (verdict.ok ? null : verdict.reason),
+        reason: verdict.ok ? (e.google_upload_reason ?? null) : verdict.reason,
         error: e.google_upload_error,
         actionId: e.google_conversion_action_id ?? mapping?.google_conversion_action_id ?? null,
         actionName:
           e.google_conversion_action_name ?? mapping?.google_conversion_action_name ?? null,
-        clickType: e.click_identifier_type ?? (verdict.ok ? verdict.clickType : null),
-        clickMasked: verdict.ok ? maskClickId(verdict.clickId) : null,
+        clickType: e.click_identifier_type ?? storedClickType,
+        clickMasked: storedClickType ? maskClickId(String(lead[storedClickType])) : null,
         value: e.google_conversion_value ?? (verdict.ok ? verdict.value : null),
-        currency: e.google_conversion_currency ?? (verdict.ok ? verdict.currency : null),
+        currency:
+          e.google_conversion_currency ??
+          (verdict.ok
+            ? verdict.value == null
+              ? null
+              : verdict.currency
+            : (mapping?.currency ?? null)),
         uploadedAt: e.google_upload_timestamp,
         attempts: e.google_upload_attempts ?? 0,
         isTest: lead.is_test,
@@ -324,6 +333,7 @@ export async function listQueue(
     ];
   });
 }
+
 
 /* ------------------------------------------------------------------ upload */
 
