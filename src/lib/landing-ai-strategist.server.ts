@@ -11,6 +11,8 @@
  */
 import { z } from "zod";
 
+import { gradeDecision } from "./landing-cro-evidence";
+
 import {
   extractJsonObject,
   resolveProvider,
@@ -40,7 +42,15 @@ Absolute regels:
 - Ontbrekende data benoem je expliciet in missing_data. Nooit opvullen met aannames.
 - googleAds = platformdata van Google Ads. socialCockpit = onze eigen B2B lead-/klantdata. Nooit door elkaar halen of optellen.
 - Je hebt geen toegang tot Google Ads-wijzigingen, budgetten of conversieuploads. Adviseer daar niets over.
-- Je output is uitsluitend geldige JSON zonder toelichting eromheen.`;
+- Je output is uitsluitend geldige JSON zonder toelichting eromheen.
+
+EVIDENCE-DISCIPLINE (V1.6C) — bepalend voor elke keuze:
+- Werk de bronnen in deze volgorde af: (1) eigen gemeten data van deze pagina/variant, (2) gemeten data van vergelijkbare eigen pagina's of branches, (3) de externe CRO/UX-kennisbank in croEvidence.externalEvidence, (4) je eigen expertise als hypothese.
+- Je mag stap 4 alleen gebruiken als 1-3 niets zeggen over die keuze, en je labelt dat dan als ai_hypothesis.
+- Verzin geen evidence en verwijs nooit naar onderzoek dat niet in croEvidence.externalEvidence staat. Externe evidence citeer je via evidence_refs met de id uit die lijst.
+- Commerciële hiërarchie: omzet/klanten > gekwalificeerde leads > leads > formulierinzendingen > CTA-clicks. Een verbetering die meer leads oplevert maar minder gekwalificeerde leads of omzet, is GEEN verbetering; zeg dat dan expliciet.
+- Optimaliseer op de hoogste laag die croEvidence.ownPerformance daadwerkelijk kan meten (zie decidable_objective per vergelijking). Kan die laag niet gemeten worden, benoem dat als meetbeperking.
+- Zonder eigen meetdata bestaat er geen zekerheid: gebruik dan WEAK of HYPOTHESIS en stel een A/B-test voor.`;
 
 const RESEARCH_SYSTEM = `${ROLE}
 
@@ -61,6 +71,8 @@ Antwoord met exact dit JSON-object:
   "recommended_structure": ["blokvolgorde met korte reden per blok"],
   "mobile_priorities": ["wat mobiel eerst zichtbaar moet zijn"],
   "missing_data": ["welke data/content ontbreekt om dit sterker te maken"],
+  "evidence_notes": ["per strategische keuze: welke bronlaag (eigen data / vergelijkbare eigen data / externe evidence / hypothese) je gebruikte en wat de gemeten cijfers zeggen"],
+  "measurement_limits": ["welke commerciële laag we nu NIET kunnen meten en wat dat betekent voor de zekerheid"],
   "confidence": 0-100
 }`;
 
@@ -124,10 +136,31 @@ Antwoord met exact dit JSON-object (geen extra velden):
   "visual_direction": { "overall": "...", "photography_needs": ["..."], "trust_placement": "...",
                         "desktop_composition": "...", "mobile_composition": "...", "product_count": 0 },
   "new_block_type_requests": [{ "name": "...", "purpose": "..." }],
-  "experiments": [{ "name": "...", "hypothesis": "...", "primary_metric": "...", "proposed_change": "...",
-                    "target_block": "hero", "expected_direction": "positief" }],
+  "experiments": [{ "name": "...", "hypothesis": "...", "primary_metric": "gekwalificeerde leads per 100 bezoeken",
+                    "proposed_change": "...", "target_block": "hero", "expected_direction": "positief",
+                    "variant_a": "wat de huidige/controle-variant toont", "variant_b": "wat de testvariant toont",
+                    "guardrail_metric": "welke metric niet mag verslechteren, bv. leadkwaliteit",
+                    "min_sample_size": 0 }],
+  "decisions": [{ "decision_area": "hero|headline|cta|form|page_structure|social_proof|pricing_transparency|visual|mobile|offer|trust|copy_tone",
+                  "decision": "de gemaakte keuze",
+                  "evidence_source": "own_performance_data|similar_own_data|external_evidence|ai_hypothesis",
+                  "evidence_level": "STRONG|MODERATE|WEAK|HYPOTHESIS",
+                  "sample_size": 0, "metric": "welke metric dit bewijst",
+                  "observed_result": "de gemeten uitkomst, of leeg als er niets gemeten is",
+                  "applicability": "waarom dit hier geldt (of waarom overdraagbaarheid onzeker is)",
+                  "confidence": 0-100, "reasoning_summary": "korte onderbouwing",
+                  "evidence_refs": ["id uit croEvidence.externalEvidence"],
+                  "ab_test_recommended": true }],
   "ai_confidence": 0-100
 }`;
+
+const EVIDENCE_ADDENDUM = `
+EVIDENCE-VERPLICHTING BIJ HET ONTWERP:
+- Elke commerciële keuze krijgt een decisions-item. Minimaal: hero, headline, cta, form, page_structure, social_proof en visual.
+- sample_size is het werkelijke aantal waarnemingen achter je claim (bezoeken, leads, klanten). Weet je het niet, zet 0 en gebruik HYPOTHESIS.
+- Wij hergraderen je evidence_level server-side op basis van de echte steekproef. Overdrijven wordt automatisch teruggezet, dus wees eerlijk.
+- Alles wat WEAK of HYPOTHESIS is, krijgt een bijbehorend experiment met variant_a, variant_b, primary_metric (commercieel, niet CTA-clicks als er iets hogers meetbaar is), guardrail_metric en min_sample_size.
+- Zet in missing_data expliciet welke bronlaag ontbrak (bijvoorbeeld: "geen eigen conversiedata op deze pagina; keuzes zijn hypotheses").`;
 
 const researchSchema = z.object({
   audience: z.string(),
@@ -226,7 +259,7 @@ export async function runLandingStrategist(args: {
     const phase2 = await runAiCompletionWithFallback({
       provider: phase1.provider,
       model: phase1.model,
-      system: BUILD_SYSTEM,
+      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}`,
       user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nDATASET:\n${datasetJson}`,
       maxTokens: 12000,
       temperature: 0.4,
@@ -284,12 +317,66 @@ export async function runLandingStrategist(args: {
           name: e.name,
           hypothesis: e.hypothesis,
           primary_metric: e.primary_metric,
-          proposed_change: { change: e.proposed_change } as never,
+          proposed_change: {
+            change: e.proposed_change,
+            variant_a: e.variant_a ?? null,
+            variant_b: e.variant_b ?? null,
+          } as never,
+          variant_a: e.variant_a ?? null,
+          variant_b: e.variant_b ?? null,
+          guardrail_metric: e.guardrail_metric ?? null,
+          min_sample_size: e.min_sample_size ?? null,
           target_block: e.target_block ?? null,
           expected_direction: e.expected_direction,
           status: "proposed",
         })),
       );
+    }
+
+    /* Evidence per decision — re-graded server-side so the AI can never present
+     * an untested best practice as proven for ZoetBezorgen. */
+    const gradedDecisions = sanitized.decisions.map((d, index) => {
+      const graded = gradeDecision({
+        decision_area: d.decision_area ?? "page_structure",
+        decision: d.decision,
+        evidence_source: d.evidence_source ?? "ai_hypothesis",
+        evidence_level: d.evidence_level,
+        sample_size: d.sample_size ?? null,
+        metric: d.metric ?? null,
+        observed_result: d.observed_result ?? null,
+        applicability: d.applicability ?? null,
+        confidence: d.confidence,
+        reasoning_summary: d.reasoning_summary ?? null,
+        evidence_refs: d.evidence_refs ?? [],
+        ab_test_recommended: d.ab_test_recommended,
+      });
+      return { graded, index };
+    });
+
+    if (gradedDecisions.length) {
+      const { error: decisionsError } = await db.from("landing_ai_decisions").insert(
+        gradedDecisions.map(({ graded, index }) => ({
+          workspace_id: args.workspaceId,
+          run_id: run.id,
+          proposal_id: proposal.id,
+          decision_area: graded.decision_area,
+          decision: graded.decision,
+          evidence_source: graded.evidence_source,
+          evidence_level: graded.evidence_level,
+          sample_size: graded.sample_size,
+          metric: graded.metric,
+          observed_result: graded.observed_result,
+          applicability: graded.applicability,
+          confidence: graded.confidence,
+          reasoning_summary: graded.reasoning_summary,
+          evidence_refs: (graded.evidence_refs ?? []) as never,
+          ab_test_recommended: graded.ab_test_recommended,
+          downgraded_from: graded.downgraded_from ?? null,
+          downgrade_reason: graded.downgrade_reason ?? null,
+          sort_order: index,
+        })),
+      );
+      if (decisionsError) console.error("[landing-ai] decisions insert failed", decisionsError.message);
     }
 
     await db

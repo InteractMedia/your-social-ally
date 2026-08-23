@@ -16,6 +16,90 @@ import {
   getLandingAiProposal,
 } from "@/lib/landing-ai.functions";
 import { CONFIDENCE_LEVEL_LABELS, confidenceLevel } from "@/lib/landing-ai-shared";
+import { listProposalDecisions } from "@/lib/landing-cro-evidence.functions";
+import {
+  DECISION_AREA_LABELS,
+  EVIDENCE_LEVEL_LABELS,
+  EVIDENCE_SOURCE_LABELS,
+  type DecisionArea,
+  type EvidenceLevel,
+  type EvidenceSource,
+} from "@/lib/landing-cro-evidence";
+
+const LEVEL_STYLES: Record<EvidenceLevel, string> = {
+  STRONG: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  MODERATE: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  WEAK: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  HYPOTHESIS: "bg-muted text-muted-foreground",
+};
+
+/** "Waarom deze pagina?" — the evidence trail behind every commercial choice. */
+function WhyThisPage({ proposalId }: { proposalId: string }) {
+  const load = useServerFn(listProposalDecisions);
+  const { data, isLoading } = useQuery({
+    queryKey: ["landing-ai-decisions", proposalId],
+    queryFn: () => load({ data: { proposalId } }),
+  });
+  const decisions = (data?.decisions ?? []) as any[];
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-base">Waarom deze pagina?</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Per keuze: de bron, het bewijsniveau en de steekproef. Niveaus zijn server-side
+          hergradeerd — externe kennis wordt nooit als bewezen voor ZoetBezorgen gepresenteerd.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : decisions.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            Dit voorstel bevat nog geen gestructureerde beslissingen (ouder dan de evidence-laag).
+          </p>
+        ) : (
+          decisions.map((d) => (
+            <div key={d.id} className="rounded border p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">
+                  {DECISION_AREA_LABELS[d.decision_area as DecisionArea] ?? d.decision_area}
+                </Badge>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${LEVEL_STYLES[d.evidence_level as EvidenceLevel] ?? ""}`}
+                >
+                  {EVIDENCE_LEVEL_LABELS[d.evidence_level as EvidenceLevel] ?? d.evidence_level}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {EVIDENCE_SOURCE_LABELS[d.evidence_source as EvidenceSource] ?? d.evidence_source}
+                  {typeof d.sample_size === "number" ? ` · n=${d.sample_size}` : ""}
+                  {d.metric ? ` · ${d.metric}` : ""}
+                  {` · zekerheid ${d.confidence}%`}
+                </span>
+                {d.ab_test_recommended ? <Badge variant="secondary">A/B-test nodig</Badge> : null}
+              </div>
+              <p className="mt-2 font-medium">{d.decision}</p>
+              {d.observed_result ? (
+                <p className="text-muted-foreground">Gemeten: {d.observed_result}</p>
+              ) : null}
+              {d.reasoning_summary ? (
+                <p className="text-muted-foreground">{d.reasoning_summary}</p>
+              ) : null}
+              {d.applicability ? (
+                <p className="text-muted-foreground text-xs">Toepasbaarheid: {d.applicability}</p>
+              ) : null}
+              {d.downgrade_reason ? (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                  Teruggezet van {d.downgraded_from}: {d.downgrade_reason}
+                </p>
+              ) : null}
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export const Route = createFileRoute("/landing-ai/$id")({
   head: () => ({
@@ -298,6 +382,8 @@ function ProposalDetail() {
         </CardContent>
       </Card>
 
+      <WhyThisPage proposalId={id} />
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -365,8 +451,16 @@ function ProposalDetail() {
                   <p className="text-muted-foreground">{e.hypothesis}</p>
                   <p className="text-muted-foreground text-xs">
                     Meetpunt: {e.primary_metric}
+                    {e.guardrail_metric ? ` · guardrail: ${e.guardrail_metric}` : ""}
+                    {e.min_sample_size ? ` · min. ${e.min_sample_size} waarnemingen` : ""}
                     {e.target_block ? ` · blok: ${e.target_block}` : ""}
                   </p>
+                  {e.variant_a || e.variant_b ? (
+                    <div className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
+                      <p className="rounded bg-muted/60 px-2 py-1">A: {e.variant_a ?? "huidige pagina"}</p>
+                      <p className="rounded bg-muted/60 px-2 py-1">B: {e.variant_b ?? "voorgestelde variant"}</p>
+                    </div>
+                  ) : null}
                 </div>
               ))
             )}

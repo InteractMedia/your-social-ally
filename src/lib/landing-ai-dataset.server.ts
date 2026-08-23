@@ -22,6 +22,7 @@ import {
   SECTION_LAYOUTS,
   SECTION_WIDTHS,
 } from "./landing-design-system";
+import { COMMERCIAL_HIERARCHY_TEXT } from "./landing-cro-evidence";
 import { CUSTOMER_STATUSES, QUALIFIED_STATUSES } from "./leads-shared";
 import type { AdsContext } from "./google-ads-accounts.server";
 
@@ -225,7 +226,7 @@ export async function buildLandingAiDataset(opts: {
   const { data: leads } = await db
     .from("leads")
     .select(
-      "id,status,lead_quality,industry_id,landing_page_id,revenue_amount,utm_source,utm_campaign,gclid,created_at,is_test",
+      "id,status,lead_quality,industry_id,landing_page_id,revenue,order_value,utm_source,utm_campaign,gclid,created_at,is_test",
     )
     .eq("workspace_id", opts.workspaceId)
     .eq("is_test", false)
@@ -259,8 +260,9 @@ export async function buildLandingAiDataset(opts: {
     if (isCustomer) {
       agg.customers += 1;
       customers += 1;
-      revenue += Number(l.revenue_amount ?? 0);
-      agg.revenue += Number(l.revenue_amount ?? 0);
+      const value = Number(l.revenue ?? l.order_value ?? 0);
+      revenue += value;
+      agg.revenue += value;
     }
     if (l.lead_quality === "poor") poorLeads += 1;
     if (l.gclid) leadsWithGclid += 1;
@@ -449,6 +451,73 @@ export async function buildLandingAiDataset(opts: {
     missingVisualsOnPage: readinessResult.missingVisuals,
   };
 
+  /* ---------------------------------------------- CRO evidence layer (V1.6C)
+   * Layer 1+2: measured own performance per decision dimension.
+   * Layer 3: curated external CRO/UX knowledge base.
+   * Layer 4 (AI hypothesis) is what remains — the model must label it as such.
+   */
+  const { buildOwnPerformanceEvidence } = await import("./landing-performance-evidence.server");
+  const ownEvidence = await buildOwnPerformanceEvidence({
+    db,
+    workspaceId: opts.workspaceId,
+    start,
+    end,
+    pageId: opts.pageId ?? null,
+  });
+
+  const { data: croKb } = await db
+    .from("cro_evidence")
+    .select(
+      "id,topic,principle,applies_to,source_name,source_url,published_at,evidence_level,context,limitations,recommended_application,metric,tags",
+    )
+    .eq("active", true)
+    .order("evidence_level", { ascending: true })
+    .limit(60);
+
+  const externalEvidence = ((croKb ?? []) as any[]).map((r) => ({
+    id: r.id,
+    topic: r.topic,
+    principle: r.principle,
+    applies_to: r.applies_to ?? [],
+    source: r.source_name ?? null,
+    source_url: r.source_url ?? null,
+    published_at: r.published_at ?? null,
+    evidence_level: r.evidence_level,
+    context: r.context ?? null,
+    limitations: r.limitations ?? null,
+    recommended_application: r.recommended_application ?? null,
+    metric: r.metric ?? null,
+  }));
+
+  (dataset as Record<string, unknown>)["croEvidence"] = {
+    commercialHierarchy: COMMERCIAL_HIERARCHY_TEXT,
+    priorityOrder: [
+      "1. own_performance_data — gemeten data van deze pagina/variant",
+      "2. similar_own_data — gemeten data van vergelijkbare eigen pagina's/branches",
+      "3. external_evidence — gecureerde CRO/UX-kennisbank (nooit STRONG voor ons)",
+      "4. ai_hypothesis — eigen aanname, altijd als hypothese + A/B-test",
+    ],
+    ownPerformance: {
+      period: ownEvidence.period,
+      thisPage: ownEvidence.thisPage,
+      similarPages: ownEvidence.similarPages,
+      comparisons: ownEvidence.comparisons,
+      totals: ownEvidence.totals,
+      pageConfigurations: ownEvidence.pageConfigurations,
+      dimensionsWithoutData: ownEvidence.dimensionsWithoutData,
+      readErrors: ownEvidence.errors,
+    },
+    externalEvidence,
+    externalEvidenceEmpty: externalEvidence.length === 0,
+    rules: [
+      "Elke commerciële keuze (hero, headline, CTA, formulier, structuur, beeld, sociale bewijskracht, prijstransparantie, mobiel) krijgt een decisions-item met evidence_source, evidence_level en sample_size.",
+      "Optimaliseer op de hoogst meetbare commerciële laag: omzet/klanten > gekwalificeerde leads > leads > formulieren > CTA-clicks. Meer leads met slechtere kwaliteit is GEEN verbetering.",
+      "Zonder eigen meetdata mag evidence_level nooit STRONG zijn. Externe evidence is maximaal MODERATE voor ons.",
+      "Bij ai_hypothesis of WEAK evidence: formuleer een A/B-test met variant_a, variant_b, primary_metric, guardrail_metric en min_sample_size.",
+      "Benoem expliciet welke bronlaag ontbrak; verzin geen cijfers.",
+    ],
+  };
+
   return {
     dataset,
     facts: {
@@ -463,6 +532,10 @@ export async function buildLandingAiDataset(opts: {
       productsInLibrary: productLibrary.length,
       testimonials: (testimonials ?? []).filter((t: any) => t.enabled !== false).length,
       hasIndustryLeadHistory: industryLeadHistory,
+      ownEvidenceDimensions: ownEvidence.comparisons.length,
+      externalEvidenceEntries: externalEvidence.length,
+      measuredCustomers: ownEvidence.totals.customers,
+      measuredQualifiedLeads: ownEvidence.totals.qualified,
     },
     meta: {
       period: { start, end, days },
