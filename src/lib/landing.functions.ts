@@ -100,10 +100,10 @@ export const createLandingPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createPageInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const { createPageWithTemplate } = await import("./landing.server");
     const id = await createPageWithTemplate({
-      workspaceId: workspace.workspaceId,
+      workspaceId: workspaceId,
       userId: context.userId,
       name: data.name,
       slug: slugify(data.slug),
@@ -119,10 +119,10 @@ export const duplicateLandingPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => duplicatePageInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const { duplicatePage } = await import("./landing.server");
     const id = await duplicatePage({
-      workspaceId: workspace.workspaceId,
+      workspaceId: workspaceId,
       userId: context.userId,
       sourceId: data.source_id,
       name: data.name,
@@ -194,9 +194,11 @@ export const updateLandingPage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updatePageInput.parse(d))
   .handler(async ({ context, data }) => {
     const { id, slug, ...rest } = data;
-    const patch: Record<string, unknown> = { ...rest, updated_at: new Date().toISOString() };
-    if (slug) patch["slug"] = slugify(slug);
-    const { error } = await context.supabase.from("landing_pages").update(patch).eq("id", id);
+    const patch = { ...rest, updated_at: new Date().toISOString() };
+    const { error } = await context.supabase
+      .from("landing_pages")
+      .update(slug ? { ...patch, slug: slugify(slug) } : patch)
+      .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -232,7 +234,7 @@ export const addLandingSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => sectionAddInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const { data: last } = await context.supabase
       .from("landing_page_sections")
       .select("sort_order")
@@ -241,7 +243,7 @@ export const addLandingSection = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     const { error } = await context.supabase.from("landing_page_sections").insert({
-      workspace_id: workspace.workspaceId,
+      workspace_id: workspaceId,
       landing_page_id: data.page_id,
       block_type: data.block_type,
       sort_order: (last?.sort_order ?? 0) + 10,
@@ -286,9 +288,9 @@ export const updateLandingForm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => formUpdateInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const payload = {
-      workspace_id: workspace.workspaceId,
+      workspace_id: workspaceId,
       landing_page_id: data.page_id,
       title: data.title ?? null,
       intro: data.intro ?? null,
@@ -311,9 +313,9 @@ export const upsertLandingProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => productInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const row = {
-      workspace_id: workspace.workspaceId,
+      workspace_id: workspaceId,
       name: data.name,
       slug: slugify(data.slug || data.name),
       image_url: data.image_url ?? null,
@@ -338,7 +340,7 @@ export const setLandingPageProducts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => pageProductInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     await context.supabase
       .from("landing_page_products")
       .delete()
@@ -346,7 +348,7 @@ export const setLandingPageProducts = createServerFn({ method: "POST" })
     if (data.product_ids.length) {
       const { error } = await context.supabase.from("landing_page_products").insert(
         data.product_ids.map((productId, i) => ({
-          workspace_id: workspace.workspaceId,
+          workspace_id: workspaceId,
           landing_page_id: data.page_id,
           product_id: productId,
           sort_order: (i + 1) * 10,
@@ -361,9 +363,9 @@ export const upsertLandingTestimonial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => testimonialInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const row = {
-      workspace_id: workspace.workspaceId,
+      workspace_id: workspaceId,
       landing_page_id: data.page_id,
       author: data.author,
       role_title: data.role_title ?? null,
@@ -398,10 +400,10 @@ export const publishLandingPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => publishInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const { publishPage } = await import("./landing.server");
     const version = await publishPage({
-      workspaceId: workspace.workspaceId,
+      workspaceId: workspaceId,
       pageId: data.id,
       userId: context.userId,
       userEmail: (context.claims as { email?: string } | null)?.email ?? null,
@@ -414,10 +416,10 @@ export const rollbackLandingPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => rollbackInput.parse(d))
   .handler(async ({ context, data }) => {
-    const workspace = await requireUserWorkspace(context.supabase, context.userId);
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     const { rollbackToVersion } = await import("./landing.server");
     const version = await rollbackToVersion({
-      workspaceId: workspace.workspaceId,
+      workspaceId: workspaceId,
       pageId: data.id,
       versionId: data.version_id,
       userId: context.userId,
