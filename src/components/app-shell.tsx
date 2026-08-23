@@ -19,6 +19,7 @@ import {
   PlusCircle,
   GitCompare,
   Briefcase,
+  Brain,
 
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
