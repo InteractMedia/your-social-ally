@@ -115,11 +115,6 @@ function LandingPageEditor() {
                     <Eye className="mr-1 h-4 w-4" /> Preview
                   </a>
                 </Button>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/landingpages/$id/analytics" params={{ id }}>
-                    <BarChart3 className="mr-1 h-4 w-4" /> Statistieken
-                  </Link>
-                </Button>
                 <Button size="sm" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate()}>
                   <Rocket className="mr-1 h-4 w-4" /> Publiceren
                 </Button>
