@@ -30,6 +30,7 @@ import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 import { Route as LandingpagesProductenRouteImport } from './routes/landingpages.producten'
+import { Route as LandingpagesBeeldbankRouteImport } from './routes/landingpages.beeldbank'
 import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
 import { Route as LandingAiIdRouteImport } from './routes/landing-ai.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
@@ -154,6 +155,11 @@ const LandingpagesProductenRoute = LandingpagesProductenRouteImport.update({
   path: '/landingpages/producten',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingpagesBeeldbankRoute = LandingpagesBeeldbankRouteImport.update({
+  id: '/landingpages/beeldbank',
+  path: '/landingpages/beeldbank',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LandingpagesIdRoute = LandingpagesIdRouteImport.update({
   id: '/landingpages/$id',
   path: '/landingpages/$id',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/competitors/$id': typeof CompetitorsIdRoute
   '/landing-ai/$id': typeof LandingAiIdRoute
   '/landingpages/$id': typeof LandingpagesIdRoute
+  '/landingpages/beeldbank': typeof LandingpagesBeeldbankRoute
   '/landingpages/producten': typeof LandingpagesProductenRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/beeldbank'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/beeldbank'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/competitors/$id'
     | '/landing-ai/$id'
     | '/landingpages/$id'
+    | '/landingpages/beeldbank'
     | '/landingpages/producten'
     | '/leads/$id'
     | '/leads/branches'
@@ -505,6 +517,7 @@ export interface RootRouteChildren {
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
   LandingAiIdRoute: typeof LandingAiIdRoute
   LandingpagesIdRoute: typeof LandingpagesIdRoute
+  LandingpagesBeeldbankRoute: typeof LandingpagesBeeldbankRoute
   LandingpagesProductenRoute: typeof LandingpagesProductenRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       path: '/landingpages/producten'
       fullPath: '/landingpages/producten'
       preLoaderRoute: typeof LandingpagesProductenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landingpages/beeldbank': {
+      id: '/landingpages/beeldbank'
+      path: '/landingpages/beeldbank'
+      fullPath: '/landingpages/beeldbank'
+      preLoaderRoute: typeof LandingpagesBeeldbankRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landingpages/$id': {
@@ -877,6 +897,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
   LandingAiIdRoute: LandingAiIdRoute,
   LandingpagesIdRoute: LandingpagesIdRoute,
+  LandingpagesBeeldbankRoute: LandingpagesBeeldbankRoute,
   LandingpagesProductenRoute: LandingpagesProductenRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
