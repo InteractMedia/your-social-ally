@@ -506,15 +506,36 @@ export async function uploadConversionEvent(args: {
     return { eventId, status: "not_eligible", reason: "no_google_account" };
   }
 
-  const conversion: Record<string, unknown> = {
-    conversionAction: `customers/${cid}/conversionActions/${verdict.actionId}`,
-    conversionDateTime: conversionTime,
+  // Deterministic transaction id: reuse the stored one on a retry so Google
+  // deduplicates the same business conversion instead of double counting it.
+  const transactionId =
+    e.google_transaction_id ??
+    buildTransactionId({
+      workspaceId,
+      leadId: l.id,
+      externalSource: l.external_source,
+      externalId: l.external_id,
+      event: e.conversion_event,
+      orderId: l.external_order_id,
+    });
+
+  const destination = googleAdsDestination({
+    customerId: cid,
+    conversionActionId: verdict.actionId,
+    reference: "d0",
+  });
+  const dmEvent: DmEvent = {
+    destinationReferences: ["d0"],
+    transactionId,
+    eventTimestamp: conversionTime,
+    eventSource: "WEB",
+    adIdentifiers: { [verdict.clickType]: verdict.clickId } as never,
   };
-  conversion[verdict.clickType] = verdict.clickId;
   if (verdict.value != null) {
-    conversion["conversionValue"] = verdict.value;
-    conversion["currencyCode"] = verdict.currency;
+    dmEvent.conversionValue = verdict.value;
+    dmEvent.currency = verdict.currency;
   }
+  const body = { destinations: [destination], events: [dmEvent] };
 
   if (args.dryRun) {
     await db
@@ -522,6 +543,7 @@ export async function uploadConversionEvent(args: {
       .update({
         google_upload_status: "pending",
         google_upload_reason: "dry_run",
+        google_transaction_id: transactionId,
       } as never)
       .eq("id", eventId);
     await logUpload({
@@ -538,32 +560,26 @@ export async function uploadConversionEvent(args: {
       conversion_time: conversionTime,
       mode,
       result: "dry_run",
+      upload_method: UPLOAD_METHOD,
+      google_transaction_id: transactionId,
       approved_by: actor.userId,
       approved_by_email: actor.email ?? null,
     });
     return { eventId, status: "not_eligible", reason: "dry_run" };
   }
 
-  let res: { ok: boolean; status: number; json: any; raw: string };
+  let res: DmResponse<{ requestId?: string }>;
   try {
-    res = await adsPost(`customers/${cid}:uploadClickConversions`, {
-      conversions: [conversion],
-      partialFailure: true,
-      validateOnly: false,
-    });
+    res = await ingestEvents(body);
   } catch (err) {
-    const retryable = (err as GoogleAdsApiError).status !== 412;
+    const retryable = (err as DataManagerError).status !== 412;
     await failEvent(eventId, attempts, "api_unavailable", (err as Error).message, retryable);
     return { eventId, status: "failed", reason: "api_unavailable", message: (err as Error).message };
   }
 
-  const partialFailure = res.json?.partialFailureError ?? null;
-  if (!res.ok || partialFailure) {
-    const body = partialFailure ? JSON.stringify(partialFailure) : res.raw;
-    const { reason, retryable } = classifyFailure(res.ok ? 400 : res.status, body);
-    const message = res.ok
-      ? (partialFailure?.message ?? "partial failure")
-      : apiMessage(res.raw, res.status);
+  if (!res.ok || !res.json?.requestId) {
+    const { reason, retryable } = classifyFailure(res.ok ? 400 : res.status, res.raw);
+    const message = dmMessage(res.raw, res.status);
     await failEvent(eventId, attempts, reason, message, retryable);
     await logUpload({
       workspace_id: workspaceId,
@@ -581,27 +597,34 @@ export async function uploadConversionEvent(args: {
       result: "failed",
       error_code: reason,
       error_message: message.slice(0, 1000),
-      api_response: (partialFailure ?? null) as never,
+      api_response: (res.json ?? null) as never,
+      upload_method: UPLOAD_METHOD,
+      google_transaction_id: transactionId,
       approved_by: actor.userId,
       approved_by_email: actor.email ?? null,
     });
     return { eventId, status: "failed", reason, message };
   }
 
-  const reference = res.json?.results?.[0]?.gclid
-    ? `${res.json.results[0].conversionAction ?? ""}`
-    : (res.json?.results?.[0]?.conversionAction ?? null);
-
+  // Data Manager ingest is asynchronous: HTTP 200 means "accepted", not
+  // "counted". The event stays `submitted` until requestStatus confirms it.
+  const requestId = res.json.requestId;
   await db
     .from("lead_conversion_events")
     .update({
-      google_upload_status: "uploaded",
-      uploaded_to_google: true,
+      google_upload_status: "submitted",
+      uploaded_to_google: false,
       google_upload_timestamp: new Date().toISOString(),
       google_upload_error: null,
       google_upload_reason: null,
       google_next_retry_at: null,
-      google_request_reference: reference,
+      google_request_id: requestId,
+      google_request_reference: requestId,
+      google_transaction_id: transactionId,
+      google_processing_status: "PROCESSING",
+      google_processing_checked_at: null,
+      google_upload_method: UPLOAD_METHOD,
+      google_diagnostics: null,
     } as never)
     .eq("id", eventId);
 
@@ -618,13 +641,17 @@ export async function uploadConversionEvent(args: {
     currency: verdict.value == null ? null : verdict.currency,
     conversion_time: conversionTime,
     mode,
-    result: "uploaded",
+    result: "submitted",
+    processing_status: "PROCESSING",
+    upload_method: UPLOAD_METHOD,
+    google_request_id: requestId,
+    google_transaction_id: transactionId,
     api_response: (res.json ?? null) as never,
     approved_by: actor.userId,
     approved_by_email: actor.email ?? null,
   });
 
-  return { eventId, status: "uploaded" };
+  return { eventId, status: "submitted", reason: null, message: requestId };
 }
 
 async function failEvent(
@@ -643,11 +670,115 @@ async function failEvent(
       google_upload_status: canRetry ? "pending" : "failed",
       google_upload_reason: reason,
       google_upload_error: message.slice(0, 2000),
+      google_upload_method: UPLOAD_METHOD,
       google_next_retry_at: canRetry
         ? new Date(Date.now() + backoff * 60_000).toISOString()
         : null,
     } as never)
     .eq("id", eventId);
+}
+
+/* ------------------------------------------- asynchronous status resolution */
+
+/**
+ * Polls Google for every event that was accepted but not yet confirmed.
+ * SUCCESS is the ONLY state that marks a conversion as really uploaded.
+ */
+export async function refreshSubmittedStatuses(
+  workspaceId: string,
+  limit = 50,
+): Promise<{ checked: number; confirmed: number; failed: number; pendingStill: number }> {
+  const db = await admin();
+
+  const { data: leads } = await db
+    .from("leads")
+    .select("id")
+    .eq("workspace_id", workspaceId);
+  const leadIds = ((leads ?? []) as { id: string }[]).map((l) => l.id);
+  if (leadIds.length === 0) return { checked: 0, confirmed: 0, failed: 0, pendingStill: 0 };
+
+  const { data: events } = await db
+    .from("lead_conversion_events")
+    .select("id,google_request_id,google_upload_attempts")
+    .in("lead_id", leadIds)
+    .in("google_upload_status", ["submitted", "processing"])
+    .not("google_request_id", "is", null)
+    .limit(limit);
+
+  const rows = (events ?? []) as {
+    id: string;
+    google_request_id: string;
+    google_upload_attempts: number | null;
+  }[];
+
+  let confirmed = 0;
+  let failed = 0;
+  let pendingStill = 0;
+
+  for (const row of rows) {
+    let res: DmResponse<{ requestStatusPerDestination?: RequestStatusPerDestination[] }>;
+    try {
+      res = await retrieveRequestStatus(row.google_request_id);
+    } catch (err) {
+      console.error("[OfflineConv] status retrieve failed", (err as Error).message);
+      pendingStill += 1;
+      continue;
+    }
+
+    const perDest = res.json?.requestStatusPerDestination?.[0] ?? null;
+    const state = perDest?.requestStatus ?? null;
+    const now = new Date().toISOString();
+
+    if (!res.ok || !state || state === "REQUEST_STATUS_UNKNOWN" || state === "PROCESSING") {
+      await db
+        .from("lead_conversion_events")
+        .update({
+          google_upload_status: "processing",
+          google_processing_status: state ?? "PROCESSING",
+          google_processing_checked_at: now,
+          google_diagnostics: (perDest ?? null) as never,
+        } as never)
+        .eq("id", row.id);
+      pendingStill += 1;
+      continue;
+    }
+
+    if (state === "SUCCESS") {
+      await db
+        .from("lead_conversion_events")
+        .update({
+          google_upload_status: "uploaded",
+          uploaded_to_google: true,
+          google_processing_status: state,
+          google_processing_checked_at: now,
+          google_upload_error: null,
+          google_upload_reason: null,
+          google_diagnostics: (perDest ?? null) as never,
+        } as never)
+        .eq("id", row.id);
+      confirmed += 1;
+      continue;
+    }
+
+    // FAILED / PARTIAL_SUCCESS — a single-event request means this event failed.
+    const reasons =
+      perDest?.errorInfo?.errorCounts?.map((c) => c.reason).filter(Boolean).join(", ") || state;
+    await db
+      .from("lead_conversion_events")
+      .update({
+        google_upload_status: "failed",
+        uploaded_to_google: false,
+        google_processing_status: state,
+        google_processing_checked_at: now,
+        google_upload_reason: "processing_rejected",
+        google_upload_error: `Google verwerkte deze conversie niet: ${reasons}`.slice(0, 2000),
+        google_diagnostics: (perDest ?? null) as never,
+      } as never)
+      .eq("id", row.id);
+    failed += 1;
+  }
+
+  return { checked: rows.length, confirmed, failed, pendingStill };
 }
 
 /* ------------------------------------------------- automatic mode (optional) */
@@ -693,9 +824,10 @@ export async function autoUploadIfEnabled(workspaceId: string, eventId: string) 
 /* ------------------------------------------------------ validate-only check */
 
 /**
- * Sends a SYNTHETIC conversion with validateOnly: true to Google Ads. Google
- * only validates the payload; nothing is ever recorded in the account. Used to
- * prove a mapping's payload shape before the first real upload.
+ * Sends a SYNTHETIC event with validateOnly: true to the Data Manager API.
+ * Google only validates the payload; nothing is recorded in the account and no
+ * requestId can be looked up afterwards. Used to prove a mapping's payload
+ * shape before the first real upload.
  */
 export async function validateOnlyCheck(args: {
   ctx: { supabase: any; userId: string };
@@ -712,25 +844,33 @@ export async function validateOnlyCheck(args: {
 }> {
   const cid = await resolveCustomerId(args.ctx);
   const when = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-  const conversion: Record<string, unknown> = {
-    conversionAction: `customers/${cid}/conversionActions/${args.actionId}`,
-    conversionDateTime: conversionDateTime(when),
+  const event: DmEvent = {
+    destinationReferences: ["d0"],
+    transactionId: `sc-validate-only-${args.actionId}-${args.withValue ? "value" : "novalue"}`,
+    eventTimestamp: rfc3339(when)!,
+    eventSource: "WEB",
     // Synthetic, deliberately invalid click id — never a real customer lead.
-    gclid: "SOCIALCOCKPIT_VALIDATE_ONLY_SYNTHETIC",
+    adIdentifiers: { gclid: "SOCIALCOCKPIT_VALIDATE_ONLY_SYNTHETIC" },
   };
   if (args.withValue) {
-    conversion["conversionValue"] = 123.45;
-    conversion["currencyCode"] = args.currency || "EUR";
+    event.conversionValue = 123.45;
+    event.currency = args.currency || "EUR";
   }
-  const body = { conversions: [conversion], partialFailure: true, validateOnly: true };
-  const res = await adsPost(`customers/${cid}:uploadClickConversions`, body);
-  const partial = res.json?.partialFailureError ?? null;
+  const body = {
+    destinations: [googleAdsDestination({ customerId: cid, conversionActionId: args.actionId })],
+    events: [event],
+    validateOnly: true as const,
+  };
+  const res = await ingestEvents(body);
   return {
     actionId: args.actionId,
-    ok: res.ok,
+    ok: res.ok && Boolean(res.json?.requestId),
     status: res.status,
     validateOnly: true,
     payload: JSON.stringify(body),
-    message: partial ? JSON.stringify(partial).slice(0, 1200) : res.raw.slice(0, 1200) || null,
+    message: res.ok
+      ? (res.json?.requestId ? `Payload geaccepteerd (validatie-referentie ${res.json.requestId})` : res.raw.slice(0, 1200))
+      : dmMessage(res.raw, res.status).slice(0, 1200),
   };
 }
+
