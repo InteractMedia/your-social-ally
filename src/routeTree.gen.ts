@@ -46,6 +46,7 @@ import { Route as AdsGoogleAdviceRouteImport } from './routes/ads.google.advice'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
 import { Route as ApiPublicLeadIngestQuoteRouteImport } from './routes/api/public/lead-ingest.quote'
 import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/public/lead-ingest.platform'
+import { Route as ApiPublicLandingAssetIdRouteImport } from './routes/api/public/landing-asset.$id'
 
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
@@ -234,6 +235,11 @@ const ApiPublicLeadIngestPlatformRoute =
     path: '/api/public/lead-ingest/platform',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLandingAssetIdRoute = ApiPublicLandingAssetIdRouteImport.update({
+  id: '/api/public/landing-asset/$id',
+  path: '/api/public/landing-asset/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google': typeof AdsGoogleIndexRoute
+  '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
 }
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
   fileRoutesByTo: FileRoutesByTo
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google'
+    | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
   id:
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
   fileRoutesById: FileRoutesById
@@ -485,6 +497,7 @@ export interface RootRouteChildren {
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
+  ApiPublicLandingAssetIdRoute: typeof ApiPublicLandingAssetIdRoute
   ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
   ApiPublicLeadIngestQuoteRoute: typeof ApiPublicLeadIngestQuoteRoute
 }
@@ -750,6 +763,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLeadIngestPlatformRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/landing-asset/$id': {
+      id: '/api/public/landing-asset/$id'
+      path: '/api/public/landing-asset/$id'
+      fullPath: '/api/public/landing-asset/$id'
+      preLoaderRoute: typeof ApiPublicLandingAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -841,6 +861,7 @@ const rootRouteChildren: RootRouteChildren = {
   LandingpagesIndexRoute: LandingpagesIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
+  ApiPublicLandingAssetIdRoute: ApiPublicLandingAssetIdRoute,
   ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
   ApiPublicLeadIngestQuoteRoute: ApiPublicLeadIngestQuoteRoute,
 }
