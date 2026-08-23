@@ -277,7 +277,9 @@ export const skipOfflineConversions = createServerFn({ method: "POST" })
       })
       .in("id", data.ids)
       .in("lead_id", leadIds)
-      .neq("google_upload_status", "uploaded")
+      // An event Google already accepted can never be skipped afterwards.
+      .not("google_upload_status", "in", "(uploaded,submitted,processing)")
+
       .select("id");
     if (error) return { ok: false as const, skipped: 0, error: error.message };
     return { ok: true as const, skipped: updated?.length ?? 0 };
