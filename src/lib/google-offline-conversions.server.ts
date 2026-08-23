@@ -485,7 +485,9 @@ export async function uploadConversionEvent(args: {
     return { eventId, status: verdict.status, reason: verdict.reason };
   }
 
-  const conversionTime = conversionDateTime(e.conversion_timestamp);
+  // Data Manager expects RFC 3339 (UTC, Z-normalised).
+  const conversionTime = rfc3339(e.conversion_timestamp);
+
   if (!conversionTime) {
     await db
       .from("lead_conversion_events")
