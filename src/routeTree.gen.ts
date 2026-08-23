@@ -21,6 +21,7 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
+import { Route as LandingpagesIndexRouteImport } from './routes/landingpages.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
 import { Route as OfferteSlugRouteImport } from './routes/offerte.$slug'
@@ -102,6 +103,11 @@ const LeadsIndexRoute = LeadsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LeadsRoute,
+} as any)
+const LandingpagesIndexRoute = LandingpagesIndexRouteImport.update({
+  id: '/landingpages/',
+  path: '/landingpages/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitorsIndexRoute = CompetitorsIndexRouteImport.update({
   id: '/',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/offerte/$slug': typeof OfferteSlugRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
+  '/landingpages': typeof LandingpagesIndexRoute
   '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -338,6 +347,7 @@ export interface FileRouteTypes {
     | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
+    | '/landingpages/'
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/offerte/$slug'
     | '/ads'
     | '/competitors'
+    | '/landingpages'
     | '/leads'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
+    | '/landingpages/'
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -431,6 +443,7 @@ export interface RootRouteChildren {
   TrendsRoute: typeof TrendsRoute
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
+  LandingpagesIndexRoute: typeof LandingpagesIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
   ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/leads/'
       preLoaderRoute: typeof LeadsIndexRouteImport
       parentRoute: typeof LeadsRoute
+    }
+    '/landingpages/': {
+      id: '/landingpages/'
+      path: '/landingpages'
+      fullPath: '/landingpages/'
+      preLoaderRoute: typeof LandingpagesIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/competitors/': {
       id: '/competitors/'
@@ -755,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrendsRoute: TrendsRoute,
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
   OfferteSlugRoute: OfferteSlugRoute,
+  LandingpagesIndexRoute: LandingpagesIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
   ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
