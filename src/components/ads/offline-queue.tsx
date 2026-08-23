@@ -216,7 +216,9 @@ export function OfflineConversionQueue() {
                   <TableHead>Valuta</TableHead>
                   <TableHead>Preflight</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Uploadtijd</TableHead>
+                  <TableHead>Verwerking bij Google</TableHead>
+                  <TableHead>Verzonden</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
