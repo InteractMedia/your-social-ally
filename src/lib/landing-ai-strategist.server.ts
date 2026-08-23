@@ -430,7 +430,7 @@ export async function applyLandingProposal(args: {
       userId: args.ctx.userId,
       name: baseName,
       slug: args.slugOverride ?? `ai-concept-${stamp}`,
-      funnel: "offerte",
+      funnel: "quote",
       industryId: proposal.industry_id ?? null,
     });
   }
