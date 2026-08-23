@@ -224,7 +224,7 @@ export async function runLandingStrategist(args: {
     totalMs += phase2.runtimeMs;
     fallbackReason = fallbackReason ?? phase2.fallbackReason;
 
-    const parsed = aiProposalSchema.parse(extractJsonObject(phase2.text));
+    const parsed = aiProposalSchema.parse(dropNulls(extractJsonObject(phase2.text)));
     const sanitized = sanitizeProposal(parsed, built.dataset, strategy);
     const dataConfidence = computeDataConfidence(built.facts);
 
@@ -328,6 +328,20 @@ export async function runLandingStrategist(args: {
 }
 
 /* ------------------------------------------------------------ sanitizing */
+
+/** Models happily emit null for "not applicable"; the schema treats that as absent. */
+function dropNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(dropNulls);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === null) continue;
+      out[k] = dropNulls(v);
+    }
+    return out;
+  }
+  return value;
+}
 
 const stripMarkup = (v?: string) =>
   v == null ? v : v.replace(/<[^>]*>/g, "").replace(/\{\{|\}\}/g, "").trim();
