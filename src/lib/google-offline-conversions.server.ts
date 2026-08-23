@@ -427,10 +427,15 @@ export async function uploadConversionEvent(args: {
   if (!event) return { eventId, status: "failed", reason: "event_not_found" };
   const e = event as unknown as EventRow;
 
-  // Idempotency: an uploaded event is never uploaded again.
+  // Idempotency: an event that is uploaded, or already accepted by Google and
+  // awaiting confirmation, is never sent a second time.
   if (e.google_upload_status === "uploaded") {
     return { eventId, status: "uploaded", reason: "already_uploaded" };
   }
+  if (e.google_upload_status === "submitted" || e.google_upload_status === "processing") {
+    return { eventId, status: "submitted", reason: "already_submitted" };
+  }
+
 
   const { data: lead } = await db
     .from("leads")
