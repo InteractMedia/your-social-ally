@@ -436,6 +436,19 @@ export async function buildLandingAiDataset(opts: {
     ? (dataset.socialCockpit.byIndustry.find((i) => i.industry === industryName)?.leads ?? 0) > 0
     : false;
 
+  /* Content readiness: deterministic facts about what content actually exists. */
+  const { buildContentReadiness } = await import("./landing-readiness.server");
+  const readinessResult = await buildContentReadiness({
+    db,
+    workspaceId: opts.workspaceId,
+    pageId: opts.pageId ?? null,
+  });
+  (dataset as Record<string, unknown>)["contentReadiness"] = {
+    score: readinessResult.readiness.score,
+    items: readinessResult.readiness.items,
+    missingVisualsOnPage: readinessResult.missingVisuals,
+  };
+
   return {
     dataset,
     facts: {
