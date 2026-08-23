@@ -103,7 +103,16 @@ const nav: NavSection[] = [
       { to: "/leads/funnels", label: "Funnels", icon: GitCompare },
     ],
   },
-  { to: "/landingpages", label: "Landingspagina's", icon: LayoutTemplate },
+  {
+    to: "/landingpages",
+    label: "Landingspagina's",
+    icon: LayoutTemplate,
+    children: [
+      { to: "/landingpages", label: "Alle pagina's", icon: LayoutTemplate },
+      { to: "/landingpages/producten", label: "Producten", icon: Package },
+      { to: "/landingpages/beeldbank", label: "Beeldbank", icon: Images },
+    ],
+  },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
 
