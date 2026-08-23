@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { AiStrategistPanel } from "@/components/landing/ai-strategist-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -133,6 +134,7 @@ function LandingPageEditor() {
         <Tabs defaultValue="content">
           <TabsList>
             <TabsTrigger value="content">Inhoud</TabsTrigger>
+            <TabsTrigger value="ai">AI Strategie</TabsTrigger>
             <TabsTrigger value="form">Formulier</TabsTrigger>
             <TabsTrigger value="products">Producten & cases</TabsTrigger>
             <TabsTrigger value="performance">Prestaties</TabsTrigger>
@@ -142,6 +144,10 @@ function LandingPageEditor() {
 
           <TabsContent value="content" className="mt-6 space-y-4">
             <SectionsEditor pageId={id} sections={query.data!.sections} />
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-6">
+            <AiStrategistPanel pageId={id} />
           </TabsContent>
 
           <TabsContent value="form" className="mt-6">
