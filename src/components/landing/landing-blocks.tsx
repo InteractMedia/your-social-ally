@@ -6,13 +6,19 @@
  * can only pick pre-approved design variants, so AI-generated pages stay on
  * brand and can never inject markup or arbitrary styling.
  */
-import { Check, Quote, Sparkles } from "lucide-react";
+import { Check, ImageOff, Quote, Sparkles } from "lucide-react";
 
 import {
   LANDING_DESIGN_TOKENS as T,
   resolveSectionDesign,
 } from "@/lib/landing-design-system";
 import { paragraphs, type LandingSection } from "@/lib/landing-shared";
+import {
+  ASPECT_RATIO_CLASS,
+  VISUAL_TYPE_LABELS,
+  visualIsMissing,
+  type SectionVisual,
+} from "@/lib/landing-visual";
 import type { PublicPage } from "@/lib/landing.server";
 import { cn } from "@/lib/utils";
 
@@ -203,10 +209,17 @@ export function LandingBlock({
           </div>
         </div>
       );
-      const media = <Media src={c.image_url} alt={c.image_alt} design={heroDesign} eager />;
+      const media = <MediaSlot
+          src={c.image_url}
+          alt={c.image_alt}
+          visual={visual}
+          design={heroDesign}
+          showPlaceholder={showVisualPlaceholders}
+          eager
+        />;
       return (
         <Section design={heroDesign}>
-          {heroDesign.isSplit && c.image_url ? (
+          {heroDesign.isSplit && slotVisible ? (
             <div className={heroDesign.gridClass}>
               {heroDesign.mediaFirst ? (
                 <>
@@ -419,7 +432,13 @@ export function LandingBlock({
 
     default: {
       // intro / personalization / why_us and any future block type
-      const media = <Media src={c.image_url} alt={c.image_alt} design={design} />;
+      const media = <MediaSlot
+          src={c.image_url}
+          alt={c.image_alt}
+          visual={visual}
+          design={design}
+          showPlaceholder={showVisualPlaceholders}
+        />;
       const copy = (
         <div>
           <Heading title={c.title} subtitle={c.subtitle} design={design} />
@@ -457,7 +476,7 @@ export function LandingBlock({
       );
       return (
         <Section design={design}>
-          {design.isSplit && c.image_url ? (
+          {design.isSplit && slotVisible ? (
             <div className={design.gridClass}>
               {design.mediaFirst ? (
                 <>
@@ -474,7 +493,7 @@ export function LandingBlock({
           ) : (
             <>
               {copy}
-              {c.image_url && <div className="mt-8">{media}</div>}
+              {slotVisible && <div className="mt-8">{media}</div>}
             </>
           )}
         </Section>
