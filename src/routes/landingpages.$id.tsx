@@ -433,6 +433,18 @@ function FormEditor({
   const setField = (index: number, patch: Partial<FormFieldConfig>) =>
     setFields((f) => f.map((field, i) => (i === index ? { ...field, ...patch } : field)));
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  const moveField = (from: number, to: number) =>
+    setFields((f) => {
+      if (from === to || to < 0 || to >= f.length) return f;
+      const next = [...f];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item!);
+      return next;
+    });
+
   return (
     <Card>
       <CardHeader>
