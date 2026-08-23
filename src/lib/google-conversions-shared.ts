@@ -129,6 +129,8 @@ export const REASON_LABELS: Record<string, string> = {
   api_error: "Google Ads gaf een fout terug bij het uploaden.",
   api_unavailable: "Google Ads was tijdelijk niet bereikbaar.",
   dry_run: "Alleen gecontroleerd (geen upload).",
+  not_allowlisted:
+    "Google staat offline click-uploads via deze API niet toe voor dit account; nieuwe integraties moeten de Data Manager API gebruiken.",
 };
 
 

@@ -342,6 +342,8 @@ const RETRY_MINUTES = [5, 15, 45, 120, 360];
 function classifyFailure(status: number, body: string): { reason: string; retryable: boolean } {
   if (status === 401 || status === 403) return { reason: "api_auth_error", retryable: false };
   if (status === 429 || status >= 500) return { reason: "api_unavailable", retryable: true };
+  if (/NOT_ALLOWLISTED|Data Manager API/i.test(body))
+    return { reason: "not_allowlisted", retryable: false };
   if (/CONVERSION_PRECEDES|INVALID_CONVERSION_DATE|EXPIRED_CLICK|TOO_RECENT/i.test(body))
     return { reason: "invalid_conversion_time", retryable: false };
   return { reason: "api_error", retryable: false };
