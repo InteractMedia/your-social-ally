@@ -398,7 +398,7 @@ async function logUpload(row: Record<string, unknown>) {
 
 export type UploadOutcome = {
   eventId: string;
-  status: "uploaded" | "failed" | "not_eligible" | "disabled";
+  status: "uploaded" | "submitted" | "failed" | "not_eligible" | "disabled";
   reason?: string | null;
   message?: string | null;
 };
