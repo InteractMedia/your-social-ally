@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowDown,
   ArrowUp,
-  BarChart3,
   Eye,
   History,
   Plus,
