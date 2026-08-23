@@ -155,6 +155,9 @@ export type Metrics = {
   conversionsValue: number;
   costPerConversion: number;
   conversionRate: number; // percentage
+  /** Google Ads "alle conversies": ook secundaire acties die niet meebieden. */
+  allConversions: number;
+  allConversionsValue: number;
 };
 
 export function mapMetrics(m: Record<string, any> | undefined): Metrics {
@@ -171,6 +174,8 @@ export function mapMetrics(m: Record<string, any> | undefined): Metrics {
     conversionsValue: num(m?.conversionsValue),
     costPerConversion: conversions > 0 ? spend / conversions : 0,
     conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+    allConversions: num(m?.allConversions),
+    allConversionsValue: num(m?.allConversionsValue),
   };
 }
 
@@ -182,6 +187,8 @@ export const METRIC_FIELDS = [
   "metrics.average_cpc",
   "metrics.conversions",
   "metrics.conversions_value",
+  "metrics.all_conversions",
+  "metrics.all_conversions_value",
 ].join(", ");
 
 /** Safe GAQL date filter from ISO yyyy-mm-dd strings. */
