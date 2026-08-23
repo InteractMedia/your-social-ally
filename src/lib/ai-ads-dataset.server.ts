@@ -387,7 +387,7 @@ export async function buildAdsAnalysisSnapshot(opts: {
   const { data: leadRows, error: leadError } = await ctx.supabase
     .from("leads")
     .select(
-      "status, lead_quality, became_customer, revenue, order_value, industry_name, landing_page, campaign_id, campaign_name, keyword, gclid, is_test, poor_reason, poor_reason_label, funnel_type",
+      "status, lead_quality, became_customer, revenue, order_value, industry_name, landing_page, landing_page_id, landing_page_slug, campaign_id, campaign_name, keyword, gclid, is_test, poor_reason, poor_reason_label, funnel_type",
     )
     .eq("workspace_id", workspaceId)
     .gte("received_at", bounds.from)
@@ -425,6 +425,62 @@ export async function buildAdsAnalysisSnapshot(opts: {
       poorReasons.set(key, (poorReasons.get(key) ?? 0) + 1);
     }
   }
+
+  /* ---------- landing page funnel (visitors → leads → customers) ---------- */
+
+  const leadAggByPageId = new Map<string, LeadAggregate>();
+  for (const lead of leads) {
+    if (!lead.landing_page_id) continue;
+    const agg = leadAggByPageId.get(lead.landing_page_id) ?? emptyAgg();
+    addLead(agg, lead);
+    leadAggByPageId.set(lead.landing_page_id, agg);
+  }
+
+  const [{ data: lpRows }, { data: lpEventRows }] = await Promise.all([
+    ctx.supabase
+      .from("landing_pages")
+      .select("id, name, slug, funnel_type, status, industry_id, is_test")
+      .eq("workspace_id", workspaceId)
+      .neq("status", "archived")
+      .limit(200),
+    ctx.supabase
+      .from("landing_page_events")
+      .select("landing_page_id, event_type, session_id")
+      .eq("workspace_id", workspaceId)
+      .eq("is_preview", false)
+      .eq("is_test", false)
+      .gte("created_at", bounds.from)
+      .lt("created_at", bounds.to)
+      .limit(20000),
+  ]);
+
+  const lpAll: any[] = lpRows ?? [];
+  const lpEvents: any[] = lpEventRows ?? [];
+  const landingPages = lpAll
+    .filter((p: any) => opts.includeTestLeads || !p.is_test)
+    .map((p: any) => {
+      const own = lpEvents.filter((e: any) => e.landing_page_id === p.id);
+      const uniq = (type: string) =>
+        new Set(own.filter((e: any) => e.event_type === type).map((e: any) => e.session_id)).size;
+      const agg = leadAggByPageId.get(p.id) ?? emptyAgg();
+      const visitors = uniq("page_view");
+      return {
+        landingPage: p.name,
+        slug: p.slug,
+        funnel: p.funnel_type,
+        status: p.status,
+        visitors,
+        ctaClicks: uniq("cta_click"),
+        formStarted: uniq("form_started"),
+        formSubmitted: uniq("form_submitted"),
+        // Spend per landingspagina is nog niet toewijsbaar; KPI's die spend nodig
+        // hebben (CPL/CPQL/CAC/ROAS) blijven daarom null tot dat wel kan.
+        ...withKpis(agg, 0),
+        visitorToLeadPct: visitors > 0 ? round((agg.leads / visitors) * 100, 1) : null,
+      };
+    })
+    .sort((a: any, b: any) => b.leads - a.leads || b.visitors - a.visitors)
+    .slice(0, 50);
 
   const spendByCampaignName = new Map<string, number>();
   for (const c of campaignStructure) spendByCampaignName.set(c.name, c.current.spend);
@@ -590,6 +646,7 @@ export async function buildAdsAnalysisSnapshot(opts: {
         .map(([landingPage, agg]) => ({ landingPage, ...withKpis(agg, 0) }))
         .sort((a, b) => b.leads - a.leads)
         .slice(0, 25),
+      landingPageFunnel: landingPages,
       poorReasons: [...poorReasons.entries()]
         .map(([reason, count]) => ({ reason, count }))
         .sort((a, b) => b.count - a.count),

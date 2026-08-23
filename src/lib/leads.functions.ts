@@ -435,11 +435,29 @@ export const updateLeadStatus = createServerFn({ method: "POST" })
       status: string;
       first_order_date?: string;
       lead_quality?: string;
+      status_history?: unknown;
     } = { status: data.status };
     if (data.status === "first_order") patch.first_order_date = new Date().toISOString().slice(0, 10);
     if (data.status === "hot") patch.lead_quality = "hot";
     if (data.status === "qualified") patch.lead_quality = "qualified";
-    const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
+    // Volledige statushistorie blijft bewaard op de lead zelf (naast lead_activities),
+    // zodat funnel-doorlooptijden en attributie later reconstrueerbaar zijn.
+    const { data: current } = await context.supabase
+      .from("leads")
+      .select("status_history")
+      .eq("id", data.id)
+      .maybeSingle();
+    const history = Array.isArray(current?.status_history)
+      ? (current!.status_history as unknown[])
+      : [];
+    patch.status_history = [
+      ...history,
+      { status: data.status, at: new Date().toISOString(), by: context.userId },
+    ];
+    const { error } = await context.supabase
+      .from("leads")
+      .update(patch as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     await context.supabase.from("lead_activities").insert({
       lead_id: data.id,
