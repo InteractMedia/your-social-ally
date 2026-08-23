@@ -21,9 +21,9 @@ import {
 } from "@/lib/landing-ai-shared";
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Nieuw voorstel",
+  proposed: "Nieuw voorstel",
   applied: "Toegepast als concept",
-  discarded: "Afgewezen",
+  rejected: "Afgewezen",
 };
 
 export function AiStrategistPanel({ pageId }: { pageId: string }) {

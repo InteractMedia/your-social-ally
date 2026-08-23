@@ -243,7 +243,7 @@ export async function runLandingStrategist(args: {
         industry_id: args.industryId ?? null,
         mode: args.mode,
         title,
-        status: "draft",
+        status: "proposed",
         strategy: sanitized.strategy as never,
         page_plan: sanitized.page as never,
         form_plan: sanitized.form as never,
