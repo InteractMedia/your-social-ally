@@ -63,7 +63,9 @@ Performance Max zoekintentie:
 Antwoord ALLEEN met geldige JSON (geen markdown, geen uitleg eromheen) in exact dit formaat:
 {"summary":"2-4 zinnen samenvatting van de accountgezondheid","advice":[{"advice_type":"EEN_VAN_DE_TOEGESTANE_TYPES","entity_type":"campaign|ad_group|keyword|search_term|landing_page|industry|account","entity_name":"naam uit de dataset of null","title":"korte titel (max 80 tekens)","summary":"wat is er aan de hand (1-3 zinnen)","reasoning":"onderbouwing met de cijfers uit de dataset","proposed_action":"exact wat een mens in Google Ads zou moeten doen","proposed_payload":{"vrij":"machineleesbare details, bv. keyword, match_type, huidige en voorgestelde waarde"},"expected_impact":"verwachte impact in cijfers of range","confidence_score":0,"risk_level":"low|medium|high","evidence":{"metric":"waarde"},"data_available":["..."],"data_missing":["..."]}]}
 
-Toegestane advice_type waarden: ${ADVICE_TYPES.join(", ")}.`;
+Toegestane advice_type waarden: ${ADVICE_TYPES.join(", ")}.
+
+Zet in proposed_payload altijd een veld "priority" met waarde "high", "medium" of "low", plus bij PMax-adviezen een veld "search_intent" met je classificatie per genoemde zoekcategorie.`;
 
 const AdviceSchema = z.object({
   advice_type: z.string(),
