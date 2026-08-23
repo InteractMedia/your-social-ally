@@ -40,6 +40,7 @@ import {
   addLandingSection,
   deleteLandingSection,
   deleteLandingTestimonial,
+  getLandingAnalytics,
   getLandingPage,
   publishLandingPage,
   reorderLandingSections,
@@ -924,5 +925,102 @@ function VersionsPanel({
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+/* -------------------------------------------------------------- performance */
+
+/**
+ * Prestatieweergave per pagina. Preview- en testverkeer zijn server-side al
+ * uitgesloten, zodat deze cijfers gelijklopen met de AI-dataset.
+ */
+function PerformancePanel({ pageId }: { pageId: string }) {
+  const today = new Date();
+  const start = new Date(today.getTime() - 29 * 86400000).toISOString().slice(0, 10);
+  const end = today.toISOString().slice(0, 10);
+  const load = useServerFn(getLandingAnalytics);
+  const { data, isLoading } = useQuery({
+    queryKey: ["landing", "analytics", pageId, start, end],
+    queryFn: () => load({ data: { id: pageId, start, end } }),
+  });
+
+  if (isLoading || !data) return <Skeleton className="h-48 w-full" />;
+  const f = data.funnel;
+  const steps: { label: string; value: string }[] = [
+    { label: "Bezoeken", value: String(f.views) },
+    { label: "CTA-clicks", value: String(f.cta_clicks) },
+    { label: "Formulier gestart", value: String(f.form_started) },
+    { label: "Leads", value: String(f.leads) },
+    { label: "Qualified / hot", value: String(f.qualified) },
+    { label: "Klanten", value: String(f.customers) },
+    {
+      label: "Omzet",
+      value: f.revenue > 0 ? `€ ${f.revenue.toLocaleString("nl-NL")}` : "—",
+    },
+    {
+      label: "Conversie",
+      value: f.conversion_rate === null ? "—" : `${f.conversion_rate.toFixed(1)}%`,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Funnel — laatste 30 dagen</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {steps.map((s) => (
+            <div key={s.label}>
+              <div className="text-2xl font-semibold tabular-nums">{s.value}</div>
+              <div className="text-muted-foreground text-xs">{s.label}</div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {f.views === 0 && (
+        <p className="text-muted-foreground text-sm">
+          Nog geen live verkeer gemeten. Preview- en testbezoeken worden bewust niet meegeteld.
+        </p>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {[
+          { title: "Per variant", rows: data.byVariant.map((v) => ({ label: v.variant, leads: v.leads })) },
+          { title: "Per platform", rows: data.byPlatform },
+          { title: "Per campagne", rows: data.byCampaign },
+          { title: "Per branche", rows: data.byIndustry },
+        ].map((block) => (
+          <Card key={block.title}>
+            <CardHeader>
+              <CardTitle className="text-base">{block.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {block.rows.length === 0 ? (
+                <p className="text-muted-foreground">Geen data in deze periode.</p>
+              ) : (
+                block.rows.map((r) => (
+                  <div key={r.label} className="flex justify-between">
+                    <span className="truncate">{r.label}</span>
+                    <span className="tabular-nums">{r.leads}</span>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Formulierinzendingen</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          {data.submissions.accepted} geaccepteerd · {data.submissions.duplicate} dubbel ·{" "}
+          {data.submissions.rejected} geweigerd (spam/validatie)
+        </CardContent>
+      </Card>
+    </div>
   );
 }
