@@ -9,9 +9,25 @@
  *
  * This module NEVER changes campaigns, budgets, bids, keywords or ads.
  */
-import { adsPost, apiMessage, gaql, GoogleAdsApiError } from "./google-ads.server";
+import { gaql } from "./google-ads.server";
 import { resolveCustomerId } from "./google-ads-accounts.server";
+import {
+  buildTransactionId,
+  DataManagerError,
+  dmMessage,
+  googleAdsDestination,
+  ingestEvents,
+  retrieveRequestStatus,
+  rfc3339,
+  type DmEvent,
+  type DmResponse,
+  type RequestStatusPerDestination,
+} from "./google-datamanager.server";
 import { MAX_UPLOAD_ATTEMPTS, type UploadMode, type ValueSource } from "./google-conversions-shared";
+
+/** Every offline conversion upload goes through the Google Data Manager API. */
+const UPLOAD_METHOD = "data_manager";
+
 
 export type Actor = { userId: string; email?: string | null };
 
