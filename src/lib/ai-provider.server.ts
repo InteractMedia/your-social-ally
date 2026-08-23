@@ -96,6 +96,32 @@ export async function runAiCompletion(req: AiCompletionRequest): Promise<AiCompl
   };
 }
 
+const FALLBACK_MODEL = "google/gemini-3-flash-preview";
+
+/**
+ * Runs the completion and, when the primary provider is unusable (missing
+ * credits, invalid key, outage), retries once on the Lovable gateway so an
+ * analysis still produces advice. The reason is reported back to the UI.
+ */
+export async function runAiCompletionWithFallback(
+  req: AiCompletionRequest,
+): Promise<AiCompletionResult & { fallbackReason: string | null }> {
+  try {
+    const result = await runAiCompletion(req);
+    return { ...result, fallbackReason: null };
+  } catch (err) {
+    const message = (err as Error).message;
+    const canFallback = req.provider !== "lovable" && Boolean(process.env.LOVABLE_API_KEY);
+    if (!canFallback) throw err;
+    console.warn("[AI] falling back to Lovable gateway", message.slice(0, 200));
+    const result = await runAiCompletion({ ...req, provider: "lovable", model: FALLBACK_MODEL });
+    return {
+      ...result,
+      fallbackReason: `Claude was niet beschikbaar (${message.slice(0, 160)}) — analyse uitgevoerd met het Lovable AI-fallbackmodel.`,
+    };
+  }
+}
+
 type RawResult = { text: string; inputTokens: number | null; outputTokens: number | null };
 
 async function callAnthropic(req: AiCompletionRequest): Promise<RawResult> {

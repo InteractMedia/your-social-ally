@@ -15,7 +15,7 @@ import {
   confidenceLevelFor,
   type AdviceType,
 } from "./ai-analyst-shared";
-import { extractJsonObject, resolveProvider, runAiCompletion, type AiProvider } from "./ai-provider.server";
+import { extractJsonObject, resolveProvider, runAiCompletionWithFallback, type AiProvider } from "./ai-provider.server";
 import { buildAdsAnalysisSnapshot } from "./ai-ads-dataset.server";
 import type { AdsContext } from "./google-ads-accounts.server";
 
@@ -192,7 +192,7 @@ export async function runAdsAnalysisForWorkspace(opts: {
   ].join("\n");
 
   try {
-    const completion = await runAiCompletion({
+    const completion = await runAiCompletionWithFallback({
       provider: resolved.provider,
       model: resolved.model,
       system: SYSTEM_PROMPT,
@@ -200,6 +200,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
       temperature: 0.2,
       maxTokens: 8000,
     });
+    const usedProvider = completion.provider;
+    const usedModel = completion.model;
+    const fallbackReason = completion.fallbackReason ?? resolved.fallbackReason;
 
     const parsed = ResponseSchema.parse(extractJsonObject(completion.text));
     const rows = parsed.advice.map((a) => {
@@ -211,8 +214,8 @@ export async function runAdsAnalysisForWorkspace(opts: {
         platform: "google_ads",
         analysis_period_start: opts.start,
         analysis_period_end: opts.end,
-        model_provider: resolved.provider,
-        model_name: resolved.model,
+        model_provider: usedProvider,
+        model_name: usedModel,
         prompt_version: PROMPT_VERSION,
         status: "new",
         is_test: Boolean(opts.isTest),
@@ -228,6 +231,8 @@ export async function runAdsAnalysisForWorkspace(opts: {
       .from("ai_analysis_runs")
       .update({
         status: "completed",
+        model_provider: usedProvider,
+        model_name: usedModel,
         input_tokens: completion.inputTokens,
         output_tokens: completion.outputTokens,
         estimated_cost_usd: completion.estimatedCostUsd,
@@ -245,8 +250,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
       actor_id: ctx.userId,
       detail: {
         advice_count: rows.length,
-        provider: resolved.provider,
-        model: resolved.model,
+        provider: usedProvider,
+        model: usedModel,
+        fallback_reason: fallbackReason,
         period: { start: opts.start, end: opts.end },
       },
     });
@@ -256,7 +262,7 @@ export async function runAdsAnalysisForWorkspace(opts: {
       runId,
       adviceCount: rows.length,
       summary: parsed.summary,
-      fallbackReason: resolved.fallbackReason,
+      fallbackReason,
       error: null,
     };
   } catch (err) {
