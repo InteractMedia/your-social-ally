@@ -17,6 +17,7 @@ import {
   SECTION_LAYOUTS,
   SECTION_WIDTHS,
 } from "./landing-design-system";
+import { ASPECT_RATIOS, VISUAL_POSITIONS, VISUAL_TYPES } from "./landing-visual";
 
 export const LANDING_AI_PROMPT_VERSION = "landing-strategist-v1.6";
 
