@@ -226,7 +226,7 @@ export const reviewAiAdvice = createServerFn({ method: "POST" })
       .eq("id", data.adviceId)
       .eq("workspace_id", workspaceId)
       .eq("status", "new")
-      .select("id, advice_type, title, run_id")
+      .select("id, advice_type, title, run_id, execution_eligibility, data_confidence_level")
       .maybeSingle();
 
     if (error) return { ok: false as const, error: error.message };
@@ -243,7 +243,12 @@ export const reviewAiAdvice = createServerFn({ method: "POST" })
         title: row.title,
         rejection_reason: data.rejectionReason ?? null,
         rejection_notes: data.rejectionNotes ?? null,
-        note: "V1.4A: goedkeuring legt intentie vast, er wordt niets in Google Ads gewijzigd.",
+        execution_eligibility: row.execution_eligibility ?? null,
+        data_confidence_level: row.data_confidence_level ?? null,
+        note:
+          row.execution_eligibility === "ALLOWED"
+            ? "V1.4A: goedkeuring legt intentie vast, er wordt niets in Google Ads gewijzigd."
+            : "V1.4A: goedkeuring legt intentie vast. Server-side uitvoerbaarheid is niet ALLOWED, dus een latere uitvoerlaag mag dit advies niet uitvoeren.",
       },
     });
 
