@@ -110,12 +110,15 @@ export const setOfflineUploadMode = createServerFn({ method: "POST" })
     return { ok: true as const, error: null as string | null };
   });
 
-/** Queue tab: pending / uploaded / failed / skipped. */
+/** Queue tab: pending / submitted / uploaded / failed / skipped. */
 export const getOfflineConversionQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ tab: z.enum(["pending", "uploaded", "failed", "skipped"]) }).parse(d),
+    z
+      .object({ tab: z.enum(["pending", "submitted", "uploaded", "failed", "skipped"]) })
+      .parse(d),
   )
+
   .handler(async ({ context, data }) => {
     const ctx = context as any;
     const workspaceId = await workspaceOf(ctx);
