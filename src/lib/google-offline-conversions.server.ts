@@ -680,7 +680,7 @@ export async function validateOnlyCheck(args: {
   ok: boolean;
   status: number;
   validateOnly: true;
-  payload: Record<string, unknown>;
+  payload: string;
   message: string | null;
 }> {
   const cid = await resolveCustomerId(args.ctx);
@@ -703,7 +703,7 @@ export async function validateOnlyCheck(args: {
     ok: res.ok,
     status: res.status,
     validateOnly: true,
-    payload: body,
+    payload: JSON.stringify(body),
     message: partial ? JSON.stringify(partial).slice(0, 1200) : res.raw.slice(0, 1200) || null,
   };
 }
