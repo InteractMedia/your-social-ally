@@ -405,7 +405,6 @@ export async function applyLandingProposal(args: {
   const productPlan = (proposal.product_plan ?? []) as any[];
 
   const { duplicatePage, createPageWithTemplate } = await import("./landing.server");
-  const { admin } = await import("./landing.server").then((m) => m as any).catch(() => ({}) as any);
 
   const baseName =
     args.nameOverride ?? `${plan?.name ?? proposal.title} (AI-concept)`.slice(0, 120);
@@ -431,9 +430,9 @@ export async function applyLandingProposal(args: {
       userId: args.ctx.userId,
       name: baseName,
       slug: args.slugOverride ?? `ai-concept-${stamp}`,
-      funnelType: "offerte",
+      funnel: "offerte",
       industryId: proposal.industry_id ?? null,
-    } as never);
+    });
   }
 
   const dbAdmin = db;
@@ -520,7 +519,6 @@ export async function applyLandingProposal(args: {
       seo_title: plan?.seo_title ?? null,
       seo_description: plan?.seo_description ?? null,
       status: "draft",
-      published_version_id: null,
       canonical_url: null,
     })
     .eq("id", newPageId);
