@@ -279,15 +279,20 @@ export type Database = {
           created_at: string
           currency: string | null
           customer_id: string | null
+          diagnostics: Json | null
           error_code: string | null
           error_message: string | null
           google_conversion_action_id: string | null
           google_conversion_action_name: string | null
+          google_request_id: string | null
+          google_transaction_id: string | null
           id: string
           internal_event_name: string
           lead_id: string | null
           mode: string
+          processing_status: string | null
           result: string
+          upload_method: string | null
           value: number | null
           workspace_id: string
         }
@@ -301,15 +306,20 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          diagnostics?: Json | null
           error_code?: string | null
           error_message?: string | null
           google_conversion_action_id?: string | null
           google_conversion_action_name?: string | null
+          google_request_id?: string | null
+          google_transaction_id?: string | null
           id?: string
           internal_event_name: string
           lead_id?: string | null
           mode?: string
+          processing_status?: string | null
           result: string
+          upload_method?: string | null
           value?: number | null
           workspace_id: string
         }
@@ -323,15 +333,20 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          diagnostics?: Json | null
           error_code?: string | null
           error_message?: string | null
           google_conversion_action_id?: string | null
           google_conversion_action_name?: string | null
+          google_request_id?: string | null
+          google_transaction_id?: string | null
           id?: string
           internal_event_name?: string
           lead_id?: string | null
           mode?: string
+          processing_status?: string | null
           result?: string
+          upload_method?: string | null
           value?: number | null
           workspace_id?: string
         }
@@ -493,10 +508,16 @@ export type Database = {
           google_conversion_action_name: string | null
           google_conversion_currency: string | null
           google_conversion_value: number | null
+          google_diagnostics: Json | null
           google_next_retry_at: string | null
+          google_processing_checked_at: string | null
+          google_processing_status: string | null
+          google_request_id: string | null
           google_request_reference: string | null
+          google_transaction_id: string | null
           google_upload_attempts: number
           google_upload_error: string | null
+          google_upload_method: string | null
           google_upload_reason: string | null
           google_upload_status: string | null
           google_upload_timestamp: string | null
@@ -519,10 +540,16 @@ export type Database = {
           google_conversion_action_name?: string | null
           google_conversion_currency?: string | null
           google_conversion_value?: number | null
+          google_diagnostics?: Json | null
           google_next_retry_at?: string | null
+          google_processing_checked_at?: string | null
+          google_processing_status?: string | null
+          google_request_id?: string | null
           google_request_reference?: string | null
+          google_transaction_id?: string | null
           google_upload_attempts?: number
           google_upload_error?: string | null
+          google_upload_method?: string | null
           google_upload_reason?: string | null
           google_upload_status?: string | null
           google_upload_timestamp?: string | null
@@ -545,10 +572,16 @@ export type Database = {
           google_conversion_action_name?: string | null
           google_conversion_currency?: string | null
           google_conversion_value?: number | null
+          google_diagnostics?: Json | null
           google_next_retry_at?: string | null
+          google_processing_checked_at?: string | null
+          google_processing_status?: string | null
+          google_request_id?: string | null
           google_request_reference?: string | null
+          google_transaction_id?: string | null
           google_upload_attempts?: number
           google_upload_error?: string | null
+          google_upload_method?: string | null
           google_upload_reason?: string | null
           google_upload_status?: string | null
           google_upload_timestamp?: string | null
