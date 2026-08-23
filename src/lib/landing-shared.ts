@@ -273,11 +273,29 @@ export type LandingPageRow = {
 };
 
 /**
- * Productie-domein van de B2B Landing Page Engine.
- * De hoofdwebshop blijft op zoetbezorgen.nl (Shopify) draaien; alle
- * engine-pagina's (/offerte/*, /cadeauplatform/*) leven op dit subdomein.
+ * Productie-domein van de B2B Landing Page Engine — één bron van waarheid.
+ *
+ * Configureerbaar via env `VITE_LANDING_PRODUCTION_BASE_URL`. Wisselen van
+ * domein (bijv. naar https://zoetbezorgen.nl) is daarmee één configuratie-
+ * wijziging: alle pagina's zonder expliciete page-level override volgen
+ * automatisch. Pagina-ID's, slugs, versies, analytics, leads en attributie
+ * zijn hostname-onafhankelijk en blijven ongewijzigd.
  */
-export const LANDING_PRODUCTION_BASE_URL = "https://zakelijk.zoetbezorgen.nl";
+const LANDING_BASE_URL_FALLBACK = "https://zakelijk.zoetbezorgen.nl";
+
+function readEnvBaseUrl(): string {
+  const fromEnv =
+    typeof import.meta !== "undefined"
+      ? (import.meta as { env?: Record<string, string | undefined> }).env?.[
+          "VITE_LANDING_PRODUCTION_BASE_URL"
+        ]
+      : undefined;
+  const value = (fromEnv ?? "").trim();
+  return (value || LANDING_BASE_URL_FALLBACK).replace(/\/+$/, "");
+}
+
+export const LANDING_PRODUCTION_BASE_URL = readEnvBaseUrl();
+
 
 /** Public path for a page (funnel prefix + slug), optionally absolute. */
 export function landingPath(funnel: string, slug: string) {
