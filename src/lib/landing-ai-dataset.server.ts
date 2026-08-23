@@ -391,6 +391,10 @@ export async function buildLandingAiDataset(opts: {
       : null,
     productLibrary,
     productLibraryEmpty: productLibrary.length === 0,
+    assetLibrary,
+    assetLibraryEmpty: assetLibrary.length === 0,
+    visualNote:
+      "Je mag alleen asset_id's uit assetLibrary gebruiken. Bestaat de gewenste visual niet? Laat asset_id leeg en schrijf een concrete visual_brief; de pagina toont dan een expliciete 'AI VISUAL NEEDED'-plek voor onze fotograaf of latere beeldgeneratie.",
     testimonials: (testimonials ?? []).map((t: any) => ({
       role_title: t.role_title,
       company_known: Boolean(t.company),
