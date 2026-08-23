@@ -53,6 +53,7 @@ import {
   upsertLandingProduct,
   upsertLandingTestimonial,
 } from "@/lib/landing.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/landingpages/$id")({
   head: () => ({
