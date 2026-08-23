@@ -373,6 +373,10 @@ function sanitizeProposal(
   const allowedFieldKeys = new Set<string>(
     (dataset.engine?.formFieldsAvailable ?? []).map((f: any) => String(f.key)),
   );
+  /* Only approved assets from the Beeldbank may ever be referenced. */
+  const allowedAssets = new Map<string, string>(
+    (dataset.assetLibrary ?? []).map((a: any) => [String(a.asset_id), String(a.asset_type)]),
+  );
 
   const sections = parsed.page.sections
     .filter((s) => (BLOCK_TYPES as readonly string[]).includes(s.block_type))
@@ -392,6 +396,7 @@ function sanitizeProposal(
           text: stripMarkup(i.text),
           badge: stripMarkup(i.badge),
         })),
+        visual: sanitizeVisual(s.content.visual, allowedAssets, allowedProducts),
       },
     }));
 
@@ -404,6 +409,38 @@ function sanitizeProposal(
       fields: parsed.form.fields.filter((f) => allowedFieldKeys.has(f.key)),
     },
     products: parsed.products.filter((p) => allowedProducts.has(p.product_id)),
+  };
+}
+
+
+/**
+ * A visual may only point at content that really exists. An unknown asset_id
+ * becomes a missing visual with a brief, so the page shows an honest visual gap
+ * instead of a broken image.
+ */
+function sanitizeVisual(
+  visual: any,
+  allowedAssets: Map<string, string>,
+  allowedProducts: Set<string>,
+) {
+  if (!visual) return undefined;
+  const assetId =
+    visual.asset_id && allowedAssets.has(String(visual.asset_id)) ? String(visual.asset_id) : null;
+  const type = visual.visual_type ?? "product_lifestyle";
+  const required = type !== "none" && visual.visual_required !== false;
+  return {
+    visual_required: required,
+    visual_type: type,
+    purpose: stripMarkup(visual.purpose) || undefined,
+    composition: stripMarkup(visual.composition) || undefined,
+    desktop_position: visual.desktop_position ?? "right",
+    mobile_position: visual.mobile_position ?? "above",
+    aspect_ratio: visual.aspect_ratio ?? "4:3",
+    background_treatment: stripMarkup(visual.background_treatment) || undefined,
+    product_ids: (visual.product_ids ?? []).filter((id: string) => allowedProducts.has(id)),
+    asset_id: assetId,
+    asset_status: assetId ? ("existing" as const) : ("missing" as const),
+    visual_brief: stripMarkup(visual.visual_brief) || undefined,
   };
 }
 
