@@ -346,11 +346,13 @@ export function OfflineConversionQueue() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conversies uploaden naar Google Ads</AlertDialogTitle>
+            <AlertDialogTitle>Conversies naar Google Ads versturen</AlertDialogTitle>
             <AlertDialogDescription>
               Je staat op het punt {selected.length} offline{" "}
-              {selected.length === 1 ? "conversie" : "conversies"} naar Google Ads te uploaden. Dit
-              kan niet worden teruggedraaid.
+              {selected.length === 1 ? "conversie" : "conversies"} naar Google Ads te versturen.
+              Google verwerkt ze asynchroon en bevestigt ze pas daarna; versturen kan niet worden
+              teruggedraaid. Elke conversie krijgt een vast transactienummer, zodat een herhaalde
+              poging nooit dubbel wordt geteld.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -361,8 +363,9 @@ export function OfflineConversionQueue() {
                 approve.mutate(selected);
               }}
             >
-              {selected.length} {selected.length === 1 ? "conversie" : "conversies"} uploaden
+              {selected.length} {selected.length === 1 ? "conversie" : "conversies"} versturen
             </AlertDialogAction>
+
           </AlertDialogFooter>
         </AlertDialogContent>
 
