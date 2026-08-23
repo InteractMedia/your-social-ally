@@ -24,13 +24,22 @@ export type Database = {
           confidence_score: number
           created_at: string
           data_available: Json | null
+          data_confidence_level: string
+          data_confidence_score: number
           data_missing: Json | null
+          decision_facts: Json | null
           entity_id: string | null
           entity_name: string | null
           entity_type: string | null
           evidence: Json | null
+          execution_block_reason: string | null
+          execution_block_reason_label: string | null
+          execution_blockers: Json | null
+          execution_eligibility: string
           expected_impact: string | null
+          guardrail_evaluated_at: string | null
           guardrail_notes: string | null
+          guardrail_version: string | null
           id: string
           is_test: boolean
           model_name: string
@@ -63,13 +72,22 @@ export type Database = {
           confidence_score?: number
           created_at?: string
           data_available?: Json | null
+          data_confidence_level?: string
+          data_confidence_score?: number
           data_missing?: Json | null
+          decision_facts?: Json | null
           entity_id?: string | null
           entity_name?: string | null
           entity_type?: string | null
           evidence?: Json | null
+          execution_block_reason?: string | null
+          execution_block_reason_label?: string | null
+          execution_blockers?: Json | null
+          execution_eligibility?: string
           expected_impact?: string | null
+          guardrail_evaluated_at?: string | null
           guardrail_notes?: string | null
+          guardrail_version?: string | null
           id?: string
           is_test?: boolean
           model_name: string
@@ -102,13 +120,22 @@ export type Database = {
           confidence_score?: number
           created_at?: string
           data_available?: Json | null
+          data_confidence_level?: string
+          data_confidence_score?: number
           data_missing?: Json | null
+          decision_facts?: Json | null
           entity_id?: string | null
           entity_name?: string | null
           entity_type?: string | null
           evidence?: Json | null
+          execution_block_reason?: string | null
+          execution_block_reason_label?: string | null
+          execution_blockers?: Json | null
+          execution_eligibility?: string
           expected_impact?: string | null
+          guardrail_evaluated_at?: string | null
           guardrail_notes?: string | null
+          guardrail_version?: string | null
           id?: string
           is_test?: boolean
           model_name?: string

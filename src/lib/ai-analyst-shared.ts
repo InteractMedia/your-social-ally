@@ -175,6 +175,14 @@ export type AdviceRow = {
   data_missing: unknown;
   actionable: boolean;
   guardrail_notes: string | null;
+  data_confidence_score?: number | null;
+  data_confidence_level?: string | null;
+  execution_eligibility?: string | null;
+  execution_block_reason?: string | null;
+  execution_block_reason_label?: string | null;
+  execution_blockers?: unknown;
+  guardrail_version?: string | null;
+  decision_facts?: unknown;
   analysis_period_start: string | null;
   analysis_period_end: string | null;
   model_provider: string;

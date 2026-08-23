@@ -17,6 +17,11 @@ import {
 } from "./ai-analyst-shared";
 import { extractJsonObject, resolveProvider, runAiCompletionWithFallback, type AiProvider } from "./ai-provider.server";
 import { buildAdsAnalysisSnapshot } from "./ai-ads-dataset.server";
+import {
+  buildDecisionFacts,
+  evaluateExecutionEligibility,
+  type DecisionFacts,
+} from "./ai-execution-guardrails";
 import type { AdsContext } from "./google-ads-accounts.server";
 
 const SYSTEM_PROMPT = `Je bent een ervaren B2B performance marketeer die Google Ads-accounts analyseert voor een Nederlands cadeau-/bezorgplatform.
@@ -97,6 +102,7 @@ const ResponseSchema = z.object({
 function applyGuardrails(
   advice: z.infer<typeof AdviceSchema>,
   budgetMaxPct: number,
+  facts: DecisionFacts,
 ): { row: Record<string, unknown>; note: string | null } {
   const type = (ADVICE_TYPES as readonly string[]).includes(advice.advice_type)
     ? (advice.advice_type as AdviceType)
@@ -118,7 +124,27 @@ function applyGuardrails(
   }
 
   const score = Math.round(advice.confidence_score);
-  const actionable = !INSIGHT_ONLY_TYPES.includes(type);
+  const decision = evaluateExecutionEligibility(
+    {
+      adviceType: type,
+      confidenceScore: score,
+      title: advice.title,
+      summary: advice.summary,
+      reasoning: advice.reasoning ?? null,
+      proposedAction: advice.proposed_action ?? null,
+      proposedPayload: payload,
+      evidence: advice.evidence ?? null,
+      dataMissing: advice.data_missing ?? null,
+    },
+    facts,
+  );
+
+  if (decision.executionEligibility === "BLOCKED") {
+    note = [note, `Uitvoering geblokkeerd: ${decision.reasonLabel}`].filter(Boolean).join(" ");
+  }
+
+  // Alleen wat door de deterministische guardrails komt, mag ooit uitvoerbaar zijn.
+  const actionable = !INSIGHT_ONLY_TYPES.includes(type) && decision.executionEligibility !== "BLOCKED";
 
   return {
     row: {
@@ -139,7 +165,16 @@ function applyGuardrails(
       data_available: advice.data_available ?? null,
       data_missing: advice.data_missing ?? null,
       actionable,
-      guardrail_notes: note,
+      guardrail_notes: note || null,
+      data_confidence_score: decision.dataConfidenceScore,
+      data_confidence_level: decision.dataConfidenceLevel,
+      execution_eligibility: decision.executionEligibility,
+      execution_block_reason: decision.reasonCode,
+      execution_block_reason_label: decision.reasonLabel,
+      execution_blockers: decision.blockers,
+      guardrail_version: decision.guardrailVersion,
+      decision_facts: facts,
+      guardrail_evaluated_at: new Date().toISOString(),
     },
     note,
   };
@@ -237,8 +272,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
     const fallbackReason = completion.fallbackReason ?? resolved.fallbackReason;
 
     const parsed = ResponseSchema.parse(extractJsonObject(completion.text));
+    const facts = buildDecisionFacts(snapshot);
     const rows = parsed.advice.map((a) => {
-      const { row } = applyGuardrails(a, opts.budgetMaxPct);
+      const { row } = applyGuardrails(a, opts.budgetMaxPct, facts);
       return {
         ...row,
         workspace_id: workspaceId,

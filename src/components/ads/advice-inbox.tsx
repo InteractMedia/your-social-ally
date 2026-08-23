@@ -5,7 +5,9 @@ import {
   Check,
   ChevronDown,
   Loader2,
+  Lock,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
@@ -39,6 +41,11 @@ import {
   type AdviceRow,
   type ConfidenceLevel,
 } from "@/lib/ai-analyst-shared";
+import {
+  EXECUTION_ELIGIBILITY_LABELS,
+  isWriteAction,
+  type ExecutionEligibility,
+} from "@/lib/ai-execution-guardrails";
 import { listAiAdvice, reviewAiAdvice } from "@/lib/ai-ads.functions";
 
 type StatusFilter = "new" | "approved" | "rejected" | "all";
@@ -77,6 +84,54 @@ function EvidenceList({ label, value }: { label: string; value: unknown }) {
   );
 }
 
+const ELIGIBILITY_TONE: Record<ExecutionEligibility, string> = {
+  ALLOWED: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  REVIEW_ONLY: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  BLOCKED: "border-destructive/40 bg-destructive/10 text-destructive",
+};
+
+/** AI-betrouwbaarheid, databetrouwbaarheid en server-side uitvoerbaarheid apart. */
+function GuardrailPanel({ advice }: { advice: AdviceRow }) {
+  const eligibility = (advice.execution_eligibility ?? "REVIEW_ONLY") as ExecutionEligibility;
+  const dataLevel = (advice.data_confidence_level ?? "low") as ConfidenceLevel;
+  const dataScore = advice.data_confidence_score ?? 0;
+
+  return (
+    <div className={cn("space-y-1 rounded-md border p-2.5 text-xs", ELIGIBILITY_TONE[eligibility])}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 font-medium">
+        <span>AI betrouwbaarheid: {advice.confidence_score}%</span>
+        <span>
+          Databetrouwbaarheid: {CONFIDENCE_LABELS[dataLevel] ?? dataLevel} ({dataScore}%)
+        </span>
+        <span className="flex items-center gap-1">
+          {eligibility === "BLOCKED" ? (
+            <Lock className="h-3.5 w-3.5" />
+          ) : eligibility === "ALLOWED" ? (
+            <ShieldCheck className="h-3.5 w-3.5" />
+          ) : (
+            <ShieldAlert className="h-3.5 w-3.5" />
+          )}
+          Uitvoerbaarheid: {EXECUTION_ELIGIBILITY_LABELS[eligibility]}
+        </span>
+      </div>
+      {advice.execution_block_reason_label && (
+        <div className="opacity-90">Reden: {advice.execution_block_reason_label}</div>
+      )}
+      {Array.isArray(advice.execution_blockers) && advice.execution_blockers.length > 1 && (
+        <ul className="mt-1 space-y-0.5 opacity-80">
+          {(advice.execution_blockers as any[]).slice(1).map((b, i) => (
+            <li key={i}>• {b?.label ?? b?.code}</li>
+          ))}
+        </ul>
+      )}
+      <div className="opacity-75">
+        Server-side beoordeeld — AI-betrouwbaarheid kan een blokkade niet opheffen. Uitvoeren is
+        later uitsluitend mogelijk bij UITVOERBAAR.
+      </div>
+    </div>
+  );
+}
+
 function AdviceCard({
   advice,
   onApprove,
@@ -90,6 +145,8 @@ function AdviceCard({
 }) {
   const [open, setOpen] = useState(false);
   const isNew = advice.status === "new";
+  const write = isWriteAction(advice.advice_type);
+  const blocked = (advice.execution_eligibility ?? "REVIEW_ONLY") === "BLOCKED";
 
   return (
     <Card className="overflow-hidden">
@@ -130,16 +187,35 @@ function AdviceCard({
           </div>
 
           {isNew && (
-            <div className="flex shrink-0 gap-2">
-              <Button size="sm" onClick={onApprove} disabled={busy}>
-                <Check className="mr-1 h-3.5 w-3.5" /> Goedkeuren
-              </Button>
-              <Button size="sm" variant="outline" onClick={onReject} disabled={busy}>
-                <X className="mr-1 h-3.5 w-3.5" /> Afwijzen
-              </Button>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              <div className="flex gap-2">
+                <Button size="sm" onClick={onApprove} disabled={busy} variant={write ? "default" : "secondary"}>
+                  {write ? (
+                    <>
+                      <ShieldCheck className="mr-1 h-3.5 w-3.5" /> Goedkeuren voor uitvoering
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-1 h-3.5 w-3.5" /> Advies accepteren
+                    </>
+                  )}
+                </Button>
+                <Button size="sm" variant="outline" onClick={onReject} disabled={busy}>
+                  <X className="mr-1 h-3.5 w-3.5" /> Afwijzen
+                </Button>
+              </div>
+              <span className="max-w-[15rem] text-right text-[10px] leading-tight text-muted-foreground">
+                {write
+                  ? blocked
+                    ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
+                    : "Legt je intentie vast voor een latere uitvoerfase. In V1.4A voert dit niets uit."
+                  : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
+              </span>
             </div>
           )}
         </div>
+
+        <GuardrailPanel advice={advice} />
 
         {advice.expected_impact && (
           <div className="rounded-md border border-border bg-surface p-2.5 text-xs">
