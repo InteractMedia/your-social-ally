@@ -37,6 +37,14 @@ export type AnalysisSnapshot = Awaited<ReturnType<typeof buildAdsAnalysisSnapsho
 const TOP_N = 40;
 const INSIGHT_N = 25;
 
+/** Alleen deze metrics zijn toegestaan op campaign_search_term_insight. */
+const INSIGHT_METRIC_FIELDS = [
+  "metrics.impressions",
+  "metrics.clicks",
+  "metrics.conversions",
+  "metrics.conversions_value",
+].join(", ");
+
 function shiftPeriod(start: string, end: string) {
   const s = new Date(`${start}T00:00:00Z`);
   const e = new Date(`${end}T00:00:00Z`);
@@ -297,15 +305,21 @@ export async function buildAdsAnalysisSnapshot(opts: {
   const pmaxServing = servingNow.filter((c) => c.rawType === "PERFORMANCE_MAX");
   const pmaxInsightResults = await Promise.all(
     pmaxServing.slice(0, 5).map(async (c) => {
+      // campaign_search_term_insight ondersteunt GEEN cost_micros, average_cpc, ctr,
+      // all_conversions of all_conversions_value: die metrics laten Google de query
+      // afwijzen (PROHIBITED_METRIC_IN_SELECT_OR_WHERE_CLAUSE) en leverden 0 rijen op.
       const rows = await gaql(
         cid,
         `SELECT campaign_search_term_insight.id, campaign_search_term_insight.category_label,
-                campaign_search_term_insight.campaign_id, ${METRIC_FIELDS}
+                campaign_search_term_insight.campaign_id, ${INSIGHT_METRIC_FIELDS}
          FROM campaign_search_term_insight
          WHERE ${dateFilter(start, end)}
            AND campaign_search_term_insight.campaign_id = ${c.id}
          ORDER BY metrics.impressions DESC LIMIT ${INSIGHT_N}`,
-      ).catch(() => []);
+      ).catch((err) => {
+        console.error("[AiDataset] pmax search insights query failed", (err as Error).message);
+        return [];
+      });
       return (rows as any[]).map((r) => {
         const label = r.campaignSearchTermInsight?.categoryLabel;
         return {
