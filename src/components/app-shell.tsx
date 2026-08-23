@@ -20,6 +20,7 @@ import {
   GitCompare,
   Briefcase,
   Brain,
+  LayoutTemplate,
 
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -102,6 +103,7 @@ const nav: NavSection[] = [
       { to: "/leads/funnels", label: "Funnels", icon: GitCompare },
     ],
   },
+  { to: "/landingpages", label: "Landingspagina's", icon: LayoutTemplate },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
 

@@ -21,12 +21,16 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
+import { Route as LandingpagesIndexRouteImport } from './routes/landingpages.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
+import { Route as OfferteSlugRouteImport } from './routes/offerte.$slug'
 import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
+import { Route as LandingpagesIdRouteImport } from './routes/landingpages.$id'
 import { Route as CompetitorsIdRouteImport } from './routes/competitors.$id'
+import { Route as CadeauplatformSlugRouteImport } from './routes/cadeauplatform.$slug'
 import { Route as AdsGoogleRouteImport } from './routes/ads.google'
 import { Route as AdsCompareRouteImport } from './routes/ads.compare'
 import { Route as AdsPlatformRouteImport } from './routes/ads.$platform'
@@ -101,6 +105,11 @@ const LeadsIndexRoute = LeadsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LeadsRoute,
 } as any)
+const LandingpagesIndexRoute = LandingpagesIndexRouteImport.update({
+  id: '/landingpages/',
+  path: '/landingpages/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompetitorsIndexRoute = CompetitorsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -110,6 +119,11 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdsRoute,
+} as any)
+const OfferteSlugRoute = OfferteSlugRouteImport.update({
+  id: '/offerte/$slug',
+  path: '/offerte/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LeadsFunnelsRoute = LeadsFunnelsRouteImport.update({
   id: '/funnels',
@@ -126,10 +140,20 @@ const LeadsIdRoute = LeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => LeadsRoute,
 } as any)
+const LandingpagesIdRoute = LandingpagesIdRouteImport.update({
+  id: '/landingpages/$id',
+  path: '/landingpages/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompetitorsIdRoute = CompetitorsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => CompetitorsRoute,
+} as any)
+const CadeauplatformSlugRoute = CadeauplatformSlugRouteImport.update({
+  id: '/cadeauplatform/$slug',
+  path: '/cadeauplatform/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdsGoogleRoute = AdsGoogleRouteImport.update({
   id: '/google',
@@ -214,12 +238,16 @@ export interface FileRoutesByFullPath {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -243,12 +271,16 @@ export interface FileRoutesByTo {
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
+  '/landingpages': typeof LandingpagesIndexRoute
   '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -277,12 +309,16 @@ export interface FileRoutesById {
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
   '/ads/google': typeof AdsGoogleRouteWithChildren
+  '/cadeauplatform/$slug': typeof CadeauplatformSlugRoute
   '/competitors/$id': typeof CompetitorsIdRoute
+  '/landingpages/$id': typeof LandingpagesIdRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
+  '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
@@ -312,12 +348,16 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/ads/google'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
+    | '/landingpages/'
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -341,12 +381,16 @@ export interface FileRouteTypes {
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads'
     | '/competitors'
+    | '/landingpages'
     | '/leads'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -374,12 +418,16 @@ export interface FileRouteTypes {
     | '/ads/$platform'
     | '/ads/compare'
     | '/ads/google'
+    | '/cadeauplatform/$slug'
     | '/competitors/$id'
+    | '/landingpages/$id'
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
+    | '/landingpages/'
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
@@ -405,6 +453,10 @@ export interface RootRouteChildren {
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
+  CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
+  LandingpagesIdRoute: typeof LandingpagesIdRoute
+  OfferteSlugRoute: typeof OfferteSlugRoute
+  LandingpagesIndexRoute: typeof LandingpagesIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
   ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
@@ -497,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadsIndexRouteImport
       parentRoute: typeof LeadsRoute
     }
+    '/landingpages/': {
+      id: '/landingpages/'
+      path: '/landingpages'
+      fullPath: '/landingpages/'
+      preLoaderRoute: typeof LandingpagesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/competitors/': {
       id: '/competitors/'
       path: '/'
@@ -510,6 +569,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
+    }
+    '/offerte/$slug': {
+      id: '/offerte/$slug'
+      path: '/offerte/$slug'
+      fullPath: '/offerte/$slug'
+      preLoaderRoute: typeof OfferteSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/leads/funnels': {
       id: '/leads/funnels'
@@ -532,12 +598,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadsIdRouteImport
       parentRoute: typeof LeadsRoute
     }
+    '/landingpages/$id': {
+      id: '/landingpages/$id'
+      path: '/landingpages/$id'
+      fullPath: '/landingpages/$id'
+      preLoaderRoute: typeof LandingpagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/competitors/$id': {
       id: '/competitors/$id'
       path: '/$id'
       fullPath: '/competitors/$id'
       preLoaderRoute: typeof CompetitorsIdRouteImport
       parentRoute: typeof CompetitorsRoute
+    }
+    '/cadeauplatform/$slug': {
+      id: '/cadeauplatform/$slug'
+      path: '/cadeauplatform/$slug'
+      fullPath: '/cadeauplatform/$slug'
+      preLoaderRoute: typeof CadeauplatformSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/ads/google': {
       id: '/ads/google'
@@ -713,6 +793,10 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
+  CadeauplatformSlugRoute: CadeauplatformSlugRoute,
+  LandingpagesIdRoute: LandingpagesIdRoute,
+  OfferteSlugRoute: OfferteSlugRoute,
+  LandingpagesIndexRoute: LandingpagesIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
   ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
