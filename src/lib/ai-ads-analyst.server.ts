@@ -15,7 +15,7 @@ import {
   confidenceLevelFor,
   type AdviceType,
 } from "./ai-analyst-shared";
-import { extractJsonObject, resolveProvider, runAiCompletion, type AiProvider } from "./ai-provider.server";
+import { extractJsonObject, resolveProvider, runAiCompletionWithFallback, type AiProvider } from "./ai-provider.server";
 import { buildAdsAnalysisSnapshot } from "./ai-ads-dataset.server";
 import type { AdsContext } from "./google-ads-accounts.server";
 
@@ -231,6 +231,8 @@ export async function runAdsAnalysisForWorkspace(opts: {
       .from("ai_analysis_runs")
       .update({
         status: "completed",
+        model_provider: usedProvider,
+        model_name: usedModel,
         input_tokens: completion.inputTokens,
         output_tokens: completion.outputTokens,
         estimated_cost_usd: completion.estimatedCostUsd,
@@ -248,8 +250,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
       actor_id: ctx.userId,
       detail: {
         advice_count: rows.length,
-        provider: resolved.provider,
-        model: resolved.model,
+        provider: usedProvider,
+        model: usedModel,
+        fallback_reason: fallbackReason,
         period: { start: opts.start, end: opts.end },
       },
     });
@@ -259,7 +262,7 @@ export async function runAdsAnalysisForWorkspace(opts: {
       runId,
       adviceCount: rows.length,
       summary: parsed.summary,
-      fallbackReason: resolved.fallbackReason,
+      fallbackReason,
       error: null,
     };
   } catch (err) {
