@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrendsRouteImport } from './routes/trends'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as MetaRouteImport } from './routes/meta'
@@ -48,6 +49,11 @@ import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/pu
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
   path: '/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/meta': typeof MetaRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trends': typeof TrendsRoute
   '/ads/$platform': typeof AdsPlatformRoute
   '/ads/compare': typeof AdsCompareRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/meta'
     | '/schedule'
     | '/settings'
+    | '/sitemap.xml'
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/meta'
     | '/schedule'
     | '/settings'
+    | '/sitemap.xml'
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/meta'
     | '/schedule'
     | '/settings'
+    | '/sitemap.xml'
     | '/trends'
     | '/ads/$platform'
     | '/ads/compare'
@@ -452,6 +464,7 @@ export interface RootRouteChildren {
   MetaRoute: typeof MetaRoute
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrendsRoute: typeof TrendsRoute
   CadeauplatformSlugRoute: typeof CadeauplatformSlugRoute
   LandingpagesIdRoute: typeof LandingpagesIdRoute
@@ -470,6 +483,13 @@ declare module '@tanstack/react-router' {
       path: '/trends'
       fullPath: '/trends'
       preLoaderRoute: typeof TrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -792,6 +812,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetaRoute: MetaRoute,
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrendsRoute: TrendsRoute,
   CadeauplatformSlugRoute: CadeauplatformSlugRoute,
   LandingpagesIdRoute: LandingpagesIdRoute,
