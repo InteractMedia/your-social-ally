@@ -245,7 +245,10 @@ export async function resolvePublicPage(args: {
   }
   if (!snapshot) snapshot = await buildSnapshot(page.id);
 
-  const canonicalBase = snapshot.page.canonical_url || snapshot.page.base_url || null;
+  // Canonical/og:url wijzen altijd naar de productie-URL van de pagina zelf
+  // (default: het zakelijk.-subdomein). Previews krijgen nooit een canonical,
+  // zodat testverkeer nooit als productiepagina geïndexeerd wordt.
+  const productionUrl = landingAbsoluteUrl(snapshot.page.base_url ?? null, page.funnel_type, page.slug);
   return {
     id: page.id,
     name: snapshot.page.name,
@@ -257,11 +260,9 @@ export async function resolvePublicPage(args: {
     industry_name: snapshot.page.industry_name ?? null,
     seo_title: snapshot.page.seo_title ?? snapshot.page.name,
     seo_description: snapshot.page.seo_description ?? null,
-    canonical: snapshot.page.canonical_url
-      ? snapshot.page.canonical_url
-      : canonicalBase
-        ? null
-        : null,
+    canonical: isPreview ? null : snapshot.page.canonical_url || productionUrl,
+    page_url: isPreview ? null : productionUrl,
+
     noindex: snapshot.page.noindex !== false || isPreview,
     og_title: snapshot.page.og_title ?? null,
     og_description: snapshot.page.og_description ?? null,
