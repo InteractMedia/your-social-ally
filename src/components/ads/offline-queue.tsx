@@ -63,6 +63,7 @@ export function OfflineConversionQueue() {
   const queueFn = useServerFn(getOfflineConversionQueue);
   const approveFn = useServerFn(approveOfflineConversions);
   const skipFn = useServerFn(skipOfflineConversions);
+  const statusFn = useServerFn(refreshOfflineConversionStatuses);
 
   const query = useQuery({
     queryKey: ["offline-conversions", "queue", tab],
@@ -80,12 +81,32 @@ export function OfflineConversionQueue() {
     mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
     onSuccess: (res) => {
       toast.success(
-        `${res.uploaded} geüpload · ${res.failed} mislukt · ${res.skipped} niet uploadbaar`,
+        `${res.submitted} verzonden naar Google · ${res.failed} mislukt · ${res.skipped} niet uploadbaar`,
+        {
+          description:
+            res.submitted > 0
+              ? "Google verwerkt conversies asynchroon. Vraag de verwerkingsstatus op via 'Status bij Google ophalen'."
+              : undefined,
+        },
       );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const statuses = useMutation({
+    mutationFn: () => statusFn({}),
+    onSuccess: (res) => {
+      if (res.error) toast.error(res.error);
+      else
+        toast.success(
+          `${res.checked} opgevraagd · ${res.confirmed} bevestigd · ${res.failed} afgekeurd · ${res.pendingStill} nog in verwerking`,
+        );
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const skip = useMutation({
     mutationFn: (ids: string[]) => skipFn({ data: { ids } }),
