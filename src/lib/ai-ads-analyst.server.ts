@@ -17,6 +17,11 @@ import {
 } from "./ai-analyst-shared";
 import { extractJsonObject, resolveProvider, runAiCompletionWithFallback, type AiProvider } from "./ai-provider.server";
 import { buildAdsAnalysisSnapshot } from "./ai-ads-dataset.server";
+import {
+  buildDecisionFacts,
+  evaluateExecutionEligibility,
+  type DecisionFacts,
+} from "./ai-execution-guardrails";
 import type { AdsContext } from "./google-ads-accounts.server";
 
 const SYSTEM_PROMPT = `Je bent een ervaren B2B performance marketeer die Google Ads-accounts analyseert voor een Nederlands cadeau-/bezorgplatform.
@@ -267,8 +272,9 @@ export async function runAdsAnalysisForWorkspace(opts: {
     const fallbackReason = completion.fallbackReason ?? resolved.fallbackReason;
 
     const parsed = ResponseSchema.parse(extractJsonObject(completion.text));
+    const facts = buildDecisionFacts(snapshot);
     const rows = parsed.advice.map((a) => {
-      const { row } = applyGuardrails(a, opts.budgetMaxPct);
+      const { row } = applyGuardrails(a, opts.budgetMaxPct, facts);
       return {
         ...row,
         workspace_id: workspaceId,
