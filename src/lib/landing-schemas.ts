@@ -226,3 +226,125 @@ export const publicEventInput = z.object({
   is_preview: z.boolean().optional(),
   meta: z.record(z.string(), z.unknown()).optional().nullable(),
 });
+
+/* ------------------------------------------- product library (V1.6B) */
+
+export const productLibraryInput = z.object({
+  id: uuid.optional(),
+  name: z.string().min(2).max(200),
+  slug: z.string().min(2).max(200).regex(/^[a-z0-9-]+$/).optional(),
+  sku: z.string().max(80).optional().nullable(),
+  category: z.string().max(120).optional().nullable(),
+  short_text: z.string().max(1000).optional().nullable(),
+  long_text: z.string().max(6000).optional().nullable(),
+  min_quantity: z.number().int().min(1).max(1000000).optional().nullable(),
+  price_from: z.number().nonnegative().optional().nullable(),
+  personalization_options: z.array(z.string().max(120)).max(20).optional(),
+  occasions: z.array(z.string().max(120)).max(20).optional(),
+  industries: z.array(z.string().max(120)).max(30).optional(),
+  tags: z.array(z.string().max(60)).max(30).optional(),
+  letterbox_friendly: z.boolean().optional().nullable(),
+  individually_shippable: z.boolean().optional().nullable(),
+  featured: z.boolean().optional(),
+  product_url: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  cta_label: z.string().max(120).optional().nullable(),
+  cta_url: z.string().max(500).optional().nullable(),
+  active: z.boolean().optional(),
+  sort_order: z.number().int().min(0).max(10000).optional(),
+});
+
+/** Quick-entry flow: name + images + a few hard facts, nothing else required. */
+export const quickProductInput = z.object({
+  name: z.string().min(2).max(200),
+  product_url: z.string().max(500).optional().nullable(),
+  min_quantity: z.number().int().min(1).max(1000000).optional().nullable(),
+  price_from: z.number().nonnegative().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  category: z.string().max(120).optional().nullable(),
+  images: z
+    .array(
+      z.object({
+        url: z.string().min(4).max(1000),
+        storage_path: z.string().max(500).optional().nullable(),
+        image_type: z.enum(PRODUCT_IMAGE_TYPES).optional(),
+        alt_text: z.string().max(300).optional().nullable(),
+        mime_type: z.string().max(120).optional().nullable(),
+      }),
+    )
+    .max(5)
+    .optional(),
+});
+
+export const productImageInput = z.object({
+  product_id: uuid,
+  asset_id: uuid.optional().nullable(),
+  url: z.string().min(4).max(1000),
+  storage_path: z.string().max(500).optional().nullable(),
+  image_type: z.enum(PRODUCT_IMAGE_TYPES).default("product_cutout"),
+  alt_text: z.string().max(300).optional().nullable(),
+  is_primary: z.boolean().optional(),
+  mime_type: z.string().max(120).optional().nullable(),
+});
+
+export const idInput = z.object({ id: uuid });
+
+export const productImageMutateInput = z.object({
+  id: uuid,
+  is_primary: z.boolean().optional(),
+  image_type: z.enum(PRODUCT_IMAGE_TYPES).optional(),
+  alt_text: z.string().max(300).optional().nullable(),
+});
+
+/* --------------------------------------------- asset library (V1.6B) */
+
+export const assetInput = z.object({
+  id: uuid.optional(),
+  name: z.string().min(2).max(200),
+  url: z.string().min(4).max(1000).optional(),
+  storage_path: z.string().max(500).optional().nullable(),
+  asset_type: z.enum(ASSET_TYPES),
+  alt_text: z.string().max(300).optional().nullable(),
+  product_id: uuid.optional().nullable(),
+  industry_id: uuid.optional().nullable(),
+  tags: z.array(z.string().max(60)).max(30).optional(),
+  desktop_ok: z.boolean().optional(),
+  mobile_ok: z.boolean().optional(),
+  source: z.enum(ASSET_SOURCES).optional(),
+  approval_status: z.enum(APPROVAL_STATUSES).optional(),
+  active: z.boolean().optional(),
+  mime_type: z.string().max(120).optional().nullable(),
+  visual_brief_id: uuid.optional().nullable(),
+});
+
+/* --------------------------------------------- visual briefs (V1.6B) */
+
+export const visualBriefInput = z.object({
+  id: uuid.optional(),
+  landing_page_id: uuid.optional().nullable(),
+  section_id: uuid.optional().nullable(),
+  block_type: z.string().max(60).optional().nullable(),
+  proposal_id: uuid.optional().nullable(),
+  title: z.string().min(2).max(200),
+  visual_type: z.enum(VISUAL_TYPES),
+  purpose: z.string().max(600).optional().nullable(),
+  composition: z.string().max(1200).optional().nullable(),
+  desktop_position: z.enum(VISUAL_POSITIONS).optional().nullable(),
+  mobile_position: z.enum(VISUAL_POSITIONS).optional().nullable(),
+  aspect_ratio: z.enum(ASPECT_RATIOS).optional().nullable(),
+  background_treatment: z.string().max(400).optional().nullable(),
+  product_ids: z.array(uuid).max(12).optional(),
+  brief_text: z.string().max(4000).optional().nullable(),
+  asset_status: z.enum(ASSET_STATUSES).optional(),
+  asset_id: uuid.optional().nullable(),
+  generation_status: z.enum(GENERATION_STATUSES).optional(),
+  approval_status: z.enum(APPROVAL_STATUSES).optional(),
+});
+
+export const sectionVisualUpdateInput = z.object({
+  section_id: uuid,
+  page_id: uuid,
+  visual: sectionVisualSchema,
+  image_url: z.string().max(1000).optional().nullable(),
+  image_alt: z.string().max(300).optional().nullable(),
+});
