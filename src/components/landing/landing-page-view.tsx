@@ -96,6 +96,7 @@ export function LandingPageView({
           page={page}
           onCtaClick={(label) => send("cta_click", { label })}
           formSlot={formSlot}
+          showVisualPlaceholders={page.is_preview}
         />
       ))}
       {!page.sections.some((s) => s.block_type === "form") && (
