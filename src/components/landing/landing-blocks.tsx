@@ -1,34 +1,52 @@
 /**
  * Presentational block renderer for the Landing Page Engine.
- * All content comes from the page configuration — never hardcoded copy.
+ *
+ * All content comes from the page configuration — never hardcoded copy — and all
+ * styling comes from the central ZoetBezorgen Landing Design System. A section
+ * can only pick pre-approved design variants, so AI-generated pages stay on
+ * brand and can never inject markup or arbitrary styling.
  */
 import { Check, Quote, Sparkles } from "lucide-react";
 
+import {
+  LANDING_DESIGN_TOKENS as T,
+  resolveSectionDesign,
+} from "@/lib/landing-design-system";
 import { paragraphs, type LandingSection } from "@/lib/landing-shared";
 import type { PublicPage } from "@/lib/landing.server";
 import { cn } from "@/lib/utils";
 
+type Design = ReturnType<typeof resolveSectionDesign>;
+
 function Section({
   id,
-  className,
+  design,
   children,
 }: {
   id?: string;
-  className?: string;
+  design: Design;
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className={cn("px-5 py-14 md:px-8 md:py-20", className)}>
-      <div className="mx-auto w-full max-w-5xl">{children}</div>
+    <section id={id} className={design.sectionClass}>
+      <div className={design.innerClass}>{children}</div>
     </section>
   );
 }
 
-function Heading({ title, subtitle }: { title?: string; subtitle?: string }) {
+function Heading({
+  title,
+  subtitle,
+  design,
+}: {
+  title?: string;
+  subtitle?: string;
+  design: Design;
+}) {
   if (!title && !subtitle) return null;
   return (
     <div className="mb-8 max-w-2xl">
-      {title && <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{title}</h2>}
+      {title && <h2 className={design.headingClass}>{title}</h2>}
       {subtitle && <p className="text-muted-foreground mt-3 text-base">{subtitle}</p>}
     </div>
   );
@@ -40,7 +58,7 @@ function Body({ body }: { body?: string }) {
   return (
     <div className="space-y-4">
       {parts.map((p, i) => (
-        <p key={i} className="text-muted-foreground leading-relaxed">
+        <p key={i} className={T.typography.body}>
           {p}
         </p>
       ))}
@@ -51,28 +69,41 @@ function Body({ body }: { body?: string }) {
 function Cta({
   label,
   url,
-  variant = "primary",
+  className,
   onClick,
 }: {
   label?: string;
   url?: string;
-  variant?: "primary" | "ghost";
+  className: string;
   onClick?: (label: string) => void;
 }) {
   if (!label) return null;
   return (
-    <a
-      href={url || "#offerte"}
-      onClick={() => onClick?.(label)}
-      className={cn(
-        "inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors",
-        variant === "primary"
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "border border-border text-foreground hover:bg-accent",
-      )}
-    >
+    <a href={url || "#offerte"} onClick={() => onClick?.(label)} className={className}>
       {label}
     </a>
+  );
+}
+
+function Media({
+  src,
+  alt,
+  design,
+  eager,
+}: {
+  src?: string;
+  alt?: string;
+  design: Design;
+  eager?: boolean;
+}) {
+  if (!src || design.image_treatment === "none") return null;
+  return (
+    <img
+      src={src}
+      alt={alt ?? ""}
+      loading={eager ? "eager" : "lazy"}
+      className={cn("aspect-4/3 w-full", design.imageClass)}
+    />
   );
 }
 
@@ -89,68 +120,104 @@ export function LandingBlock({
 }) {
   const c = section.content ?? {};
   const items = c.items ?? [];
+  const design = resolveSectionDesign(c.design);
 
   switch (section.block_type) {
-    case "hero":
-      return (
-        <Section className="bg-gradient-to-br from-primary/10 via-background to-background">
-          <div className="grid items-center gap-10 md:grid-cols-2">
-            <div>
-              {page.industry_name && (
-                <span className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-                  <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
-                </span>
-              )}
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-5xl">{c.title}</h1>
-              {c.subtitle && (
-                <p className="text-muted-foreground mt-4 text-lg leading-relaxed">{c.subtitle}</p>
-              )}
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Cta label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
-                <Cta
-                  label={c.secondary_cta_label}
-                  url={c.secondary_cta_url}
-                  variant="ghost"
-                  onClick={onCtaClick}
-                />
-              </div>
+    case "hero": {
+      const heroDesign = resolveSectionDesign({
+        background: "warm",
+        layout: "split_media_right",
+        ...(c.design ?? {}),
+      });
+      const copy = (
+        <div>
+          {page.industry_name && (
+            <span className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+              <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
+            </span>
+          )}
+          <h1 className={cn("mt-4", heroDesign.heroHeadingClass)}>{c.title}</h1>
+          {c.subtitle && <p className={cn("mt-4", T.typography.lead)}>{c.subtitle}</p>}
+          {c.body && (
+            <div className="mt-4">
+              <Body body={c.body} />
             </div>
-            {c.image_url && (
-              <img
-                src={c.image_url}
-                alt={c.image_alt ?? ""}
-                loading="eager"
-                className="aspect-4/3 w-full rounded-2xl object-cover shadow-lg"
-              />
-            )}
+          )}
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Cta
+              label={c.cta_label}
+              url={c.cta_url}
+              className={heroDesign.buttonClass}
+              onClick={onCtaClick}
+            />
+            <Cta
+              label={c.secondary_cta_label}
+              url={c.secondary_cta_url}
+              className={T.buttons.outline}
+              onClick={onCtaClick}
+            />
           </div>
+        </div>
+      );
+      const media = <Media src={c.image_url} alt={c.image_alt} design={heroDesign} eager />;
+      return (
+        <Section design={heroDesign}>
+          {heroDesign.isSplit && c.image_url ? (
+            <div className={heroDesign.gridClass}>
+              {heroDesign.mediaFirst ? (
+                <>
+                  {media}
+                  {copy}
+                </>
+              ) : (
+                <>
+                  {copy}
+                  {media}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-8">
+              {copy}
+              {media}
+            </div>
+          )}
         </Section>
       );
+    }
 
-    case "usps":
+    case "usps": {
+      const uspDesign = resolveSectionDesign({
+        background: "bordered",
+        layout: "grid_4",
+        density: "compact",
+        ...(c.design ?? {}),
+      });
       return (
-        <Section className="border-border/60 border-y bg-card/40">
-          <Heading title={c.title} subtitle={c.subtitle} />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Section design={uspDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={uspDesign} />
+          <div className={uspDesign.gridClass}>
             {items.map((item, i) => (
-              <div key={i} className="bg-background rounded-xl border p-4">
+              <div key={i} className={T.cards.default}>
                 <Check className="text-primary h-4 w-4" />
-                <p className="mt-2 text-sm font-semibold">{item.title}</p>
+                <p className={cn("mt-2", T.typography.h3)}>{item.title}</p>
                 {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
               </div>
             ))}
           </div>
         </Section>
       );
+    }
 
-    case "products":
+    case "products": {
+      const productDesign = resolveSectionDesign({ layout: "cards", ...(c.design ?? {}) });
       return (
-        <Section id="producten">
-          <Heading title={c.title} subtitle={c.subtitle} />
+        <Section id="producten" design={productDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
           {page.products.length === 0 ? (
             <Body body={c.body} />
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={productDesign.gridClass}>
               {page.products.map((p) => (
                 <article key={p.id} className="overflow-hidden rounded-xl border">
                   {p.image_url && (
@@ -162,7 +229,7 @@ export function LandingBlock({
                     />
                   )}
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold">{p.name}</h3>
+                    <h3 className={T.typography.h3}>{p.name}</h3>
                     {p.short_text && (
                       <p className="text-muted-foreground mt-1 text-sm">{p.short_text}</p>
                     )}
@@ -183,17 +250,23 @@ export function LandingBlock({
           )}
         </Section>
       );
+    }
 
-    case "testimonials":
+    case "testimonials": {
+      const tDesign = resolveSectionDesign({
+        background: "card",
+        layout: "grid_2",
+        ...(c.design ?? {}),
+      });
       return (
-        <Section className="bg-card/40">
-          <Heading title={c.title} subtitle={c.subtitle} />
+        <Section design={tDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={tDesign} />
           {page.testimonials.length === 0 ? (
             <Body body={c.body} />
           ) : (
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className={tDesign.gridClass}>
               {page.testimonials.map((t) => (
-                <blockquote key={t.id} className="bg-background rounded-xl border p-5">
+                <blockquote key={t.id} className={T.cards.elevated}>
                   <Quote className="text-primary h-4 w-4" />
                   <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
                   <footer className="text-muted-foreground mt-4 text-xs">
@@ -207,11 +280,12 @@ export function LandingBlock({
           )}
         </Section>
       );
+    }
 
     case "faq":
       return (
-        <Section>
-          <Heading title={c.title} subtitle={c.subtitle} />
+        <Section design={design}>
+          <Heading title={c.title} subtitle={c.subtitle} design={design} />
           <div className="divide-border divide-y rounded-xl border">
             {items.map((item, i) => (
               <details key={i} className="group p-4">
@@ -225,50 +299,71 @@ export function LandingBlock({
         </Section>
       );
 
-    case "cta_banner":
+    case "cta_banner": {
+      const bannerDesign = resolveSectionDesign({ layout: "banner", ...(c.design ?? {}) });
       return (
-        <Section>
+        <Section design={bannerDesign}>
           <div className="from-primary/15 to-primary/5 flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-gradient-to-r p-8">
             <div className="max-w-xl">
-              <h2 className="text-xl font-semibold md:text-2xl">{c.title}</h2>
+              <h2 className={bannerDesign.headingClass}>{c.title}</h2>
               {c.subtitle && <p className="text-muted-foreground mt-2 text-sm">{c.subtitle}</p>}
+              {c.body && (
+                <div className="mt-2">
+                  <Body body={c.body} />
+                </div>
+              )}
             </div>
-            <Cta label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+            <Cta
+              label={c.cta_label}
+              url={c.cta_url}
+              className={bannerDesign.buttonClass}
+              onClick={onCtaClick}
+            />
           </div>
         </Section>
       );
+    }
 
-    case "form":
+    case "form": {
+      const formDesign = resolveSectionDesign({ background: "card", ...(c.design ?? {}) });
       return (
-        <Section id="offerte" className="bg-card/40">
-          <Heading title={c.title} subtitle={c.subtitle} />
+        <Section id="offerte" design={formDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={formDesign} />
           {formSlot}
         </Section>
       );
+    }
 
     case "how_it_works":
-    case "use_cases":
+    case "use_cases": {
+      const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
       return (
-        <Section>
-          <Heading title={c.title} subtitle={c.subtitle} />
-          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Section design={stepDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
+          <ol className={stepDesign.gridClass}>
             {items.map((item, i) => (
-              <li key={i} className="rounded-xl border p-4">
+              <li key={i} className={T.cards.quiet}>
                 <span className="bg-primary/10 text-primary inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
                   {i + 1}
                 </span>
-                <p className="mt-2 text-sm font-semibold">{item.title}</p>
+                <p className={cn("mt-2", T.typography.h3)}>{item.title}</p>
                 {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
               </li>
             ))}
           </ol>
         </Section>
       );
+    }
 
-    case "social_proof":
+    case "social_proof": {
+      const spDesign = resolveSectionDesign({
+        background: "bordered",
+        density: "compact",
+        ...(c.design ?? {}),
+      });
       return (
-        <Section className="border-border/60 border-y">
-          <Heading title={c.title} subtitle={c.subtitle} />
+        <Section design={spDesign}>
+          <Heading title={c.title} subtitle={c.subtitle} design={spDesign} />
           <div className="text-muted-foreground flex flex-wrap gap-x-8 gap-y-3 text-sm font-medium">
             {items.map((item, i) => (
               <span key={i}>{item.title}</span>
@@ -276,38 +371,70 @@ export function LandingBlock({
           </div>
         </Section>
       );
+    }
 
-    default:
+    default: {
       // intro / personalization / why_us and any future block type
-      return (
-        <Section>
-          <Heading title={c.title} subtitle={c.subtitle} />
+      const media = <Media src={c.image_url} alt={c.image_alt} design={design} />;
+      const copy = (
+        <div>
+          <Heading title={c.title} subtitle={c.subtitle} design={design} />
           <Body body={c.body} />
           {items.length > 0 && (
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ul className={cn("mt-6", design.isSplit ? T.grids.list : T.grids.grid_2)}>
               {items.map((item, i) => (
                 <li key={i} className="flex gap-2.5 rounded-lg border p-3">
                   <Check className="text-primary mt-0.5 h-4 w-4 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium">{item.title}</p>
-                    {item.text && <p className="text-muted-foreground mt-0.5 text-sm">{item.text}</p>}
+                    <p className={T.typography.h3}>{item.title}</p>
+                    {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
                   </div>
                 </li>
               ))}
             </ul>
           )}
-          {c.image_url && (
-            <img
-              src={c.image_url}
-              alt={c.image_alt ?? ""}
-              loading="lazy"
-              className="mt-8 w-full rounded-2xl object-cover"
-            />
+          {(c.cta_label || c.secondary_cta_label) && (
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Cta
+                label={c.cta_label}
+                url={c.cta_url}
+                className={design.buttonClass}
+                onClick={onCtaClick}
+              />
+              <Cta
+                label={c.secondary_cta_label}
+                url={c.secondary_cta_url}
+                className={T.buttons.outline}
+                onClick={onCtaClick}
+              />
+            </div>
           )}
-          <div className="mt-6">
-            <Cta label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
-          </div>
+        </div>
+      );
+      return (
+        <Section design={design}>
+          {design.isSplit && c.image_url ? (
+            <div className={design.gridClass}>
+              {design.mediaFirst ? (
+                <>
+                  {media}
+                  {copy}
+                </>
+              ) : (
+                <>
+                  {copy}
+                  {media}
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {copy}
+              {c.image_url && <div className="mt-8">{media}</div>}
+            </>
+          )}
         </Section>
       );
+    }
   }
 }
