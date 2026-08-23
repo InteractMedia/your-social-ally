@@ -84,6 +84,33 @@ export const aiSectionDesignSchema = z.object({
 });
 
 
+/**
+ * Structured visual plan per section (V1.6B). The AI directs the imagery:
+ * type, purpose, composition, positioning, ratio and a concrete brief. It may
+ * only reference existing assets/products from the dataset; anything else stays
+ * a brief with asset_status "missing" so the page shows an explicit visual gap
+ * instead of silently rendering a text-only section.
+ */
+export const aiSectionVisualSchema = z.object({
+  visual_required: z.preprocess(
+    (v) => (typeof v === "boolean" ? v : true),
+    z.boolean().default(true),
+  ),
+  visual_type: tolerantEnum(VISUAL_TYPES, "product_lifestyle"),
+  purpose: clampedText(600).optional(),
+  composition: clampedText(1200).optional(),
+  desktop_position: tolerantEnum(VISUAL_POSITIONS, "right"),
+  mobile_position: tolerantEnum(VISUAL_POSITIONS, "above"),
+  aspect_ratio: tolerantEnum(ASPECT_RATIOS, "4:3"),
+  background_treatment: clampedText(400).optional(),
+  product_ids: z.preprocess(
+    (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string") : []),
+    z.array(z.string()).default([]),
+  ),
+  asset_id: z.preprocess((v) => (typeof v === "string" ? v : null), z.string().nullable()),
+  visual_brief: clampedText(2000).optional(),
+});
+
 export const aiSectionSchema = z.object({
   block_type: z.enum(BLOCK_TYPES),
   enabled: z.preprocess((v) => (typeof v === "boolean" ? v : true), z.boolean().default(true)),
@@ -106,6 +133,7 @@ export const aiSectionSchema = z.object({
       )
       .optional(),
     design: aiSectionDesignSchema.optional(),
+    visual: aiSectionVisualSchema.optional(),
   }),
   reason: clampedText(500).optional(),
 });
