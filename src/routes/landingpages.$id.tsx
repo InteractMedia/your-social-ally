@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   Eye,
+  GripVertical,
   History,
   Plus,
   Rocket,
