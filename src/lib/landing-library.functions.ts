@@ -269,13 +269,13 @@ export const updateProductImage = createServerFn({ method: "POST" })
         .update({ image_url: image.url, image_alt: data.alt_text ?? image.alt_text })
         .eq("id", image.product_id);
     }
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, any> = {};
     if (data.is_primary !== undefined) patch["is_primary"] = data.is_primary;
     if (data.image_type) patch["image_type"] = data.image_type;
     if (data.alt_text !== undefined) patch["alt_text"] = data.alt_text;
     const { error } = await context.supabase
       .from("landing_product_images")
-      .update(patch)
+      .update(patch as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -334,7 +334,7 @@ export const upsertLandingAsset = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => assetInput.parse(d))
   .handler(async ({ context, data }) => {
     const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
-    const row: Record<string, unknown> = {
+    const row: Record<string, any> = {
       workspace_id: workspaceId,
       name: data.name,
       asset_type: data.asset_type,
@@ -355,14 +355,17 @@ export const upsertLandingAsset = createServerFn({ method: "POST" })
     if (data.storage_path !== undefined) row["storage_path"] = data.storage_path;
 
     if (data.id) {
-      const { error } = await context.supabase.from("landing_assets").update(row).eq("id", data.id);
+      const { error } = await context.supabase
+        .from("landing_assets")
+        .update(row as never)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     if (!data.url) throw new Error("Een nieuw asset heeft een bestand of URL nodig.");
     const { data: inserted, error } = await context.supabase
       .from("landing_assets")
-      .insert({ ...row, created_by: context.userId })
+      .insert({ ...row, created_by: context.userId } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
