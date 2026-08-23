@@ -1,14 +1,20 @@
 /**
- * Server-only Google Ads offline conversion tracking (V1.3).
+ * Server-only Google offline conversion tracking (V1.4 — Data Manager API).
  *
  * Responsibilities:
  *  - eligibility evaluation (test leads, click identifier, mapping, value)
  *  - the upload queue (workspace scoped)
- *  - the actual uploadClickConversions API call + retries
+ *  - sending events to the Google Data Manager API (events:ingest) + retries
+ *  - resolving the asynchronous processing status (requestStatus:retrieve)
  *  - audit logging
+ *
+ * Reading Google Ads reporting data still uses the Google Ads API (gaql).
+ * The legacy ConversionUploadService.UploadClickConversions path is no longer
+ * used anywhere — offline conversions go exclusively through Data Manager.
  *
  * This module NEVER changes campaigns, budgets, bids, keywords or ads.
  */
+
 import { gaql } from "./google-ads.server";
 import { resolveCustomerId } from "./google-ads-accounts.server";
 import {
