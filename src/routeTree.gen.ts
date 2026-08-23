@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
 import { Route as AdsIndexRouteImport } from './routes/ads.index'
+import { Route as OfferteSlugRouteImport } from './routes/offerte.$slug'
 import { Route as LeadsFunnelsRouteImport } from './routes/leads.funnels'
 import { Route as LeadsBranchesRouteImport } from './routes/leads.branches'
 import { Route as LeadsIdRouteImport } from './routes/leads.$id'
@@ -110,6 +111,11 @@ const AdsIndexRoute = AdsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdsRoute,
+} as any)
+const OfferteSlugRoute = OfferteSlugRouteImport.update({
+  id: '/offerte/$slug',
+  path: '/offerte/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LeadsFunnelsRoute = LeadsFunnelsRouteImport.update({
   id: '/funnels',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads': typeof AdsIndexRoute
   '/competitors': typeof CompetitorsIndexRoute
   '/leads': typeof LeadsIndexRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/leads/$id': typeof LeadsIdRoute
   '/leads/branches': typeof LeadsBranchesRoute
   '/leads/funnels': typeof LeadsFunnelsRoute
+  '/offerte/$slug': typeof OfferteSlugRoute
   '/ads/': typeof AdsIndexRoute
   '/competitors/': typeof CompetitorsIndexRoute
   '/leads/': typeof LeadsIndexRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
     | '/leads/'
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads'
     | '/competitors'
     | '/leads'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/branches'
     | '/leads/funnels'
+    | '/offerte/$slug'
     | '/ads/'
     | '/competitors/'
     | '/leads/'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TrendsRoute: typeof TrendsRoute
+  OfferteSlugRoute: typeof OfferteSlugRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
   ApiPublicLeadIngestPlatformRoute: typeof ApiPublicLeadIngestPlatformRoute
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ads/'
       preLoaderRoute: typeof AdsIndexRouteImport
       parentRoute: typeof AdsRoute
+    }
+    '/offerte/$slug': {
+      id: '/offerte/$slug'
+      path: '/offerte/$slug'
+      fullPath: '/offerte/$slug'
+      preLoaderRoute: typeof OfferteSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/leads/funnels': {
       id: '/leads/funnels'
@@ -713,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TrendsRoute: TrendsRoute,
+  OfferteSlugRoute: OfferteSlugRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
   ApiPublicLeadIngestPlatformRoute: ApiPublicLeadIngestPlatformRoute,
