@@ -577,6 +577,7 @@ export async function buildAdsAnalysisSnapshot(opts: {
         ...slimMetrics(mapMetrics(r.metrics)),
       })),
       pmaxSearchInsights,
+      pmaxSearchInsightsPrevious,
     },
     socialCockpitB2B: {
       total: withKpis(total, totalSpend),
