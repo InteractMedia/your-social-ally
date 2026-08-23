@@ -552,7 +552,7 @@ function FormEditor({
               />
               {(field.type === "select" || field.type === "multiselect") && (
                 <Input
-                  className="md:col-span-3"
+                  className="md:col-span-4"
                   placeholder="Opties, gescheiden door komma's"
                   value={(field.options ?? []).join(", ")}
                   onChange={(e) =>
