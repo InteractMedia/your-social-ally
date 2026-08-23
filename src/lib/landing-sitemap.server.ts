@@ -5,18 +5,25 @@
  * en anders het globale productiedomein uit de configuratie. Een domeinwissel
  * is daarmee één configuratiewijziging.
  */
-import { admin } from "@/integrations/supabase/client.server";
-
 import { landingAbsoluteUrl } from "./landing-shared";
 
+type SitemapRow = {
+  slug: string;
+  funnel_type: string;
+  base_url: string | null;
+  noindex: boolean | null;
+  is_test: boolean | null;
+  updated_at: string | null;
+};
+
 export async function buildLandingSitemapXml() {
-  const db = await admin();
-  const { data } = await db
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
     .from("landing_pages")
     .select("slug,funnel_type,base_url,noindex,status,updated_at,is_test")
     .eq("status", "published");
 
-  const entries = (data ?? [])
+  const entries = ((data ?? []) as SitemapRow[])
     .filter((p) => !p.noindex && !p.is_test)
     .map((p) => ({
       loc: landingAbsoluteUrl(p.base_url ?? null, p.funnel_type, p.slug),
@@ -29,6 +36,7 @@ export async function buildLandingSitemapXml() {
         `  <url><loc>${escapeXml(e.loc)}</loc>${e.lastmod ? `<lastmod>${e.lastmod}</lastmod>` : ""}</url>`,
     )
     .join("\n");
+
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
