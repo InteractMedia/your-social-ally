@@ -1,11 +1,34 @@
 /** Client-safe validation schemas for the Landing Page Engine. */
 import { z } from "zod";
 
+import {
+  CTA_STYLES,
+  EMPHASIS_LEVELS,
+  IMAGE_TREATMENTS,
+  SECTION_BACKGROUNDS,
+  SECTION_DENSITIES,
+  SECTION_LAYOUTS,
+  SECTION_WIDTHS,
+} from "./landing-design-system";
+
 const uuid = z.string().uuid();
 
 export const funnelEnum = z.enum(["quote", "platform"]);
 
+export const sectionDesignSchema = z.object({
+  layout: z.enum(SECTION_LAYOUTS).optional(),
+  background: z.enum(SECTION_BACKGROUNDS).optional(),
+  width: z.enum(SECTION_WIDTHS).optional(),
+  density: z.enum(SECTION_DENSITIES).optional(),
+  image_treatment: z.enum(IMAGE_TREATMENTS).optional(),
+  cta_style: z.enum(CTA_STYLES).optional(),
+  emphasis: z.enum(EMPHASIS_LEVELS).optional(),
+  media_intent: z.string().max(500).optional(),
+  mobile_note: z.string().max(500).optional(),
+});
+
 export const blockContentSchema = z.object({
+  design: sectionDesignSchema.optional(),
   title: z.string().max(300).optional(),
   subtitle: z.string().max(1000).optional(),
   body: z.string().max(8000).optional(),
