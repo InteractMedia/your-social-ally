@@ -97,7 +97,7 @@ function ProposalDetail() {
   if (!proposal) {
     return (
       <AppShell>
-        <PageHeader title="Voorstel niet gevonden" description="Dit AI-voorstel bestaat niet (meer)." />
+        <PageHeader title="Voorstel niet gevonden" subtitle="Dit AI-voorstel bestaat niet (meer)." />
         <Button asChild variant="outline">
           <Link to="/landingpages">
             <ArrowLeft className="size-4" /> Terug naar landingspagina's
@@ -119,9 +119,9 @@ function ProposalDetail() {
     <AppShell>
       <PageHeader
         title={proposal.title}
-        description={`AI-voorstel · ${new Date(proposal.created_at).toLocaleString("nl-NL")}${run?.model ? ` · ${run.model}` : ""}`}
-      >
-        <div className="flex flex-wrap gap-2">
+        subtitle={`AI-voorstel · ${new Date(proposal.created_at).toLocaleString("nl-NL")}${run?.model ? ` · ${run.model}` : ""}`}
+        actions={
+          <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link to="/landingpages">
               <ArrowLeft className="size-4" /> Landingspagina's
@@ -148,8 +148,9 @@ function ProposalDetail() {
               </Button>
             </>
           )}
-        </div>
-      </PageHeader>
+          </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
