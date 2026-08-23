@@ -159,9 +159,10 @@ export type Eligibility =
 
 /** Pure decision function — no side effects, safe to unit test. */
 export function evaluateEligibility(
-  event: { conversion_event: string; value: number | null },
+  event: { conversion_event: string; value: number | null; conversion_timestamp?: string },
   lead: LeadRow,
   mapping: MappingRow | undefined,
+  liveActions?: LiveAction[] | null,
 ): Eligibility {
   // 1. Hard test protection — server side, before anything else.
   if (lead.is_test) return { ok: false, status: "not_eligible", reason: "test_event" };
@@ -172,26 +173,38 @@ export function evaluateEligibility(
   if (!mapping.google_conversion_action_id)
     return { ok: false, status: "not_eligible", reason: "conversion_action_missing" };
 
+  // 2b. Preflight against the live account: still present, ENABLED, click-import type.
+  const actionProblem = checkActionUsable(
+    liveActions ?? null,
+    mapping.google_conversion_action_id,
+  );
+  if (actionProblem) return { ok: false, status: "not_eligible", reason: actionProblem };
+
   // 3. A real click identifier stored on the lead — never invented.
   const clickType = (["gclid", "gbraid", "wbraid"] as const).find((k) => lead[k]);
   if (!clickType) return { ok: false, status: "not_eligible", reason: "missing_click_identifier" };
+
+  // 3b. A usable business timestamp (the event moment, never the upload moment).
+  if (event.conversion_timestamp && !conversionDateTime(event.conversion_timestamp))
+    return { ok: false, status: "not_eligible", reason: "invalid_conversion_time" };
 
   // 4. Value according to the configured mode.
   let value: number | null = null;
   const currency = mapping.currency || "EUR";
   if (mapping.upload_value && mapping.value_source === "fixed") {
-    if (mapping.fixed_value == null)
+    if (mapping.fixed_value == null || Number(mapping.fixed_value) <= 0)
       return { ok: false, status: "not_eligible", reason: "missing_value" };
     value = Number(mapping.fixed_value);
   } else if (mapping.upload_value && mapping.value_source === "dynamic") {
-    const dynamic = event.value ?? lead.revenue ?? lead.order_value ?? null;
-    if (dynamic == null || Number(dynamic) <= 0) {
-      if (mapping.fixed_value != null) value = Number(mapping.fixed_value);
-      else return { ok: false, status: "not_eligible", reason: "missing_value" };
-    } else {
-      value = Number(dynamic);
-    }
+    // Priority: the event's own revenue, then the lead's revenue, then order value.
+    // NEVER a €0/€1 fallback — without a real value > 0 we simply do not upload.
+    const dynamic = [event.value, lead.revenue, lead.order_value].find(
+      (v) => v != null && Number(v) > 0,
+    );
+    if (dynamic == null) return { ok: false, status: "not_eligible", reason: "missing_value" };
+    value = Number(dynamic);
   }
+
 
   return {
     ok: true,
