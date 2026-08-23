@@ -23,7 +23,7 @@ import {
   LayoutTemplate,
   Package,
   Images,
-
+  BookOpen,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -113,6 +113,7 @@ const nav: NavSection[] = [
       { to: "/landingpages", label: "Alle pagina's", icon: LayoutTemplate },
       { to: "/landingpages/producten", label: "Producten", icon: Package },
       { to: "/landingpages/beeldbank", label: "Beeldbank", icon: Images },
+      { to: "/landingpages/evidence", label: "CRO-evidence", icon: BookOpen },
     ],
   },
   { to: "/inbox", label: "Inbox", icon: Inbox },
