@@ -21,6 +21,8 @@ import {
   Briefcase,
   Brain,
   LayoutTemplate,
+  Package,
+  Images,
 
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
