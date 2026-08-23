@@ -347,6 +347,13 @@ export async function listQueue(
         isTest: lead.is_test,
         campaign: lead.campaign_name,
         eligible: verdict.ok,
+        requestId: e.google_request_id ?? null,
+        transactionId: e.google_transaction_id ?? null,
+        processingStatus: e.google_processing_status ?? null,
+        processingCheckedAt: e.google_processing_checked_at ?? null,
+        uploadMethod: e.google_upload_method ?? null,
+        diagnostics: e.google_diagnostics ? JSON.stringify(e.google_diagnostics) : null,
+
       },
     ];
   });
