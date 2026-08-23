@@ -42,14 +42,30 @@ Regels voor TRACKING_ISSUE (verplicht):
 - Is allConversions > 0 terwijl conversions 0 is, dan wordt er wél gemeten: dit is een configuratiebevinding (geen primaire/meebiedende conversieactie actief), niet een kapotte meting. Gebruik dan CONFIG- of DATA_QUALITY_ISSUE-achtige advisering, geen alarmerende trackingconclusie.
 - Zijn de conversies gedaald doordat campagnes zijn gepauzeerd of de campagnemix is gewijzigd, benoem dat als verklaring en geef geen trackingadvies met hoge confidence.
 - HIGH confidence (>= 80) voor TRACKING_ISSUE is uitsluitend toegestaan bij concrete technische aanwijzingen, bijvoorbeeld: noemenswaardige spend en clicks terwijl allConversions 0 is, of onze eigen SocialCockpit-leads komen wél binnen terwijl Google Ads bij dezelfde campagne niets meet. Ontbreekt zulk bewijs, maximaal 50 confidence en formuleer het als hypothese met de benodigde vervolgcheck.
+Onderscheid deze vier lagen altijd expliciet en vermeng ze nooit:
+1. primaire Google Ads-conversies (conversion actions die meebieden),
+2. secundaire Google Ads-conversies (observerend, bijv. PAGE_VIEW — dit zijn GEEN leads en GEEN commerciële conversies),
+3. SocialCockpit B2B-leads (onze eigen ingest),
+4. uiteindelijke klanten en omzet.
+
+Performance Max zoekintentie:
+- Classificeer beschikbare pmaxSearchInsights-categorieën, waar de context dat toelaat, in: duidelijke B2B-intentie, waarschijnlijke B2B-intentie, gemengde/onduidelijke intentie, waarschijnlijke B2C-intentie, duidelijke B2C-intentie.
+- Baseer die classificatie op de daadwerkelijke zoekcategorie en context, nooit op losse trefwoorden als harde regel. Signalen die kunnen wijzen op zakelijke intentie zijn bijvoorbeeld personeel, medewerkers, collega's, relatiegeschenken, zakelijke cadeaus, logo/bedrukken/personaliseren, bedrijven of klanten bedanken — behandel ze als aanwijzing, niet als bewijs.
+- Beoordeel of de huidige PMax-campagne qua zoekintentie voldoende aansluit op de B2B-doelstelling, en geef aan hoe betrouwbaar die conclusie is gezien het categorieniveau van de data.
+- Geef geen advies over negatieve zoekwoorden op termniveau wanneer alleen categorieën beschikbaar zijn; benoem dan wat er nodig is om dat wel te kunnen.
+
+- Beoordeel expliciet of het ontbreken van primaire conversies bij de huidige spend en clicks reden is voor actie, of dat er simpelweg nog te weinig data is voor een conclusie.
 - Benoem per advies exact welke data je gebruikte en welke data ontbrak.
-- Geef 3 tot 12 adviezen, gesorteerd op verwachte impact. Zijn er geen betrouwbare kansen, geef één advies van type NO_ACTION.
+- Geef zoveel adviezen als de data betrouwbaar onderbouwt, gesorteerd op verwachte impact. Er is GEEN minimumaantal: één goed onderbouwd advies is een geldig resultaat, en NO_ACTION is ook een geldig resultaat. Forceer nooit adviezen die de data niet dragen.
 - Nederlands, concreet, geen marketingjargon zonder uitleg.
+
 
 Antwoord ALLEEN met geldige JSON (geen markdown, geen uitleg eromheen) in exact dit formaat:
 {"summary":"2-4 zinnen samenvatting van de accountgezondheid","advice":[{"advice_type":"EEN_VAN_DE_TOEGESTANE_TYPES","entity_type":"campaign|ad_group|keyword|search_term|landing_page|industry|account","entity_name":"naam uit de dataset of null","title":"korte titel (max 80 tekens)","summary":"wat is er aan de hand (1-3 zinnen)","reasoning":"onderbouwing met de cijfers uit de dataset","proposed_action":"exact wat een mens in Google Ads zou moeten doen","proposed_payload":{"vrij":"machineleesbare details, bv. keyword, match_type, huidige en voorgestelde waarde"},"expected_impact":"verwachte impact in cijfers of range","confidence_score":0,"risk_level":"low|medium|high","evidence":{"metric":"waarde"},"data_available":["..."],"data_missing":["..."]}]}
 
-Toegestane advice_type waarden: ${ADVICE_TYPES.join(", ")}.`;
+Toegestane advice_type waarden: ${ADVICE_TYPES.join(", ")}.
+
+Zet in proposed_payload altijd een veld "priority" met waarde "high", "medium" of "low", plus bij PMax-adviezen een veld "search_intent" met je classificatie per genoemde zoekcategorie.`;
 
 const AdviceSchema = z.object({
   advice_type: z.string(),
