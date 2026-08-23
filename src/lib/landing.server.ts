@@ -8,6 +8,8 @@
  */
 import {
   DEFAULT_FORM_CONFIG,
+  LANDING_PRODUCTION_BASE_URL,
+  landingAbsoluteUrl,
   type BlockContent,
   type FormFieldConfig,
   type LandingFormConfig,
@@ -49,6 +51,8 @@ export type PublicPage = {
   seo_title: string | null;
   seo_description: string | null;
   canonical: string | null;
+  /** Absolute productie-URL van deze pagina (null in preview). */
+  page_url: string | null;
   noindex: boolean;
   og_title: string | null;
   og_description: string | null;
@@ -245,7 +249,10 @@ export async function resolvePublicPage(args: {
   }
   if (!snapshot) snapshot = await buildSnapshot(page.id);
 
-  const canonicalBase = snapshot.page.canonical_url || snapshot.page.base_url || null;
+  // Canonical/og:url wijzen altijd naar de productie-URL van de pagina zelf
+  // (default: het zakelijk.-subdomein). Previews krijgen nooit een canonical,
+  // zodat testverkeer nooit als productiepagina geïndexeerd wordt.
+  const productionUrl = landingAbsoluteUrl(snapshot.page.base_url ?? null, page.funnel_type, page.slug);
   return {
     id: page.id,
     name: snapshot.page.name,
@@ -257,11 +264,9 @@ export async function resolvePublicPage(args: {
     industry_name: snapshot.page.industry_name ?? null,
     seo_title: snapshot.page.seo_title ?? snapshot.page.name,
     seo_description: snapshot.page.seo_description ?? null,
-    canonical: snapshot.page.canonical_url
-      ? snapshot.page.canonical_url
-      : canonicalBase
-        ? null
-        : null,
+    canonical: isPreview ? null : snapshot.page.canonical_url || productionUrl,
+    page_url: isPreview ? null : productionUrl,
+
     noindex: snapshot.page.noindex !== false || isPreview,
     og_title: snapshot.page.og_title ?? null,
     og_description: snapshot.page.og_description ?? null,
@@ -305,7 +310,7 @@ export async function createPageWithTemplate(args: {
       industry_id: args.industryId ?? null,
       status: "draft",
       template_key: TEMPLATE_KEY,
-      base_url: args.baseUrl ?? null,
+      base_url: args.baseUrl ?? LANDING_PRODUCTION_BASE_URL,
       noindex: true,
       seo_title: `${args.name} — ZoetBezorgen zakelijk`,
       active: true,

@@ -29,6 +29,7 @@ import {
   BLOCK_TYPES,
   DEFAULT_FORM_FIELDS,
   FIELD_STATE_LABELS,
+  LANDING_PRODUCTION_BASE_URL,
   LANDING_STATUS_LABELS,
   landingPath,
   type BlockContent,
@@ -786,6 +787,7 @@ function SettingsEditor({
     name: string;
     slug: string;
     status: string;
+    funnel_type: string;
     industry_id: string | null;
     base_url: string | null;
     canonical_url: string | null;
@@ -887,13 +889,27 @@ function SettingsEditor({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Canonical URL</Label>
+            <Label>Basis-URL (productiedomein)</Label>
+            <Input
+              value={state.base_url ?? ""}
+              onChange={(e) => set({ base_url: e.target.value })}
+              placeholder={LANDING_PRODUCTION_BASE_URL}
+            />
+            <p className="text-muted-foreground text-xs">
+              Leeg = {LANDING_PRODUCTION_BASE_URL}. Live URL:{" "}
+              {(state.base_url || LANDING_PRODUCTION_BASE_URL).replace(/\/+$/, "")}
+              {landingPath(page.funnel_type ?? "quote", state.slug)}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Canonical URL (optioneel)</Label>
             <Input
               value={state.canonical_url ?? ""}
               onChange={(e) => set({ canonical_url: e.target.value })}
-              placeholder="https://www.zoetbezorgen.nl/offerte/..."
+              placeholder={`${LANDING_PRODUCTION_BASE_URL}/offerte/...`}
             />
           </div>
+
           <div className="space-y-1.5 md:col-span-2">
             <Label>SEO-omschrijving</Label>
             <Textarea
