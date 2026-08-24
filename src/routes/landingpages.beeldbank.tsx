@@ -132,10 +132,13 @@ function AssetLibraryPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {briefs.map((brief) => (
-                <BriefCard key={brief.id} brief={brief} />
-              ))}
+            <div className="space-y-4">
+              <FulfilBriefsBar briefs={briefs} />
+              <div className="grid gap-4 md:grid-cols-2">
+                {briefs.map((brief) => (
+                  <BriefCard key={brief.id} brief={brief} />
+                ))}
+              </div>
             </div>
           )}
         </TabsContent>
