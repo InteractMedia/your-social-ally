@@ -159,7 +159,7 @@ function FulfilBriefsBar({ briefs }: { briefs: LandingVisualBriefRow[] }) {
       Array.from(
         new Set(
           briefs
-            .filter((b) => b.status !== "linked" && b.landing_page_id)
+            .filter((b) => b.asset_status !== "linked" && b.landing_page_id)
             .map((b) => b.landing_page_id as string),
         ),
       ),
@@ -174,14 +174,17 @@ function FulfilBriefsBar({ briefs }: { briefs: LandingVisualBriefRow[] }) {
         return;
       }
       const r = res.report;
-      const filled = r.fulfilled.filter((f) => f.match).length;
-      const missing = r.fulfilled.filter((f) => !f.match);
       toast.success(
-        `${filled}/${r.fulfilled.length} briefs gekoppeld aan bestaand beeld` +
-          (r.skipped > 0 ? ` (${r.skipped} al gekoppeld)` : ""),
+        `${r.linked}/${r.totalBriefs} briefs gekoppeld aan bestaand beeld` +
+          (r.aiImageNeeded > 0 ? ` — ${r.aiImageNeeded}× AI IMAGE NEEDED` : ""),
       );
-      for (const m of missing) {
-        toast.warning(`AI IMAGE NEEDED: ${m.purpose}`, { duration: 8000 });
+      for (const result of r.results) {
+        if (result.outcome === "ai_image_needed") {
+          toast.warning(
+            `AI IMAGE NEEDED: ${result.blockType ?? result.visualType} (${result.visualType})`,
+            { duration: 8000 },
+          );
+        }
       }
       qc.invalidateQueries({ queryKey: ["landing"] });
     },
