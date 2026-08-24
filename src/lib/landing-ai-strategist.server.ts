@@ -335,6 +335,23 @@ export async function runLandingStrategist(args: {
     const sanitized = sanitizeProposal(parsed, built.dataset, strategy);
     const dataConfidence = computeDataConfidence(built.facts);
 
+    /* V1.9 — deterministische creatieve kwaliteitsgate op het geplande ontwerp. */
+    const { scoreCreativeQuality } = await import("./landing-creative-quality");
+    const plannedSections = sanitized.page.sections.map((s, i) => ({
+      id: `planned-${i}`,
+      block_type: s.block_type,
+      sort_order: i,
+      enabled: s.enabled,
+      use_global: false,
+      global_key: null,
+      variant_key: "A",
+      content: s.content,
+    }));
+    const plannedProducts = (built.dataset.productLibrary ?? []).filter((p: any) =>
+      sanitized.products.some((sp) => sp.product_id === p.product_id),
+    );
+    const creativeQuality = scoreCreativeQuality(plannedSections as never, plannedProducts as never);
+
     const title =
       sanitized.page.name?.slice(0, 120) ||
       `${args.mode === "create" ? "Nieuwe pagina" : "Optimalisatie"} — ${built.meta.industryName ?? "algemeen"}`;
@@ -355,6 +372,9 @@ export async function runLandingStrategist(args: {
         product_plan: sanitized.products as never,
         rationale: sanitized.rationale as never,
         visual_direction: sanitized.visual_direction as never,
+        creative_direction: creativeDirection as never,
+        quality_scores: creativeQuality as never,
+        creative_ready: creativeQuality.creativeReady,
         missing_data: [
           ...sanitized.strategy.missing_data,
           ...dataConfidence.missing.map((m) => `Ontbrekend in dataset: ${m}`),
