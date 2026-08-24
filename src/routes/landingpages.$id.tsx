@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { VisualSlotEditor } from "@/components/landing/visual-slot-editor";
+import type { SectionVisual } from "@/lib/landing-visual";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
@@ -130,7 +132,7 @@ function LandingPageEditor() {
                     <Eye className="mr-1 h-4 w-4" /> Preview
                   </a>
                 </Button>
-                <Button size="sm" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate()}>
+                <Button size="sm" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(false)}>
                   <Rocket className="mr-1 h-4 w-4" /> Publiceren
                 </Button>
               </>
@@ -276,6 +278,7 @@ function SectionsEditor({ pageId, sections }: { pageId: string; sections: Sectio
 }
 
 function SectionCard({
+  pageId,
   section,
   onToggle,
   onSave,
