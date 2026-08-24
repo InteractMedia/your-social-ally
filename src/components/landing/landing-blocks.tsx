@@ -605,6 +605,8 @@ export function LandingBlock({
 
     case "cta_banner": {
       const bannerDesign = resolveSectionDesign({ layout: "banner", ...(c.design ?? {}) });
+      /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. */
+      const withImage = bannerDesign.composition === "visual_cta" && Boolean(c.image_url);
       return (
         <Section design={bannerDesign}>
           <div className="from-primary/15 to-primary/5 flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-gradient-to-r p-8">
@@ -616,13 +618,30 @@ export function LandingBlock({
                   <Body body={c.body} />
                 </div>
               )}
+              <div className="mt-5">
+                <Cta
+                  label={c.cta_label}
+                  url={c.cta_url}
+                  className={bannerDesign.buttonClass}
+                  onClick={onCtaClick}
+                />
+              </div>
             </div>
-            <Cta
-              label={c.cta_label}
-              url={c.cta_url}
-              className={bannerDesign.buttonClass}
-              onClick={onCtaClick}
-            />
+            {withImage ? (
+              <img
+                src={c.image_url}
+                alt={c.image_alt ?? ""}
+                loading="lazy"
+                className="aspect-square w-40 rounded-2xl object-cover shadow-lg md:w-52"
+              />
+            ) : (
+              <Cta
+                label={c.cta_label}
+                url={c.cta_url}
+                className={bannerDesign.buttonClass}
+                onClick={onCtaClick}
+              />
+            )}
           </div>
         </Section>
       );
@@ -665,6 +684,28 @@ export function LandingBlock({
         density: "compact",
         ...(c.design ?? {}),
       });
+      /* V1.9 — trust_strip: compacte pillen-strip zonder koppen. */
+      if (spDesign.composition === "trust_strip") {
+        return (
+          <Section design={spDesign}>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {c.title && (
+                <span className="text-muted-foreground mr-2 text-xs font-medium tracking-wide uppercase">
+                  {c.title}
+                </span>
+              )}
+              {items.map((item, i) => (
+                <span
+                  key={i}
+                  className="bg-background rounded-full border px-4 py-1.5 text-sm font-medium shadow-sm"
+                >
+                  {item.title}
+                </span>
+              ))}
+            </div>
+          </Section>
+        );
+      }
       return (
         <Section design={spDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={spDesign} />
