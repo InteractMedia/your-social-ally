@@ -547,7 +547,13 @@ export function LandingBlock({
                     className="border-primary/40 aspect-4/3 w-full rounded-2xl border-2 object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="bg-primary/5 border-primary/40 aspect-4/3 w-full rounded-2xl border-2 border-dashed" />
+                  <MediaSlot
+                    src={undefined}
+                    alt={afterLabel}
+                    visual={visual}
+                    design={pDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                  />
                 )}
                 <figcaption className="text-primary text-center text-xs font-semibold tracking-wide uppercase">
                   {afterLabel}
