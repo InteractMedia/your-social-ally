@@ -58,6 +58,7 @@ import { listLandingPages } from "@/lib/landing.functions";
 import {
   addProductImage,
   applyProductSuggestions,
+  createAssetUploadUrl,
   deleteProductImage,
   deleteProductLibraryItem,
   getLandingContentReadiness,
@@ -67,6 +68,7 @@ import {
   updateProductImage,
   upsertProductLibraryItem,
 } from "@/lib/landing-library.functions";
+import { uploadLandingFile } from "@/lib/landing-upload";
 
 type ProductImage = {
   id: string;
@@ -101,7 +103,7 @@ type ProductRow = {
   ai_suggestions: unknown;
   images: ProductImage[];
 };
-import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/landingpages/producten")({
   head: () => ({
@@ -556,18 +558,20 @@ function QuickAddDialog({
     setImages(next);
   };
 
+  const uploadUrlFn = useServerFn(createAssetUploadUrl);
   const save = useMutation({
     mutationFn: async () => {
       const uploaded = [];
       for (const img of images) {
-        const ext = img.file.name.split(".").pop() ?? "jpg";
-        const path = `quick/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("landing-assets").upload(path, img.file);
-        if (error) throw new Error(`Upload mislukt: ${error.message}`);
+        // Signed upload naar de private bucket; de server koppelt daarna de
+        // stabiele publieke asset-URL (/api/public/landing-asset/:id).
+        const { path } = await uploadLandingFile(img.file, uploadUrlFn);
         uploaded.push({
-          url: `/api/public/landing-asset?path=${encodeURIComponent(path)}`,
+          url: `storage:${path}`,
+          storage_path: path,
           image_type: img.image_type,
           alt_text: name,
+          mime_type: img.file.type || null,
         });
       }
       return createFn({
@@ -643,7 +647,7 @@ function QuickAddDialog({
             />
           </div>
           <div>
-            <Label>Foto's * (max 8)</Label>
+            <Label>Foto's (max 8, aanbevolen)</Label>
             <label className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground hover:bg-muted/50">
               <Upload className="h-4 w-4" /> Kies afbeeldingen
               <input
@@ -712,10 +716,13 @@ function QuickAddDialog({
             </p>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col items-stretch gap-2 sm:flex-col">
+          {!name.trim() && (
+            <p className="text-xs text-muted-foreground">Vul een naam in om het product toe te voegen.</p>
+          )}
           <Button
             onClick={() => save.mutate()}
-            disabled={!name.trim() || images.length === 0 || save.isPending}
+            disabled={!name.trim() || save.isPending}
           >
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Toevoegen
@@ -953,21 +960,23 @@ function ProductImagesDialog({
   const [uploadType, setUploadType] = useState<ProductImageType>("product_lifestyle");
   const [altDrafts, setAltDrafts] = useState<Record<string, string>>({});
 
+  const uploadUrlFn = useServerFn(createAssetUploadUrl);
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
     setUploading(true);
     try {
       for (const f of Array.from(files)) {
-        const ext = f.name.split(".").pop() ?? "jpg";
-        const path = `products/${product.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("landing-assets").upload(path, f);
-        if (error) throw new Error(error.message);
+        // Signed upload naar de private bucket; de server koppelt de stabiele
+        // publieke asset-URL (/api/public/landing-asset/:id).
+        const { path } = await uploadLandingFile(f, uploadUrlFn);
         await addFn({
           data: {
             product_id: product.id,
-            url: `/api/public/landing-asset?path=${encodeURIComponent(path)}`,
+            url: `storage:${path}`,
+            storage_path: path,
             image_type: uploadType,
             alt_text: product.name,
+            mime_type: f.type || null,
           },
         });
       }
