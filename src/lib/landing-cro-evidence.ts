@@ -345,6 +345,10 @@ export type CroEvidenceRow = {
   metric: string | null;
   tags: string[];
   active: boolean;
+  not_applicable_to: string[];
+  audience: "b2b" | "b2c" | "both";
+  devices: "desktop" | "mobile" | "both";
+  funnel_type: string[];
   created_at: string;
 };
 

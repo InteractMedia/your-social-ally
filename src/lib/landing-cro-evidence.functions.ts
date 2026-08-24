@@ -32,6 +32,10 @@ const evidenceInput = z.object({
   metric: z.string().max(120).optional().nullable(),
   tags: z.array(z.string().max(60)).max(20).default([]),
   active: z.boolean().default(true),
+  not_applicable_to: z.array(z.string().max(60)).max(20).default([]),
+  audience: z.enum(["b2b", "b2c", "both"]).default("both"),
+  devices: z.enum(["desktop", "mobile", "both"]).default("both"),
+  funnel_type: z.array(z.string().max(60)).max(10).default([]),
 });
 
 export const listCroEvidence = createServerFn({ method: "GET" })
@@ -70,6 +74,10 @@ export const upsertCroEvidence = createServerFn({ method: "POST" })
       metric: data.metric ?? null,
       tags: data.tags,
       active: data.active,
+      not_applicable_to: data.not_applicable_to,
+      audience: data.audience,
+      devices: data.devices,
+      funnel_type: data.funnel_type,
     };
 
     if (data.id) {
