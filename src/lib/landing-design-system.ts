@@ -39,6 +39,27 @@ export type CtaStyle = (typeof CTA_STYLES)[number];
 export const EMPHASIS_LEVELS = ["normal", "high"] as const;
 export type EmphasisLevel = (typeof EMPHASIS_LEVELS)[number];
 
+/**
+ * Creative compositions (V1.9) — hoe een sectie haar content en beeld
+ * choreografeert. "default" is de neutrale vorm; alle andere varianten zijn
+ * bewust anti-card-first en geven de pagina ritme en schaalcontrast.
+ */
+export const SECTION_COMPOSITIONS = [
+  "default",
+  "layered_hero",
+  "collage_hero",
+  "editorial_split",
+  "oversized_showcase",
+  "asymmetric_grid",
+  "staggered_grid",
+  "before_after",
+  "large_quote",
+  "trust_strip",
+  "visual_cta",
+  "floating_products",
+] as const;
+export type SectionComposition = (typeof SECTION_COMPOSITIONS)[number];
+
 /** Structured, safe visual direction stored per section. */
 export type SectionDesign = {
   layout?: SectionLayout;
@@ -48,6 +69,8 @@ export type SectionDesign = {
   image_treatment?: ImageTreatment;
   cta_style?: CtaStyle;
   emphasis?: EmphasisLevel;
+  /** Creatieve compositie-variant (V1.9). */
+  composition?: SectionComposition;
   /** Briefing for the photographer/designer — never rendered as markup. */
   media_intent?: string;
   /** Short note on the mobile priority for this section. */
@@ -125,7 +148,7 @@ export const LANDING_DESIGN_TOKENS = {
 } as const;
 
 export const DEFAULT_SECTION_DESIGN: Required<
-  Pick<SectionDesign, "layout" | "background" | "width" | "density" | "image_treatment" | "cta_style" | "emphasis">
+  Pick<SectionDesign, "layout" | "background" | "width" | "density" | "image_treatment" | "cta_style" | "emphasis" | "composition">
 > = {
   layout: "stacked",
   background: "plain",
@@ -134,6 +157,7 @@ export const DEFAULT_SECTION_DESIGN: Required<
   image_treatment: "rounded",
   cta_style: "solid",
   emphasis: "normal",
+  composition: "default",
 };
 
 const T = LANDING_DESIGN_TOKENS;
@@ -142,9 +166,13 @@ const T = LANDING_DESIGN_TOKENS;
 export function resolveSectionDesign(design?: SectionDesign | null) {
   const d = { ...DEFAULT_SECTION_DESIGN, ...(design ?? {}) };
   const layout = (SECTION_LAYOUTS as readonly string[]).includes(d.layout) ? d.layout : "stacked";
+  const composition = (SECTION_COMPOSITIONS as readonly string[]).includes(d.composition)
+    ? d.composition
+    : "default";
   return {
     ...d,
     layout: layout as SectionLayout,
+    composition: composition as SectionComposition,
     sectionClass: `${T.backgrounds[d.background] ?? T.backgrounds.plain} ${
       T.spacing[d.density] ?? T.spacing.default
     }`,
@@ -181,4 +209,18 @@ export const DESIGN_LABELS = {
     contrast: "Contrast",
     bordered: "Met randen",
   } satisfies Record<SectionBackground, string>,
+  composition: {
+    default: "Standaard",
+    layered_hero: "Gelaagde hero (beeld als basis)",
+    collage_hero: "Collage-hero (meerdere beelden)",
+    editorial_split: "Editorial split (magazine)",
+    oversized_showcase: "Oversized product-showcase",
+    asymmetric_grid: "Asymmetrisch grid",
+    staggered_grid: "Versprongen grid",
+    before_after: "Voor / na (personalisatie)",
+    large_quote: "Grote quote",
+    trust_strip: "Trust-strip",
+    visual_cta: "Visuele CTA-banner",
+    floating_products: "Zwevende producten",
+  } satisfies Record<SectionComposition, string>,
 };

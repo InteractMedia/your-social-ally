@@ -24,11 +24,13 @@ import { buildLandingAiDataset } from "./landing-ai-dataset.server";
 import {
   aiProposalSchema,
   computeDataConfidence,
+  creativeDirectionSchema,
   LANDING_AI_DEFAULT_MODEL,
   LANDING_AI_PROMPT_VERSION,
   type AiProposalPayload,
   type LandingAiMode,
 } from "./landing-ai-shared";
+import { VISUAL_DNA_PROMPT } from "./landing-visual-dna";
 import { BLOCK_TYPES, DEFAULT_FORM_FIELDS, type FormFieldConfig } from "./landing-shared";
 
 type Ctx = { supabase: any; userId: string; claims?: { email?: string } };
@@ -77,10 +79,40 @@ Antwoord met exact dit JSON-object:
   "confidence": 0-100
 }`;
 
+const CREATIVE_SYSTEM = `${ROLE}
+
+FASE B — CREATIVE DIRECTION (V1.9).
+Je bent nu de Creative Director. Bepaal het visuele en emotionele concept van de pagina vóór het ontwerp wordt gebouwd. Je vertaalt de strategie uit fase 1 naar een creatieve regie die een bezoeker in één oogopslag raakt.
+
+ZOETBEZORGEN VISUAL DNA (verplicht vertrekpunt):
+${VISUAL_DNA_PROMPT}
+
+Regels:
+- Denk in beeld en ritme, niet in tekstblokken. De pagina moet aanvoelen als een ontworpen campagne, niet als een template.
+- Bepaal expliciet hoe de pagina zich onderscheidt van een generieke card-first landingspagina.
+- Het wow-moment is één concreet, uitvoerbaar compositie-idee binnen de block-engine (geen custom code).
+- Baseer je op bestaande beeldmogelijkheden (assetLibrary/productLibrary uit de dataset); wat ontbreekt benoem je als fotografie-behoefte.
+
+Antwoord met exact dit JSON-object:
+{
+  "visual_concept": "het overkoepelende visuele idee in 2-3 zinnen",
+  "emotional_direction": "welk gevoel de pagina moet oproepen en hoe",
+  "hero_composition": "concrete hero-regie: beeld, headline, gelaagdheid",
+  "section_rhythm": ["per sectieblok: groot/klein, beeld/tekst, rust/druk — het ritme van de pagina"],
+  "color_mood": "kleur- en achtergrondregie binnen het design system",
+  "composition_strategy": "welke compositie-varianten (layered_hero, collage_hero, editorial_split, oversized_showcase, asymmetric_grid, staggered_grid, before_after, large_quote, trust_strip, visual_cta, floating_products) je waar inzet en waarom",
+  "product_presentation": "hoe producten begeerlijk worden gepresenteerd",
+  "personalization_presentation": "hoe personalisatie zichtbaar wordt (bijv. voor/na)",
+  "differentiation_from_template": "waardoor deze pagina NIET generiek aanvoelt",
+  "mobile_creative_priorities": ["creatieve prioriteiten voor mobiel"],
+  "wow_moment": "het ene moment dat de bezoeker bijblijft",
+  "confidence": 0-100
+}`;
+
 const BUILD_SYSTEM = `${ROLE}
 
 FASE 2 — PAGINA-ONTWERP.
-Bouw de landingspagina in onze block-engine op basis van de strategie uit fase 1.
+Bouw de landingspagina in onze block-engine op basis van de strategie uit fase 1 én de creative direction uit fase B. De creative direction is leidend voor alle visuele en compositiekeuzes.
 
 CRO-principes die je moet toepassen:
 - Boodschap boven de fold sluit aan op de zoekintentie (message match).
@@ -91,9 +123,18 @@ CRO-principes die je moet toepassen:
 - Zo weinig mogelijk formulierfrictie: alleen velden die de vervolgstap echt nodig heeft; de rest optioneel of hidden.
 - Mobiel-first: eerst propositie, dan bewijs, dan CTA.
 
+CREATIEVE ONTWERPREGLEN (V1.9 — verplicht):
+- GEEN card-first design: nooit meer dan 2 kaart/grid-secties (cards, grid_2/3/4, list) achter elkaar.
+- Kies per sectie bewust een "composition" uit engine.designSystem.composition. Gebruik minimaal 3 verschillende niet-default composities op de pagina.
+- De hero krijgt bij voorkeur layered_hero of collage_hero als er beeld is of gepland wordt.
+- Producten krijgen oversized_showcase of staggered_grid — nooit een doodgewoon uniform raster als er beeld is.
+- Personalisatie krijgt before_after als er twee beelden (standaard + gepersonaliseerd) bestaan of gepland worden.
+- Wissel tekst en beeld af: nooit meer dan 1 tekst-only sectie achter elkaar.
+- Minimaal 1 sectie met emphasis "high" voor een visuele piek.
+
 Ontwerpregels:
 - Gebruik alleen block_types uit engine.allowedBlockTypes. Mist er een blok dat je echt nodig hebt? Zet dat in new_block_type_requests en werk verder met bestaande blokken.
-- Per sectie mag je design-tokens kiezen uit engine.designSystem (layout, background, width, density, image_treatment, cta_style, emphasis). Varieer bewust zodat de pagina niet één grijze kolom wordt, maar blijf rustig en merkconform.
+- Per sectie mag je design-tokens kiezen uit engine.designSystem (layout, background, width, density, image_treatment, cta_style, emphasis, composition). Varieer bewust zodat de pagina niet één grijze kolom wordt, maar blijf rustig en merkconform.
 - cta_url alleen interne anchors zoals "#offerte" of "#producten".
 - Producten alleen kiezen uit productLibrary via product_id. Is de bibliotheek leeg, kies dan geen producten en zet dat in missing_data.
 - Formuliervelden: alleen keys uit engine.formFieldsAvailable, en per veld state required/optional/hidden. Bepaal ook de beste volgorde (de volgorde van de array is de weergaveorder). Verzin geen nieuwe velden.
@@ -120,9 +161,9 @@ Antwoord met exact dit JSON-object (geen extra velden):
         "content": { "title": "...", "subtitle": "...", "body": "...", "cta_label": "...", "cta_url": "#offerte",
                      "secondary_cta_label": "...", "secondary_cta_url": "#producten", "image_alt": "...",
                      "items": [{ "title": "...", "text": "...", "badge": "..." }],
-                     "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
-                                 "image_treatment": "...", "cta_style": "...", "emphasis": "...",
-                                 "media_intent": "...", "mobile_note": "..." },
+                      "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
+                                  "image_treatment": "...", "cta_style": "...", "emphasis": "...",
+                                  "composition": "...", "media_intent": "...", "mobile_note": "..." },
                      "visual": { "visual_required": true, "visual_type": "...", "purpose": "...",
                                  "composition": "...", "desktop_position": "...", "mobile_position": "...",
                                  "aspect_ratio": "...", "background_treatment": "...",
@@ -256,12 +297,30 @@ export async function runLandingStrategist(args: {
     fallbackReason = fallbackReason ?? phase1.fallbackReason;
     const strategy = researchSchema.parse(extractJsonObject(phase1.text));
 
-    /* fase 2 — pagina-ontwerp */
-    const phase2 = await runAiCompletionWithFallback({
+    /* fase B — creative direction (V1.9) */
+    const phaseB = await runAiCompletionWithFallback({
       provider: phase1.provider,
       model: phase1.model,
-      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}\n\nCOMPACTHEID: houd tekstvelden kort en bondig (titels max ~10 woorden, body max ~40 woorden, reasons max ~25 woorden). Schrijf geen lange alinea's; de renderer toont ze letterlijk.`,
+      system: CREATIVE_SYSTEM,
       user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nDATASET:\n${datasetJson}`,
+      maxTokens: 4000,
+      temperature: 0.5,
+    });
+    totalIn += phaseB.inputTokens ?? 0;
+    totalOut += phaseB.outputTokens ?? 0;
+    totalCost += phaseB.estimatedCostUsd ?? 0;
+    totalMs += phaseB.runtimeMs;
+    fallbackReason = fallbackReason ?? phaseB.fallbackReason;
+    const creativeDirection = creativeDirectionSchema.parse(
+      dropNulls(extractJsonObject(phaseB.text)),
+    );
+
+    /* fase 2 — pagina-ontwerp */
+    const phase2 = await runAiCompletionWithFallback({
+      provider: phaseB.provider,
+      model: phaseB.model,
+      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}\n\nCOMPACTHEID: houd tekstvelden kort en bondig (titels max ~10 woorden, body max ~40 woorden, reasons max ~25 woorden). Schrijf geen lange alinea's; de renderer toont ze letterlijk.`,
+      user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nCREATIVE DIRECTION (fase B — leidend voor alle visuele keuzes):\n${JSON.stringify(creativeDirection)}\n\nDATASET:\n${datasetJson}`,
       maxTokens: 24000,
       temperature: 0.4,
     });
@@ -275,6 +334,23 @@ export async function runLandingStrategist(args: {
     const parsed = aiProposalSchema.parse(dropNulls(extractJsonObject(phase2.text)));
     const sanitized = sanitizeProposal(parsed, built.dataset, strategy);
     const dataConfidence = computeDataConfidence(built.facts);
+
+    /* V1.9 — deterministische creatieve kwaliteitsgate op het geplande ontwerp. */
+    const { scoreCreativeQuality } = await import("./landing-creative-quality");
+    const plannedSections = sanitized.page.sections.map((s, i) => ({
+      id: `planned-${i}`,
+      block_type: s.block_type,
+      sort_order: i,
+      enabled: s.enabled,
+      use_global: false,
+      global_key: null,
+      variant_key: "A",
+      content: s.content,
+    }));
+    const plannedProducts = (built.dataset.productLibrary ?? []).filter((p: any) =>
+      sanitized.products.some((sp) => sp.product_id === p.product_id),
+    );
+    const creativeQuality = scoreCreativeQuality(plannedSections as never, plannedProducts as never);
 
     const title =
       sanitized.page.name?.slice(0, 120) ||
@@ -296,6 +372,9 @@ export async function runLandingStrategist(args: {
         product_plan: sanitized.products as never,
         rationale: sanitized.rationale as never,
         visual_direction: sanitized.visual_direction as never,
+        creative_direction: creativeDirection as never,
+        quality_scores: creativeQuality as never,
+        creative_ready: creativeQuality.creativeReady,
         missing_data: [
           ...sanitized.strategy.missing_data,
           ...dataConfidence.missing.map((m) => `Ontbrekend in dataset: ${m}`),

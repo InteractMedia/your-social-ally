@@ -88,6 +88,9 @@ export type BlockContent = {
   image_url?: string;
   image_alt?: string;
   mobile_image_url?: string;
+  /** Second image slot — used by the before/after composition (V1.9). */
+  image_url_2?: string;
+  image_alt_2?: string;
   cta_label?: string;
   cta_url?: string;
   secondary_cta_label?: string;

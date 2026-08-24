@@ -18,6 +18,7 @@ import {
   EMPHASIS_LEVELS,
   IMAGE_TREATMENTS,
   SECTION_BACKGROUNDS,
+  SECTION_COMPOSITIONS,
   SECTION_DENSITIES,
   SECTION_LAYOUTS,
   SECTION_WIDTHS,
@@ -346,6 +347,7 @@ export async function buildLandingAiDataset(opts: {
         image_treatment: IMAGE_TREATMENTS,
         cta_style: CTA_STYLES,
         emphasis: EMPHASIS_LEVELS,
+        composition: SECTION_COMPOSITIONS,
       },
       formFieldsAvailable: currentFormFields.map((f) => ({
         key: f.key,
