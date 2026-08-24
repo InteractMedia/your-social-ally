@@ -1024,6 +1024,8 @@ export type Database = {
           applied_page_id: string | null
           applied_version_id: string | null
           created_at: string
+          creative_direction: Json | null
+          creative_ready: boolean
           data_confidence: number
           data_confidence_reasons: Json
           form_plan: Json
@@ -1035,6 +1037,7 @@ export type Database = {
           page_plan: Json
           performance_data_used: Json
           product_plan: Json
+          quality_scores: Json | null
           rationale: Json
           run_id: string
           status: string
@@ -1051,6 +1054,8 @@ export type Database = {
           applied_page_id?: string | null
           applied_version_id?: string | null
           created_at?: string
+          creative_direction?: Json | null
+          creative_ready?: boolean
           data_confidence?: number
           data_confidence_reasons?: Json
           form_plan?: Json
@@ -1062,6 +1067,7 @@ export type Database = {
           page_plan?: Json
           performance_data_used?: Json
           product_plan?: Json
+          quality_scores?: Json | null
           rationale?: Json
           run_id: string
           status?: string
@@ -1078,6 +1084,8 @@ export type Database = {
           applied_page_id?: string | null
           applied_version_id?: string | null
           created_at?: string
+          creative_direction?: Json | null
+          creative_ready?: boolean
           data_confidence?: number
           data_confidence_reasons?: Json
           form_plan?: Json
@@ -1089,6 +1097,7 @@ export type Database = {
           page_plan?: Json
           performance_data_used?: Json
           product_plan?: Json
+          quality_scores?: Json | null
           rationale?: Json
           run_id?: string
           status?: string
