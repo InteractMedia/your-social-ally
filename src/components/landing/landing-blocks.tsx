@@ -306,6 +306,130 @@ export function LandingBlock({
         );
       }
 
+      /* V1.9C — full_bleed_hero: sfeerbeeld over de volle breedte als
+         achtergrond, copy in een contrastpaneel eroverheen. Editorial
+         photography in plaats van een card. */
+      if (heroDesign.composition === "full_bleed_hero" && (c.image_url || layeredMissing)) {
+        return (
+          <section className="relative overflow-hidden">
+            {c.image_url ? (
+              <img
+                src={c.image_url}
+                alt={c.image_alt ?? visual?.purpose ?? ""}
+                loading="eager"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="bg-primary/10 absolute inset-0" />
+            )}
+            <div className="from-foreground/70 via-foreground/40 absolute inset-0 bg-gradient-to-r to-transparent" />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-24 md:px-8 md:py-36">
+              <div className="max-w-xl text-white">
+                {page.industry_name && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                    <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
+                  </span>
+                )}
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight drop-shadow md:text-6xl">
+                  {c.title}
+                </h1>
+                {c.subtitle && <p className="mt-4 text-lg leading-relaxed text-white/90">{c.subtitle}</p>}
+                {c.body && <p className="mt-3 leading-relaxed text-white/80">{c.body}</p>}
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Cta label={c.cta_label} url={c.cta_url} className={heroDesign.buttonClass} onClick={onCtaClick} />
+                  <Cta
+                    label={c.secondary_cta_label}
+                    url={c.secondary_cta_url}
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-white/60 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                    onClick={onCtaClick}
+                  />
+                </div>
+              </div>
+            </div>
+            {layeredMissing && (
+              <div className="relative mx-auto -mt-16 w-full max-w-6xl px-5 pb-6 md:px-8">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={heroDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                  eager
+                />
+              </div>
+            )}
+          </section>
+        );
+      }
+
+      /* V1.9C — cutout_hero: sfeerbeeld als basis met een product-cutout die
+         over de sectiegrens heen breekt (layered product + lifestyle). */
+      if (heroDesign.composition === "cutout_hero" && (c.image_url || layeredMissing)) {
+        const cutout = page.products.find((p) => p.image_url);
+        return (
+          <section className="relative overflow-visible">
+            <div className="relative overflow-hidden rounded-none">
+              {c.image_url ? (
+                <img
+                  src={c.image_url}
+                  alt={c.image_alt ?? visual?.purpose ?? ""}
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="bg-primary/10 absolute inset-0" />
+              )}
+              <div className="from-background via-background/60 absolute inset-0 bg-gradient-to-t to-transparent" />
+              <div className="relative mx-auto grid w-full max-w-6xl items-end gap-8 px-5 pt-20 pb-16 md:grid-cols-[1.2fr_0.8fr] md:px-8 md:pt-28 md:pb-24">
+                <div>
+                  {page.industry_name && (
+                    <span className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+                      <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
+                    </span>
+                  )}
+                  <h1 className={cn("mt-4", heroDesign.heroHeadingClass)}>{c.title}</h1>
+                  {c.subtitle && <p className={cn("mt-4", T.typography.lead)}>{c.subtitle}</p>}
+                  {c.body && (
+                    <div className="mt-4">
+                      <Body body={c.body} />
+                    </div>
+                  )}
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <Cta label={c.cta_label} url={c.cta_url} className={heroDesign.buttonClass} onClick={onCtaClick} />
+                    <Cta
+                      label={c.secondary_cta_label}
+                      url={c.secondary_cta_url}
+                      className={T.buttons.outline}
+                      onClick={onCtaClick}
+                    />
+                  </div>
+                </div>
+                {cutout?.image_url && (
+                  <img
+                    src={cutout.image_url}
+                    alt={cutout.image_alt ?? cutout.name}
+                    loading="eager"
+                    className="mx-auto w-56 rotate-3 drop-shadow-2xl md:-mb-24 md:w-72"
+                  />
+                )}
+              </div>
+            </div>
+            {layeredMissing && (
+              <div className="mx-auto w-full max-w-6xl px-5 pt-4 md:px-8">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={heroDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                  eager
+                />
+              </div>
+            )}
+          </section>
+        );
+      }
+
       return (
         <Section design={heroDesign}>
           {heroDesign.isSplit && slotVisible ? (
@@ -341,6 +465,22 @@ export function LandingBlock({
       });
       /* V1.9 — asymmetric_grid: eerste USP groot, de rest compact ernaast. */
       const asymmetric = uspDesign.composition === "asymmetric_grid" && items.length >= 3;
+      /* V1.9C — usp_strip: één compacte horizontale strip met scheidingstekens
+         i.p.v. cards. Scant in één oogopslag. */
+      if (uspDesign.composition === "usp_strip") {
+        return (
+          <section className="border-border/60 bg-card/30 border-y px-5 py-5 md:px-8">
+            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+              {items.map((item, i) => (
+                <span key={i} className="inline-flex items-center gap-2 text-sm font-medium">
+                  <Check className="text-primary h-4 w-4 shrink-0" />
+                  {item.title}
+                </span>
+              ))}
+            </div>
+          </section>
+        );
+      }
       return (
         <Section design={uspDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={uspDesign} />
@@ -412,6 +552,40 @@ export function LandingBlock({
           <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
           {page.products.length === 0 ? (
             <Body body={c.body} />
+          ) : composition === "masonry_showcase" ? (
+            /* V1.9C — masonry_showcase: echte asymmetrische masonry met
+               wisselende tegelgroottes i.p.v. een uniform card-grid. */
+            <div className="columns-1 gap-5 sm:columns-2 lg:columns-3 [&>*]:mb-5 [&>*]:break-inside-avoid">
+              {page.products.map((p, i) => (
+                <article key={p.id} className="bg-card overflow-hidden rounded-2xl border shadow-sm">
+                  {p.image_url && (
+                    <img
+                      src={p.image_url}
+                      alt={p.image_alt ?? p.name}
+                      loading="lazy"
+                      className={cn(
+                        "w-full object-cover",
+                        i % 3 === 0 ? "aspect-[4/5]" : i % 3 === 1 ? "aspect-square" : "aspect-[4/3]",
+                      )}
+                    />
+                  )}
+                  <div className="p-4">
+                    <h3 className={T.typography.h3}>{p.name}</h3>
+                    {p.short_text && <p className="text-muted-foreground mt-1 text-sm">{p.short_text}</p>}
+                    {p.price_from !== null && (
+                      <p className="mt-2 text-sm font-medium">
+                        vanaf € {Number(p.price_from).toFixed(2).replace(".", ",")}
+                      </p>
+                    )}
+                    {p.personalization_options.length > 0 && (
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        {p.personalization_options.join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
           ) : composition === "oversized_showcase" ? (
             /* V1.9 — één held-product groot, de rest ondergeschikt. */
             <div className="grid gap-5">
@@ -652,6 +826,46 @@ export function LandingBlock({
       const bannerDesign = resolveSectionDesign({ layout: "banner", ...(c.design ?? {}) });
       /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. Geen stille
          fallback: ontbreekt het beeld, toont de preview een placeholder. */
+      /* V1.9C — editorial_cta: full-bleed beeld als achtergrond met een
+         contrasterend conversiepaneel. Geen rechthoekige card meer. */
+      if (bannerDesign.composition === "editorial_cta" && (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))) {
+        return (
+          <section className="relative overflow-hidden">
+            {c.image_url ? (
+              <img
+                src={c.image_url}
+                alt={c.image_alt ?? ""}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="bg-primary/15 absolute inset-0" />
+            )}
+            <div className="from-foreground/75 via-foreground/45 absolute inset-0 bg-gradient-to-t to-transparent" />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-24 md:px-8 md:py-32">
+              <div className="max-w-xl text-white">
+                <h2 className="text-3xl font-semibold tracking-tight drop-shadow md:text-5xl">{c.title}</h2>
+                {c.subtitle && <p className="mt-3 text-lg text-white/90">{c.subtitle}</p>}
+                {c.body && <p className="mt-2 text-white/80">{c.body}</p>}
+                <div className="mt-6">
+                  <Cta label={c.cta_label} url={c.cta_url} className={bannerDesign.buttonClass} onClick={onCtaClick} />
+                </div>
+              </div>
+            </div>
+            {!c.image_url && showVisualPlaceholders && visualIsMissing(visual) && (
+              <div className="relative mx-auto -mt-14 w-full max-w-6xl px-5 pb-6 md:px-8">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={bannerDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                />
+              </div>
+            )}
+          </section>
+        );
+      }
       const isVisualCta = bannerDesign.composition === "visual_cta";
       const withImage = isVisualCta && Boolean(c.image_url);
       const ctaMissing =
@@ -708,6 +922,42 @@ export function LandingBlock({
 
     case "form": {
       const formDesign = resolveSectionDesign({ background: "card", ...(c.design ?? {}) });
+      /* V1.9C — premium_form: beeld + benefits-links, formulier rechts in een
+         verhoogd paneel. Commerciële afsluiter i.p.v. kale card. */
+      if (formDesign.composition === "premium_form") {
+        const formImage = c.image_url ?? page.products.find((p) => p.image_url)?.image_url;
+        return (
+          <Section id="offerte" design={formDesign}>
+            <div className="bg-card grid overflow-hidden rounded-3xl border shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="from-primary/15 to-primary/5 relative flex flex-col justify-center gap-5 bg-gradient-to-br p-8 md:p-10">
+                {formImage && (
+                  <img
+                    src={formImage}
+                    alt={c.image_alt ?? ""}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover opacity-15"
+                  />
+                )}
+                <div className="relative">
+                  <h2 className={formDesign.headingClass}>{c.title}</h2>
+                  {c.subtitle && <p className="text-muted-foreground mt-3">{c.subtitle}</p>}
+                  {items.length > 0 && (
+                    <ul className="mt-6 space-y-3">
+                      {items.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2.5">
+                          <Check className="text-primary mt-0.5 h-4 w-4 shrink-0" />
+                          <span className="text-sm font-medium">{item.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              <div className="p-6 md:p-10">{formSlot}</div>
+            </div>
+          </Section>
+        );
+      }
       return (
         <Section id="offerte" design={formDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={formDesign} />
@@ -719,6 +969,31 @@ export function LandingBlock({
     case "how_it_works":
     case "use_cases": {
       const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
+      /* V1.9C — steps_strip: compacte horizontale stappenlijst met verbinding,
+         geen cards. */
+      if (section.block_type === "how_it_works" && stepDesign.composition === "steps_strip") {
+        return (
+          <Section design={stepDesign}>
+            <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
+            <ol className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {items.map((item, i) => (
+                <li key={i} className="relative">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-primary text-primary-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+                      {i + 1}
+                    </span>
+                    {i < items.length - 1 && (
+                      <span className="border-border hidden h-px flex-1 border-t border-dashed lg:block" />
+                    )}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold">{(item.title ?? "").replace(/^\d+\.\s*/, "")}</p>
+                  {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
+                </li>
+              ))}
+            </ol>
+          </Section>
+        );
+      }
       /* V1.9 — asymmetric_grid voor use_cases: eerste moment groot, de rest
          compact. Ontbreekt het geplande icoon/illustratie-beeld, dan toont de
          preview een expliciete placeholder i.p.v. stille fallback. */
@@ -734,11 +1009,11 @@ export function LandingBlock({
         <Section design={stepDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
           {iconsMissing && (
-            <div className="mb-4">
+            <div className="mb-4 max-w-md">
               <MediaSlot
                 src={undefined}
                 alt={c.title}
-                visual={visual}
+                visual={visual ? { ...visual, aspect_ratio: "16:9" } : visual}
                 design={stepDesign}
                 showPlaceholder={showVisualPlaceholders}
               />
@@ -814,6 +1089,42 @@ export function LandingBlock({
 
     default: {
       // intro / personalization / why_us and any future block type
+      /* V1.9C — statement_intro: editorial statement met oversized typografie,
+         subtiele decoratieve laag en geen card. */
+      if (design.composition === "statement_intro") {
+        return (
+          <section className="relative overflow-hidden px-5 py-20 md:px-8 md:py-28">
+            <div
+              aria-hidden
+              className="bg-primary/10 pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl"
+            />
+            <div className="relative mx-auto w-full max-w-4xl">
+              {c.title && (
+                <h2 className="text-3xl leading-tight font-semibold tracking-tight md:text-5xl">
+                  {c.title}
+                </h2>
+              )}
+              {c.subtitle && <p className="text-muted-foreground mt-4 text-lg">{c.subtitle}</p>}
+              {c.body && (
+                <div className="mt-6 max-w-2xl">
+                  <Body body={c.body} />
+                </div>
+              )}
+              {(c.cta_label || c.secondary_cta_label) && (
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Cta label={c.cta_label} url={c.cta_url} className={design.buttonClass} onClick={onCtaClick} />
+                  <Cta
+                    label={c.secondary_cta_label}
+                    url={c.secondary_cta_url}
+                    className={T.buttons.outline}
+                    onClick={onCtaClick}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
       const media = <MediaSlot
           src={c.image_url}
           alt={c.image_alt}
