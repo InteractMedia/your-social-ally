@@ -57,6 +57,17 @@ export const SECTION_COMPOSITIONS = [
   "trust_strip",
   "visual_cta",
   "floating_products",
+  /* V1.9C — premium visual treatments */
+  "full_bleed_hero",
+  "cutout_hero",
+  "masonry_showcase",
+  "split_unequal",
+  "statement_intro",
+  "usp_strip",
+  "steps_strip",
+  "industry_story",
+  "editorial_cta",
+  "premium_form",
 ] as const;
 export type SectionComposition = (typeof SECTION_COMPOSITIONS)[number];
 
@@ -222,5 +233,15 @@ export const DESIGN_LABELS = {
     trust_strip: "Trust-strip",
     visual_cta: "Visuele CTA-banner",
     floating_products: "Zwevende producten",
+    full_bleed_hero: "Full-bleed hero (beeld over volle breedte)",
+    cutout_hero: "Cutout-hero (product breekt over sectie)",
+    masonry_showcase: "Masonry product-showcase",
+    split_unequal: "Split ongelijk (40/60)",
+    statement_intro: "Statement-intro (grote typografie)",
+    usp_strip: "USP-strip (compact)",
+    steps_strip: "Stappen-strip (compact)",
+    industry_story: "Branche-verhaal (visueel)",
+    editorial_cta: "Editorial CTA (full-bleed)",
+    premium_form: "Premium formulier (beeld + benefits)",
   } satisfies Record<SectionComposition, string>,
 };
