@@ -155,14 +155,26 @@ export const quickCreateProduct = createServerFn({ method: "POST" })
       const { data: assets } = await context.supabase
         .from("landing_assets")
         .insert(assetRows)
-        .select("id,url");
+        .select("id,url,storage_path");
+
+      // Uploaded files live in the private bucket: serve them through the
+      // stable public asset route instead of the temporary client-side URL.
+      const assetIdByInputUrl = new Map<string, string>();
+      for (const asset of assets ?? []) {
+        if (!asset.storage_path) continue;
+        const stableUrl = `/api/public/landing-asset/${asset.id}`;
+        assetIdByInputUrl.set(asset.url, asset.id);
+        await context.supabase.from("landing_assets").update({ url: stableUrl }).eq("id", asset.id);
+      }
+      const finalUrl = (img: (typeof images)[number]) =>
+        assetIdByInputUrl.has(img.url) ? `/api/public/landing-asset/${assetIdByInputUrl.get(img.url)}` : img.url;
 
       await context.supabase.from("landing_product_images").insert(
         images.map((img, i) => ({
           workspace_id: workspaceId,
           product_id: product.id,
-          asset_id: (assets ?? []).find((a) => a.url === img.url)?.id ?? null,
-          url: img.url,
+          asset_id: assetIdByInputUrl.get(img.url) ?? null,
+          url: finalUrl(img),
           alt_text: img.alt_text ?? data.name,
           image_type: img.image_type ?? "product_cutout",
           is_primary: i === 0,
@@ -171,7 +183,7 @@ export const quickCreateProduct = createServerFn({ method: "POST" })
       );
       await context.supabase
         .from("landing_products")
-        .update({ image_url: images[0]!.url, image_alt: images[0]!.alt_text ?? data.name })
+        .update({ image_url: finalUrl(images[0]!), image_alt: images[0]!.alt_text ?? data.name })
         .eq("id", product.id);
     }
     return { id: product.id, images: images.length };
@@ -194,6 +206,7 @@ export const addProductImage = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
     let assetId = data.asset_id ?? null;
+    let finalUrl = data.url;
     if (!assetId) {
       const { data: asset } = await context.supabase
         .from("landing_assets")
@@ -215,6 +228,12 @@ export const addProductImage = createServerFn({ method: "POST" })
         .select("id")
         .single();
       assetId = asset?.id ?? null;
+      // Uploaded files live in the private bucket: serve them through the
+      // stable public asset route instead of the temporary client-side URL.
+      if (asset?.id && data.storage_path) {
+        finalUrl = `/api/public/landing-asset/${asset.id}`;
+        await context.supabase.from("landing_assets").update({ url: finalUrl }).eq("id", asset.id);
+      }
     }
 
     const { count } = await context.supabase
@@ -234,7 +253,7 @@ export const addProductImage = createServerFn({ method: "POST" })
       workspace_id: workspaceId,
       product_id: data.product_id,
       asset_id: assetId,
-      url: data.url,
+      url: finalUrl,
       alt_text: data.alt_text ?? null,
       image_type: data.image_type,
       is_primary: isPrimary,
@@ -245,7 +264,7 @@ export const addProductImage = createServerFn({ method: "POST" })
     if (isPrimary) {
       await context.supabase
         .from("landing_products")
-        .update({ image_url: data.url, image_alt: data.alt_text ?? null })
+        .update({ image_url: finalUrl, image_alt: data.alt_text ?? null })
         .eq("id", data.product_id);
     }
     return { ok: true };

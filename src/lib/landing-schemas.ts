@@ -272,7 +272,7 @@ export const quickProductInput = z.object({
         mime_type: z.string().max(120).optional().nullable(),
       }),
     )
-    .max(5)
+    .max(8)
     .optional(),
 });
 
