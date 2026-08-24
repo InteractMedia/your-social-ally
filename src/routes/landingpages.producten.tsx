@@ -199,7 +199,7 @@ function ProductLibraryPage() {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">Alle categorieën</option>
-            {(data?.categories ?? []).map((c) => (
+            {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -211,7 +211,7 @@ function ProductLibraryPage() {
             onChange={(e) => setIndustry(e.target.value)}
           >
             <option value="">Alle branches</option>
-            {(data?.industryNames ?? []).map((i) => (
+            {industryNames.map((i) => (
               <option key={i} value={i}>
                 {i}
               </option>
@@ -252,14 +252,14 @@ function ProductLibraryPage() {
       <QuickAddDialog
         open={quickAddOpen}
         onOpenChange={setQuickAddOpen}
-        categories={data?.categories ?? []}
+        categories={categories}
         onCreated={refresh}
       />
       {editProduct && (
         <EditProductDialog
           product={editProduct}
-          categories={data?.categories ?? []}
-          industryNames={data?.industryNames ?? []}
+          categories={categories}
+          industryNames={industryNames}
           onClose={() => setEditProduct(null)}
           onSaved={refresh}
         />
