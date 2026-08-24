@@ -650,8 +650,12 @@ export function LandingBlock({
 
     case "cta_banner": {
       const bannerDesign = resolveSectionDesign({ layout: "banner", ...(c.design ?? {}) });
-      /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. */
-      const withImage = bannerDesign.composition === "visual_cta" && Boolean(c.image_url);
+      /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. Geen stille
+         fallback: ontbreekt het beeld, toont de preview een placeholder. */
+      const isVisualCta = bannerDesign.composition === "visual_cta";
+      const withImage = isVisualCta && Boolean(c.image_url);
+      const ctaMissing =
+        isVisualCta && !c.image_url && showVisualPlaceholders && visualIsMissing(visual);
       return (
         <Section design={bannerDesign}>
           <div className="from-primary/15 to-primary/5 flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-gradient-to-r p-8">
@@ -679,6 +683,16 @@ export function LandingBlock({
                 loading="lazy"
                 className="aspect-square w-40 rounded-2xl object-cover shadow-lg md:w-52"
               />
+            ) : ctaMissing ? (
+              <div className="w-40 md:w-52">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={bannerDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                />
+              </div>
             ) : (
               <Cta
                 label={c.cta_label}
