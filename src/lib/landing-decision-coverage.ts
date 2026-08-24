@@ -31,6 +31,10 @@ export const REQUIRED_DECISIONS: RequiredDecision[] = [
   { key: "cta_repetition", area: "cta", label: "CTA-herhaling" },
   { key: "faq_objection_handling", area: "objections", label: "FAQ / bezwaarafhandeling" },
   { key: "mobile_strategy", area: "mobile", label: "Mobiele strategie" },
+  /* V1.9 — creatieve kwaliteit is een verplichte beslislaag. */
+  { key: "hero_visual_impact", area: "hero", label: "Hero visuele impact" },
+  { key: "composition_rhythm", area: "page_structure", label: "Compositie & ritme" },
+  { key: "brand_distinctiveness", area: "visual_treatment", label: "Merkonderscheid" },
 ];
 
 export const REQUIRED_DECISION_COUNT = REQUIRED_DECISIONS.length;
