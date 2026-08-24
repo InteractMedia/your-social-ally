@@ -219,22 +219,37 @@ export function LandingBlock({
         />;
 
       /* V1.9 — layered_hero: beeld als grote basis, copy als zwevende kaart
-         die eroverheen breekt. Alleen als er echt beeld is. */
-      if (heroDesign.composition === "layered_hero" && c.image_url) {
+         die eroverheen breekt. Geen stille fallback: ontbreekt het beeld,
+         dan toont de preview een expliciete AI VISUAL NEEDED-placeholder
+         in dezelfde gelaagde compositie. */
+      const layeredMissing =
+        !c.image_url && showVisualPlaceholders && visualIsMissing(visual);
+      if (heroDesign.composition === "layered_hero" && (c.image_url || layeredMissing)) {
         return (
           <Section design={heroDesign}>
             <div className="relative">
               <div className="md:ml-[22%]">
-                <img
-                  src={c.image_url}
-                  alt={c.image_alt ?? visual?.purpose ?? ""}
-                  loading="eager"
-                  className={cn(
-                    ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "4:3"] ?? "aspect-4/3",
-                    "w-full object-cover shadow-xl",
-                    design.imageClass,
-                  )}
-                />
+                {c.image_url ? (
+                  <img
+                    src={c.image_url}
+                    alt={c.image_alt ?? visual?.purpose ?? ""}
+                    loading="eager"
+                    className={cn(
+                      ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "4:3"] ?? "aspect-4/3",
+                      "w-full object-cover shadow-xl",
+                      design.imageClass,
+                    )}
+                  />
+                ) : (
+                  <MediaSlot
+                    src={undefined}
+                    alt={c.image_alt}
+                    visual={visual}
+                    design={heroDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                    eager
+                  />
+                )}
               </div>
               <div className="bg-background relative z-10 -mt-10 max-w-xl rounded-2xl border p-6 shadow-xl md:absolute md:top-1/2 md:left-0 md:mt-0 md:-translate-y-1/2 md:p-8">
                 {copy}
