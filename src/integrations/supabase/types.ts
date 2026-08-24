@@ -848,6 +848,7 @@ export type Database = {
           created_at: string
           decision: string
           decision_area: string
+          decision_key: string | null
           downgrade_reason: string | null
           downgraded_from: string | null
           evidence_level: string
@@ -870,6 +871,7 @@ export type Database = {
           created_at?: string
           decision: string
           decision_area: string
+          decision_key?: string | null
           downgrade_reason?: string | null
           downgraded_from?: string | null
           evidence_level: string
@@ -892,6 +894,7 @@ export type Database = {
           created_at?: string
           decision?: string
           decision_area?: string
+          decision_key?: string | null
           downgrade_reason?: string | null
           downgraded_from?: string | null
           evidence_level?: string

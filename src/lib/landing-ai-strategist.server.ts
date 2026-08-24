@@ -11,7 +11,8 @@
  */
 import { z } from "zod";
 
-import { gradeDecision } from "./landing-cro-evidence";
+import { gradeDecision, type CroEvidenceRow } from "./landing-cro-evidence";
+import { enforceApplicabilityOnDecision } from "./landing-evidence-applicability";
 
 import {
   extractJsonObject,
@@ -334,7 +335,23 @@ export async function runLandingStrategist(args: {
     }
 
     /* Evidence per decision — re-graded server-side so the AI can never present
-     * an untested best practice as proven for ZoetBezorgen. */
+     * an untested best practice as proven for ZoetBezorgen. V1.8B: evidence refs
+     * are additionally checked for applicability to this funnel/audience/area;
+     * an item that excludes the current context can never back the claim. */
+    let funnelType = "quote_request";
+    if (args.pageId) {
+      const { data: pageRow } = await db
+        .from("landing_pages")
+        .select("funnel_type")
+        .eq("id", args.pageId)
+        .maybeSingle();
+      if (pageRow?.funnel_type) funnelType = pageRow.funnel_type;
+    }
+    const { data: evidenceRows } = await db.from("cro_evidence").select("*").eq("active", true);
+    const evidenceById = new Map<string, CroEvidenceRow>(
+      ((evidenceRows ?? []) as CroEvidenceRow[]).map((e) => [e.id, e]),
+    );
+
     const gradedDecisions = sanitized.decisions.map((d, index) => {
       const graded = gradeDecision({
         decision_area: d.decision_area ?? "page_structure",
@@ -350,7 +367,12 @@ export async function runLandingStrategist(args: {
         evidence_refs: d.evidence_refs ?? [],
         ab_test_recommended: d.ab_test_recommended,
       });
-      return { graded, index };
+      const enforced = enforceApplicabilityOnDecision(graded, evidenceById, {
+        funnelType,
+        audience: "b2b",
+        decisionArea: graded.decision_area,
+      });
+      return { graded: enforced.decision, index };
     });
 
     if (gradedDecisions.length) {
@@ -377,6 +399,19 @@ export async function runLandingStrategist(args: {
         })),
       );
       if (decisionsError) console.error("[landing-ai] decisions insert failed", decisionsError.message);
+    }
+
+    /* V1.8B: decision coverage is mandatory. Missing commercial decisions are
+     * reconstructed deterministically from the stored plan (no new AI call). */
+    try {
+      const { ensureDecisionCoverage } = await import("./landing-decision-coverage.server");
+      await ensureDecisionCoverage({
+        db,
+        workspaceId: args.workspaceId,
+        proposalId: proposal.id,
+      });
+    } catch (coverageErr) {
+      console.error("[landing-ai] decision coverage failed", (coverageErr as Error).message);
     }
 
     await db

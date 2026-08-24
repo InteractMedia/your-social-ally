@@ -196,7 +196,12 @@ export const testimonialInput = z.object({
 
 export const pageIdInput = z.object({ id: uuid });
 
-export const publishInput = z.object({ id: uuid, note: z.string().max(500).optional().nullable() });
+export const publishInput = z.object({
+  id: uuid,
+  note: z.string().max(500).optional().nullable(),
+  /** Explicit override for the missing-required-visuals gate (V1.8B). */
+  allow_missing_visuals: z.boolean().optional(),
+});
 
 export const rollbackInput = z.object({ id: uuid, version_id: uuid });
 

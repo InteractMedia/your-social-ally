@@ -1,0 +1,2 @@
+alter table public.landing_ai_decisions add column if not exists decision_key text;
+create index if not exists landing_ai_decisions_proposal_key_idx on public.landing_ai_decisions (proposal_id, decision_key);

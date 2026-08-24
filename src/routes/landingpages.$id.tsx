@@ -85,12 +85,23 @@ function LandingPageEditor() {
   });
   const publish = useServerFn(publishLandingPage);
   const publishMutation = useMutation({
-    mutationFn: () => publish({ data: { id } }),
+    mutationFn: (allowMissingVisuals: boolean) =>
+      publish({ data: { id, allow_missing_visuals: allowMissingVisuals } }),
     onSuccess: (r) => {
       toast.success(`Versie ${r.version.version_number} gepubliceerd`);
       queryClient.invalidateQueries({ queryKey: ["landing"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      /* V1.8B quality gate: missing required visuals block publishing until the
+       * user consciously confirms the override. */
+      if (e.message.startsWith("PUBLICEREN GEBLOKKEERD")) {
+        if (window.confirm(`${e.message}\n\nToch publiceren met lege beeldslots?`)) {
+          publishMutation.mutate(true);
+          return;
+        }
+      }
+      toast.error(e.message);
+    },
   });
 
   const page = query.data?.page;
@@ -336,6 +347,14 @@ function SectionCard({
             <Input value={content.image_alt ?? ""} onChange={(e) => set({ image_alt: e.target.value })} />
           </div>
         </div>
+
+        <VisualSlotEditor
+          sectionId={section.id}
+          pageId={pageId}
+          visual={content.visual as SectionVisual | undefined}
+          imageUrl={content.image_url}
+          imageAlt={content.image_alt}
+        />
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">

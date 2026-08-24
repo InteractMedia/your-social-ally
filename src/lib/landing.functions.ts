@@ -401,6 +401,24 @@ export const publishLandingPage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => publishInput.parse(d))
   .handler(async ({ context, data }) => {
     const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
+
+    /* V1.8B quality gate: a visual-first page may not silently go live with
+     * empty required image slots. Override only via explicit confirmation. */
+    const { buildContentReadiness } = await import("./landing-readiness.server");
+    const { missingVisuals } = await buildContentReadiness({
+      db: context.supabase,
+      workspaceId,
+      pageId: data.id,
+    });
+    if (missingVisuals.length && !data.allow_missing_visuals) {
+      const list = missingVisuals
+        .map((v) => `- ${v.block_type} (${v.visual_type})`)
+        .join("\n");
+      throw new Error(
+        `PUBLICEREN GEBLOKKEERD: ${missingVisuals.length} vereiste visual(s) zonder goedgekeurd beeld:\n${list}\n\nKoppel eerst een goedgekeurd asset in de blok-editor, of bevestig bewust dat je met lege beeldslots wilt publiceren.`,
+      );
+    }
+
     const { publishPage } = await import("./landing.server");
     const version = await publishPage({
       workspaceId: workspaceId,
