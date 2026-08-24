@@ -58,16 +58,49 @@ import { listLandingPages } from "@/lib/landing.functions";
 import {
   addProductImage,
   applyProductSuggestions,
-  deleteLandingProduct,
   deleteProductImage,
+  deleteProductLibraryItem,
   getLandingContentReadiness,
   listProductLibrary,
   quickCreateProduct,
   suggestProductMetadata,
   updateProductImage,
-  upsertLibraryProduct,
-  type ProductRow,
+  upsertProductLibraryItem,
 } from "@/lib/landing-library.functions";
+
+type ProductImage = {
+  id: string;
+  url: string;
+  alt_text: string | null;
+  image_type: ProductImageType;
+  is_primary: boolean;
+};
+
+type ProductRow = {
+  id: string;
+  name: string;
+  sku: string | null;
+  category: string | null;
+  short_text: string | null;
+  long_text: string | null;
+  price_from: number | null;
+  min_quantity: number | null;
+  cta_label: string | null;
+  product_url: string | null;
+  personalization_options: string[];
+  occasions: string[];
+  industries: string[];
+  tags: string[];
+  notes: string | null;
+  letterbox_friendly: boolean | null;
+  individually_shippable: boolean | null;
+  featured: boolean;
+  active: boolean;
+  image_url: string | null;
+  image_alt: string | null;
+  ai_suggestions: unknown;
+  images: ProductImage[];
+};
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/landingpages/producten")({
@@ -106,9 +139,9 @@ function ProductLibraryPage() {
   const [industry, setIndustry] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<LandingProductRow | null>(null);
-  const [imagesProduct, setImagesProduct] = useState<LandingProductRow | null>(null);
-  const [aiProduct, setAiProduct] = useState<LandingProductRow | null>(null);
+  const [editProduct, setEditProduct] = useState<ProductRow | null>(null);
+  const [imagesProduct, setImagesProduct] = useState<ProductRow | null>(null);
+  const [aiProduct, setAiProduct] = useState<ProductRow | null>(null);
 
   const products = useMemo(() => {
     let list = data?.products ?? [];
