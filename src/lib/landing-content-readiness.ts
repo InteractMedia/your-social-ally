@@ -147,3 +147,56 @@ export function computeContentReadiness(f: ReadinessFacts) {
 }
 
 export type ContentReadiness = ReturnType<typeof computeContentReadiness>;
+
+/* ------------------------------------------- per-product readiness (V1.7) */
+
+export const PRODUCT_READINESS_LEVELS = ["complete", "partial", "insufficient"] as const;
+export type ProductReadinessLevel = (typeof PRODUCT_READINESS_LEVELS)[number];
+
+export const PRODUCT_READINESS_LABELS: Record<ProductReadinessLevel, string> = {
+  complete: "Compleet",
+  partial: "Gedeeltelijk",
+  insufficient: "Onvoldoende",
+};
+
+export type ProductReadinessInput = {
+  name: string;
+  category: string | null;
+  short_text: string | null;
+  images: { image_type: string }[];
+};
+
+export type ProductReadinessCheck = { key: string; label: string; ok: boolean };
+
+/**
+ * Deterministic per-product readiness: what does the AI Strategist actually
+ * have to work with for this product? Never scored by AI.
+ */
+export function computeProductReadiness(p: ProductReadinessInput): {
+  level: ProductReadinessLevel;
+  checks: ProductReadinessCheck[];
+} {
+  const types = new Set(p.images.map((i) => i.image_type));
+  const checks: ProductReadinessCheck[] = [
+    {
+      key: "data",
+      label: "Productgegevens (naam, categorie, korte tekst)",
+      ok: Boolean(p.name?.trim()) && Boolean(p.category?.trim()) && Boolean(p.short_text?.trim()),
+    },
+    { key: "cutout", label: "Vrijstaande foto", ok: types.has("product_cutout") },
+    {
+      key: "personalized",
+      label: "Gepersonaliseerd voorbeeld",
+      ok: types.has("personalized_product"),
+    },
+    { key: "lifestyle", label: "Sfeerfoto", ok: types.has("product_lifestyle") },
+  ];
+  const okCount = checks.filter((c) => c.ok).length;
+  const level: ProductReadinessLevel =
+    okCount === checks.length
+      ? "complete"
+      : okCount === 0 || !checks[0]!.ok
+        ? "insufficient"
+        : "partial";
+  return { level, checks };
+}

@@ -296,6 +296,27 @@ export const productImageMutateInput = z.object({
   alt_text: z.string().max(300).optional().nullable(),
 });
 
+/**
+ * Fields the AI Metadata Assistant may propose. Hard product facts (price,
+ * minimum quantity, shipping) are deliberately absent: AI never invents them.
+ */
+export const PRODUCT_SUGGESTION_FIELDS = [
+  "short_text",
+  "long_text",
+  "category",
+  "tags",
+  "industries",
+  "occasions",
+  "personalization_options",
+  "image_alt",
+] as const;
+export type ProductSuggestionField = (typeof PRODUCT_SUGGESTION_FIELDS)[number];
+
+export const productSuggestApplyInput = z.object({
+  id: uuid,
+  fields: z.array(z.enum(PRODUCT_SUGGESTION_FIELDS)).min(1),
+});
+
 /* --------------------------------------------- asset library (V1.6B) */
 
 export const assetInput = z.object({
