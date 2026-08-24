@@ -719,16 +719,51 @@ export function LandingBlock({
     case "how_it_works":
     case "use_cases": {
       const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
+      /* V1.9 — asymmetric_grid voor use_cases: eerste moment groot, de rest
+         compact. Ontbreekt het geplande icoon/illustratie-beeld, dan toont de
+         preview een expliciete placeholder i.p.v. stille fallback. */
+      const asymmetric =
+        section.block_type === "use_cases" &&
+        stepDesign.composition === "asymmetric_grid" &&
+        items.length >= 3;
+      const iconsMissing =
+        section.block_type === "use_cases" &&
+        showVisualPlaceholders &&
+        visualIsMissing(visual);
       return (
         <Section design={stepDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
-          <ol className={stepDesign.gridClass}>
+          {iconsMissing && (
+            <div className="mb-4">
+              <MediaSlot
+                src={undefined}
+                alt={c.title}
+                visual={visual}
+                design={stepDesign}
+                showPlaceholder={showVisualPlaceholders}
+              />
+            </div>
+          )}
+          <ol className={asymmetric ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3" : stepDesign.gridClass}>
             {items.map((item, i) => (
-              <li key={i} className={T.cards.quiet}>
-                <span className="bg-primary/10 text-primary inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
+              <li
+                key={i}
+                className={cn(
+                  T.cards.quiet,
+                  asymmetric && i === 0 && "bg-primary/5 border-primary/30 sm:col-span-2 lg:row-span-2 p-6",
+                )}
+              >
+                <span
+                  className={cn(
+                    "bg-primary/10 text-primary inline-flex items-center justify-center rounded-full text-xs font-semibold",
+                    asymmetric && i === 0 ? "h-9 w-9 text-sm" : "h-7 w-7",
+                  )}
+                >
                   {i + 1}
                 </span>
-                <p className={cn("mt-2", T.typography.h3)}>{item.title}</p>
+                <p className={cn("mt-2", asymmetric && i === 0 ? "text-lg font-semibold" : T.typography.h3)}>
+                  {item.title}
+                </p>
                 {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
               </li>
             ))}
