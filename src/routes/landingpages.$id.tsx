@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { VisualSlotEditor } from "@/components/landing/visual-slot-editor";
+import type { SectionVisual } from "@/lib/landing-visual";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
@@ -85,12 +87,23 @@ function LandingPageEditor() {
   });
   const publish = useServerFn(publishLandingPage);
   const publishMutation = useMutation({
-    mutationFn: () => publish({ data: { id } }),
+    mutationFn: (allowMissingVisuals: boolean) =>
+      publish({ data: { id, allow_missing_visuals: allowMissingVisuals } }),
     onSuccess: (r) => {
       toast.success(`Versie ${r.version.version_number} gepubliceerd`);
       queryClient.invalidateQueries({ queryKey: ["landing"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      /* V1.8B quality gate: missing required visuals block publishing until the
+       * user consciously confirms the override. */
+      if (e.message.startsWith("PUBLICEREN GEBLOKKEERD")) {
+        if (window.confirm(`${e.message}\n\nToch publiceren met lege beeldslots?`)) {
+          publishMutation.mutate(true);
+          return;
+        }
+      }
+      toast.error(e.message);
+    },
   });
 
   const page = query.data?.page;
@@ -119,7 +132,7 @@ function LandingPageEditor() {
                     <Eye className="mr-1 h-4 w-4" /> Preview
                   </a>
                 </Button>
-                <Button size="sm" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate()}>
+                <Button size="sm" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(false)}>
                   <Rocket className="mr-1 h-4 w-4" /> Publiceren
                 </Button>
               </>
@@ -265,6 +278,7 @@ function SectionsEditor({ pageId, sections }: { pageId: string; sections: Sectio
 }
 
 function SectionCard({
+  pageId,
   section,
   onToggle,
   onSave,
@@ -336,6 +350,14 @@ function SectionCard({
             <Input value={content.image_alt ?? ""} onChange={(e) => set({ image_alt: e.target.value })} />
           </div>
         </div>
+
+        <VisualSlotEditor
+          sectionId={section.id}
+          pageId={pageId}
+          visual={content.visual as SectionVisual | undefined}
+          imageUrl={content.image_url}
+          imageAlt={content.image_alt}
+        />
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
