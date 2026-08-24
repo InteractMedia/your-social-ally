@@ -14,13 +14,14 @@ import {
   EMPHASIS_LEVELS,
   IMAGE_TREATMENTS,
   SECTION_BACKGROUNDS,
+  SECTION_COMPOSITIONS,
   SECTION_DENSITIES,
   SECTION_LAYOUTS,
   SECTION_WIDTHS,
 } from "./landing-design-system";
 import { ASPECT_RATIOS, VISUAL_POSITIONS, VISUAL_TYPES } from "./landing-visual";
 
-export const LANDING_AI_PROMPT_VERSION = "landing-strategist-v1.6";
+export const LANDING_AI_PROMPT_VERSION = "landing-strategist-v1.9";
 
 /** Best available Claude model for strategy + copy. Independent of Ads Analyst. */
 export const LANDING_AI_DEFAULT_MODEL = "claude-sonnet-4-5";
@@ -81,9 +82,31 @@ export const aiSectionDesignSchema = z.object({
   image_treatment: tolerantEnum(IMAGE_TREATMENTS),
   cta_style: tolerantEnum(CTA_STYLES),
   emphasis: tolerantEnum(EMPHASIS_LEVELS),
+  composition: tolerantEnum(SECTION_COMPOSITIONS),
   media_intent: clampedText(500).optional(),
   mobile_note: clampedText(500).optional(),
 });
+
+/**
+ * Creative Direction (V1.9, Fase B) — de Creative Director bepaalt het visuele
+ * concept vóór het pagina-ontwerp. Dit object stuurt fase 2 en wordt op het
+ * voorstel opgeslagen zodat elke ontwerpkeuze herleidbaar is.
+ */
+export const creativeDirectionSchema = z.object({
+  visual_concept: clampedText(1200),
+  emotional_direction: clampedText(600),
+  hero_composition: clampedText(800),
+  section_rhythm: z.array(clampedText(300)).default([]),
+  color_mood: clampedText(400),
+  composition_strategy: clampedText(800),
+  product_presentation: clampedText(600),
+  personalization_presentation: clampedText(600),
+  differentiation_from_template: clampedText(600),
+  mobile_creative_priorities: z.array(clampedText(300)).default([]),
+  wow_moment: clampedText(600),
+  confidence: score(),
+});
+export type CreativeDirection = z.infer<typeof creativeDirectionSchema>;
 
 
 /**
