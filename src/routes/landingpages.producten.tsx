@@ -306,16 +306,17 @@ function BouwReadinessPanel() {
 
   if (isLoading || !readiness) return null;
 
-  const required = readiness.categories.filter((c) => REQUIRED_KEYS.includes(c.key));
-  const nice = readiness.categories.filter((c) => NICE_KEYS.includes(c.key));
-  const missingRequired = required.filter((c) => !c.ok);
+  const items = readiness.readiness.items;
+  const required = items.filter((c) => REQUIRED_KEYS.includes(c.category));
+  const nice = items.filter((c) => NICE_KEYS.includes(c.category));
+  const missingRequired = required.filter((c) => c.level === "MISSING");
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           {bouwPage ? `Wat mist de ${bouwPage.name}-pagina nog?` : "Content-readiness (globaal)"}
-          <Badge variant="outline">{readiness.score}%</Badge>
+          <Badge variant="outline">{readiness.readiness.score}%</Badge>
           {missingRequired.length === 0 ? (
             <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
               Klaar voor een kwalitatieve AI-run
@@ -335,16 +336,16 @@ function BouwReadinessPanel() {
           </p>
           <ul className="space-y-1.5">
             {required.map((c) => (
-              <li key={c.key} className="flex items-start gap-2 text-sm">
-                {c.ok ? (
+              <li key={c.category} className="flex items-start gap-2 text-sm">
+                {c.level === "READY" ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                 ) : (
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                 )}
                 <span>
                   <span className="font-medium">{c.label}</span>
-                  <span className="text-muted-foreground"> — {c.value}</span>
-                  {!c.ok && (
+                  <span className="text-muted-foreground"> — {c.detail}</span>
+                  {c.level !== "READY" && c.advice && (
                     <span className="block text-xs text-muted-foreground">{c.advice}</span>
                   )}
                 </span>
@@ -358,15 +359,15 @@ function BouwReadinessPanel() {
           </p>
           <ul className="space-y-1.5">
             {nice.map((c) => (
-              <li key={c.key} className="flex items-start gap-2 text-sm">
-                {c.ok ? (
+              <li key={c.category} className="flex items-start gap-2 text-sm">
+                {c.level === "READY" ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                 ) : (
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/50" />
                 )}
                 <span>
                   <span className="font-medium">{c.label}</span>
-                  <span className="text-muted-foreground"> — {c.value}</span>
+                  <span className="text-muted-foreground"> — {c.detail}</span>
                 </span>
               </li>
             ))}
