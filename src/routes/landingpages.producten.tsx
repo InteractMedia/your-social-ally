@@ -58,15 +58,15 @@ import { listLandingPages } from "@/lib/landing.functions";
 import {
   addProductImage,
   applyProductSuggestions,
-  deleteProduct,
+  deleteLandingProduct,
   deleteProductImage,
   getLandingContentReadiness,
   listProductLibrary,
   quickCreateProduct,
   suggestProductMetadata,
   updateProductImage,
-  upsertProduct,
-  type LandingProductRow,
+  upsertLibraryProduct,
+  type ProductRow,
 } from "@/lib/landing-library.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -88,8 +88,18 @@ function ProductLibraryPage() {
   const listFn = useServerFn(listProductLibrary);
   const { data, isLoading } = useQuery({
     queryKey: ["landing-product-library"],
-    queryFn: () => listFn({ data: {} }),
+    queryFn: () => listFn(),
   });
+
+  const categories = useMemo(
+    () =>
+      [...new Set((data?.products ?? []).map((p) => p.category).filter((c): c is string => !!c))].sort(),
+    [data],
+  );
+  const industryNames = useMemo(
+    () => (data?.industries ?? []).map((i: any) => i.name as string),
+    [data],
+  );
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
