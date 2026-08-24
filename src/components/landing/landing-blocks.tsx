@@ -259,24 +259,38 @@ export function LandingBlock({
         );
       }
 
-      /* V1.9 — collage_hero: hoofdbeeld + tot 2 productbeelden als collage. */
-      if (heroDesign.composition === "collage_hero" && c.image_url) {
+      /* V1.9 — collage_hero: hoofdbeeld + tot 2 productbeelden als collage.
+         Geen stille fallback bij ontbrekend hoofdbeeld. */
+      if (heroDesign.composition === "collage_hero" && (c.image_url || layeredMissing)) {
         const collageProducts = page.products.filter((p) => p.image_url).slice(0, 2);
         return (
           <Section design={heroDesign}>
             <div className="grid items-center gap-10 md:grid-cols-2">
               {copy}
               <div className="grid grid-cols-2 gap-3">
-                <img
-                  src={c.image_url}
-                  alt={c.image_alt ?? visual?.purpose ?? ""}
-                  loading="eager"
-                  className={cn(
-                    "col-span-2 w-full object-cover shadow-lg",
-                    ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "16:9"] ?? "aspect-16/9",
-                    design.imageClass,
-                  )}
-                />
+                {c.image_url ? (
+                  <img
+                    src={c.image_url}
+                    alt={c.image_alt ?? visual?.purpose ?? ""}
+                    loading="eager"
+                    className={cn(
+                      "col-span-2 w-full object-cover shadow-lg",
+                      ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "16:9"] ?? "aspect-16/9",
+                      design.imageClass,
+                    )}
+                  />
+                ) : (
+                  <div className="col-span-2">
+                    <MediaSlot
+                      src={undefined}
+                      alt={c.image_alt}
+                      visual={visual}
+                      design={heroDesign}
+                      showPlaceholder={showVisualPlaceholders}
+                      eager
+                    />
+                  </div>
+                )}
                 {collageProducts.map((p) => (
                   <img
                     key={p.id}
