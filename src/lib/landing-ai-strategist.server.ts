@@ -161,9 +161,9 @@ Antwoord met exact dit JSON-object (geen extra velden):
         "content": { "title": "...", "subtitle": "...", "body": "...", "cta_label": "...", "cta_url": "#offerte",
                      "secondary_cta_label": "...", "secondary_cta_url": "#producten", "image_alt": "...",
                      "items": [{ "title": "...", "text": "...", "badge": "..." }],
-                     "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
-                                 "image_treatment": "...", "cta_style": "...", "emphasis": "...",
-                                 "media_intent": "...", "mobile_note": "..." },
+                      "design": { "layout": "...", "background": "...", "width": "...", "density": "...",
+                                  "image_treatment": "...", "cta_style": "...", "emphasis": "...",
+                                  "composition": "...", "media_intent": "...", "mobile_note": "..." },
                      "visual": { "visual_required": true, "visual_type": "...", "purpose": "...",
                                  "composition": "...", "desktop_position": "...", "mobile_position": "...",
                                  "aspect_ratio": "...", "background_treatment": "...",
@@ -297,12 +297,30 @@ export async function runLandingStrategist(args: {
     fallbackReason = fallbackReason ?? phase1.fallbackReason;
     const strategy = researchSchema.parse(extractJsonObject(phase1.text));
 
-    /* fase 2 — pagina-ontwerp */
-    const phase2 = await runAiCompletionWithFallback({
+    /* fase B — creative direction (V1.9) */
+    const phaseB = await runAiCompletionWithFallback({
       provider: phase1.provider,
       model: phase1.model,
-      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}\n\nCOMPACTHEID: houd tekstvelden kort en bondig (titels max ~10 woorden, body max ~40 woorden, reasons max ~25 woorden). Schrijf geen lange alinea's; de renderer toont ze letterlijk.`,
+      system: CREATIVE_SYSTEM,
       user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nDATASET:\n${datasetJson}`,
+      maxTokens: 4000,
+      temperature: 0.5,
+    });
+    totalIn += phaseB.inputTokens ?? 0;
+    totalOut += phaseB.outputTokens ?? 0;
+    totalCost += phaseB.estimatedCostUsd ?? 0;
+    totalMs += phaseB.runtimeMs;
+    fallbackReason = fallbackReason ?? phaseB.fallbackReason;
+    const creativeDirection = creativeDirectionSchema.parse(
+      dropNulls(extractJsonObject(phaseB.text)),
+    );
+
+    /* fase 2 — pagina-ontwerp */
+    const phase2 = await runAiCompletionWithFallback({
+      provider: phaseB.provider,
+      model: phaseB.model,
+      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}\n\nCOMPACTHEID: houd tekstvelden kort en bondig (titels max ~10 woorden, body max ~40 woorden, reasons max ~25 woorden). Schrijf geen lange alinea's; de renderer toont ze letterlijk.`,
+      user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nCREATIVE DIRECTION (fase B — leidend voor alle visuele keuzes):\n${JSON.stringify(creativeDirection)}\n\nDATASET:\n${datasetJson}`,
       maxTokens: 24000,
       temperature: 0.4,
     });
