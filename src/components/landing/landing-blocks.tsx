@@ -219,22 +219,37 @@ export function LandingBlock({
         />;
 
       /* V1.9 — layered_hero: beeld als grote basis, copy als zwevende kaart
-         die eroverheen breekt. Alleen als er echt beeld is. */
-      if (heroDesign.composition === "layered_hero" && c.image_url) {
+         die eroverheen breekt. Geen stille fallback: ontbreekt het beeld,
+         dan toont de preview een expliciete AI VISUAL NEEDED-placeholder
+         in dezelfde gelaagde compositie. */
+      const layeredMissing =
+        !c.image_url && showVisualPlaceholders && visualIsMissing(visual);
+      if (heroDesign.composition === "layered_hero" && (c.image_url || layeredMissing)) {
         return (
           <Section design={heroDesign}>
             <div className="relative">
               <div className="md:ml-[22%]">
-                <img
-                  src={c.image_url}
-                  alt={c.image_alt ?? visual?.purpose ?? ""}
-                  loading="eager"
-                  className={cn(
-                    ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "4:3"] ?? "aspect-4/3",
-                    "w-full object-cover shadow-xl",
-                    design.imageClass,
-                  )}
-                />
+                {c.image_url ? (
+                  <img
+                    src={c.image_url}
+                    alt={c.image_alt ?? visual?.purpose ?? ""}
+                    loading="eager"
+                    className={cn(
+                      ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "4:3"] ?? "aspect-4/3",
+                      "w-full object-cover shadow-xl",
+                      design.imageClass,
+                    )}
+                  />
+                ) : (
+                  <MediaSlot
+                    src={undefined}
+                    alt={c.image_alt}
+                    visual={visual}
+                    design={heroDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                    eager
+                  />
+                )}
               </div>
               <div className="bg-background relative z-10 -mt-10 max-w-xl rounded-2xl border p-6 shadow-xl md:absolute md:top-1/2 md:left-0 md:mt-0 md:-translate-y-1/2 md:p-8">
                 {copy}
@@ -244,24 +259,38 @@ export function LandingBlock({
         );
       }
 
-      /* V1.9 — collage_hero: hoofdbeeld + tot 2 productbeelden als collage. */
-      if (heroDesign.composition === "collage_hero" && c.image_url) {
+      /* V1.9 — collage_hero: hoofdbeeld + tot 2 productbeelden als collage.
+         Geen stille fallback bij ontbrekend hoofdbeeld. */
+      if (heroDesign.composition === "collage_hero" && (c.image_url || layeredMissing)) {
         const collageProducts = page.products.filter((p) => p.image_url).slice(0, 2);
         return (
           <Section design={heroDesign}>
             <div className="grid items-center gap-10 md:grid-cols-2">
               {copy}
               <div className="grid grid-cols-2 gap-3">
-                <img
-                  src={c.image_url}
-                  alt={c.image_alt ?? visual?.purpose ?? ""}
-                  loading="eager"
-                  className={cn(
-                    "col-span-2 w-full object-cover shadow-lg",
-                    ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "16:9"] ?? "aspect-16/9",
-                    design.imageClass,
-                  )}
-                />
+                {c.image_url ? (
+                  <img
+                    src={c.image_url}
+                    alt={c.image_alt ?? visual?.purpose ?? ""}
+                    loading="eager"
+                    className={cn(
+                      "col-span-2 w-full object-cover shadow-lg",
+                      ASPECT_RATIO_CLASS[visual?.aspect_ratio ?? "16:9"] ?? "aspect-16/9",
+                      design.imageClass,
+                    )}
+                  />
+                ) : (
+                  <div className="col-span-2">
+                    <MediaSlot
+                      src={undefined}
+                      alt={c.image_alt}
+                      visual={visual}
+                      design={heroDesign}
+                      showPlaceholder={showVisualPlaceholders}
+                      eager
+                    />
+                  </div>
+                )}
                 {collageProducts.map((p) => (
                   <img
                     key={p.id}
@@ -474,7 +503,11 @@ export function LandingBlock({
     case "personalization": {
       /* V1.9 — before_after: standaard vs. gepersonaliseerd naast elkaar. */
       const pDesign = resolveSectionDesign(c.design);
-      if (pDesign.composition === "before_after" && (c.image_url || c.image_url_2)) {
+      /* Geen stille fallback: zonder beeld toont de preview de before/after-
+         compositie met expliciete AI VISUAL NEEDED-placeholders. */
+      const beforeAfterMissing =
+        !c.image_url && !c.image_url_2 && showVisualPlaceholders && visualIsMissing(visual);
+      if (pDesign.composition === "before_after" && (c.image_url || c.image_url_2 || beforeAfterMissing)) {
         const beforeLabel = items[0]?.title ?? "Standaard cadeau";
         const afterLabel = items[1]?.title ?? "Met jouw merk";
         return (
@@ -490,7 +523,13 @@ export function LandingBlock({
                     className="aspect-4/3 w-full rounded-2xl border object-cover"
                   />
                 ) : (
-                  <div className="bg-muted aspect-4/3 w-full rounded-2xl border" />
+                  <MediaSlot
+                    src={undefined}
+                    alt={beforeLabel}
+                    visual={visual}
+                    design={pDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                  />
                 )}
                 <figcaption className="text-muted-foreground text-center text-xs font-medium tracking-wide uppercase">
                   {beforeLabel}
@@ -508,7 +547,13 @@ export function LandingBlock({
                     className="border-primary/40 aspect-4/3 w-full rounded-2xl border-2 object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="bg-primary/5 border-primary/40 aspect-4/3 w-full rounded-2xl border-2 border-dashed" />
+                  <MediaSlot
+                    src={undefined}
+                    alt={afterLabel}
+                    visual={visual}
+                    design={pDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                  />
                 )}
                 <figcaption className="text-primary text-center text-xs font-semibold tracking-wide uppercase">
                   {afterLabel}
@@ -605,8 +650,12 @@ export function LandingBlock({
 
     case "cta_banner": {
       const bannerDesign = resolveSectionDesign({ layout: "banner", ...(c.design ?? {}) });
-      /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. */
-      const withImage = bannerDesign.composition === "visual_cta" && Boolean(c.image_url);
+      /* V1.9 — visual_cta: sfeerbeeld rechts in de banner. Geen stille
+         fallback: ontbreekt het beeld, toont de preview een placeholder. */
+      const isVisualCta = bannerDesign.composition === "visual_cta";
+      const withImage = isVisualCta && Boolean(c.image_url);
+      const ctaMissing =
+        isVisualCta && !c.image_url && showVisualPlaceholders && visualIsMissing(visual);
       return (
         <Section design={bannerDesign}>
           <div className="from-primary/15 to-primary/5 flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-gradient-to-r p-8">
@@ -634,6 +683,16 @@ export function LandingBlock({
                 loading="lazy"
                 className="aspect-square w-40 rounded-2xl object-cover shadow-lg md:w-52"
               />
+            ) : ctaMissing ? (
+              <div className="w-40 md:w-52">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={bannerDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                />
+              </div>
             ) : (
               <Cta
                 label={c.cta_label}
@@ -660,16 +719,51 @@ export function LandingBlock({
     case "how_it_works":
     case "use_cases": {
       const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
+      /* V1.9 — asymmetric_grid voor use_cases: eerste moment groot, de rest
+         compact. Ontbreekt het geplande icoon/illustratie-beeld, dan toont de
+         preview een expliciete placeholder i.p.v. stille fallback. */
+      const asymmetric =
+        section.block_type === "use_cases" &&
+        stepDesign.composition === "asymmetric_grid" &&
+        items.length >= 3;
+      const iconsMissing =
+        section.block_type === "use_cases" &&
+        showVisualPlaceholders &&
+        visualIsMissing(visual);
       return (
         <Section design={stepDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
-          <ol className={stepDesign.gridClass}>
+          {iconsMissing && (
+            <div className="mb-4">
+              <MediaSlot
+                src={undefined}
+                alt={c.title}
+                visual={visual}
+                design={stepDesign}
+                showPlaceholder={showVisualPlaceholders}
+              />
+            </div>
+          )}
+          <ol className={asymmetric ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3" : stepDesign.gridClass}>
             {items.map((item, i) => (
-              <li key={i} className={T.cards.quiet}>
-                <span className="bg-primary/10 text-primary inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
+              <li
+                key={i}
+                className={cn(
+                  T.cards.quiet,
+                  asymmetric && i === 0 && "bg-primary/5 border-primary/30 sm:col-span-2 lg:row-span-2 p-6",
+                )}
+              >
+                <span
+                  className={cn(
+                    "bg-primary/10 text-primary inline-flex items-center justify-center rounded-full text-xs font-semibold",
+                    asymmetric && i === 0 ? "h-9 w-9 text-sm" : "h-7 w-7",
+                  )}
+                >
                   {i + 1}
                 </span>
-                <p className={cn("mt-2", T.typography.h3)}>{item.title}</p>
+                <p className={cn("mt-2", asymmetric && i === 0 ? "text-lg font-semibold" : T.typography.h3)}>
+                  {item.title}
+                </p>
                 {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
               </li>
             ))}

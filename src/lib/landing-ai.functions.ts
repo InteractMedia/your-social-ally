@@ -157,3 +157,27 @@ export const discardLandingAiProposal = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId);
     return { ok: !error, error: error?.message ?? null };
   });
+
+/**
+ * Visual Fulfilment (V1.9): koppelt visual briefs van een pagina aan bestaande
+ * approved assets. Volledig deterministisch — geen AI-run, geen generatie.
+ */
+export const fulfillLandingVisualBriefs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => z.object({ pageId: uuid }).parse(raw))
+  .handler(async ({ data, context }) => {
+    const ctx = context as any;
+    const { requireUserWorkspace } = await import("./workspaces.server");
+    const { fulfillVisualBriefs } = await import("./landing-visual-fulfilment.server");
+    const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
+    try {
+      const report = await fulfillVisualBriefs({
+        supabase: ctx.supabase,
+        workspaceId,
+        pageId: data.pageId,
+      });
+      return { ok: true as const, report, error: null as string | null };
+    } catch (err) {
+      return { ok: false as const, report: null, error: (err as Error).message.slice(0, 400) };
+    }
+  });

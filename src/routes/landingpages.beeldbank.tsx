@@ -8,7 +8,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ImageIcon, Images, Trash2, Upload, XCircle } from "lucide-react";
+import { CheckCircle2, ImageIcon, Images, Sparkles, Trash2, Upload, XCircle } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fulfillLandingVisualBriefs } from "@/lib/landing-ai.functions";
 import {
   createAssetUploadUrl,
   deleteLandingAsset,
@@ -131,15 +132,89 @@ function AssetLibraryPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {briefs.map((brief) => (
-                <BriefCard key={brief.id} brief={brief} />
-              ))}
+            <div className="space-y-4">
+              <FulfilBriefsBar briefs={briefs} />
+              <div className="grid gap-4 md:grid-cols-2">
+                {briefs.map((brief) => (
+                  <BriefCard key={brief.id} brief={brief} />
+                ))}
+              </div>
             </div>
           )}
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+/**
+ * V1.9 — Visual fulfilment: koppelt open briefs van een pagina aan bestaande
+ * approved assets. Deterministisch, geen AI-run. Toont per brief het resultaat.
+ */
+function FulfilBriefsBar({ briefs }: { briefs: LandingVisualBriefRow[] }) {
+  const qc = useQueryClient();
+  const fulfilFn = useServerFn(fulfillLandingVisualBriefs);
+  const openPageIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          briefs
+            .filter((b) => b.asset_status !== "linked" && b.landing_page_id)
+            .map((b) => b.landing_page_id as string),
+        ),
+      ),
+    [briefs],
+  );
+
+  const mutation = useMutation({
+    mutationFn: (pageId: string) => fulfilFn({ data: { pageId } }),
+    onSuccess: (res) => {
+      if (!res?.ok || !res.report) {
+        toast.error(res?.error ?? "Koppelen mislukt");
+        return;
+      }
+      const r = res.report;
+      toast.success(
+        `${r.linked}/${r.totalBriefs} briefs gekoppeld aan bestaand beeld` +
+          (r.aiImageNeeded > 0 ? ` — ${r.aiImageNeeded}× AI IMAGE NEEDED` : ""),
+      );
+      for (const result of r.results) {
+        if (result.outcome === "ai_image_needed") {
+          toast.warning(
+            `AI IMAGE NEEDED: ${result.blockType ?? result.visualType} (${result.visualType})`,
+            { duration: 8000 },
+          );
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["landing"] });
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  if (openPageIds.length === 0) return null;
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+        <div className="text-sm">
+          <p className="font-medium">Visual fulfilment</p>
+          <p className="text-muted-foreground text-xs">
+            Zoekt per open brief het best passende approved asset en koppelt het aan de pagina.
+            Alleen bestaand beeld — er wordt niets gegenereerd.
+          </p>
+        </div>
+        {openPageIds.map((pageId) => (
+          <Button
+            key={pageId}
+            variant="secondary"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate(pageId)}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Vul visuals automatisch
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
