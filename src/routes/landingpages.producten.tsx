@@ -387,15 +387,15 @@ function ProductCard({
   onAi,
   onChanged,
 }: {
-  product: LandingProductRow;
+  product: ProductRow;
   onEdit: () => void;
   onImages: () => void;
   onAi: () => void;
   onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
-  const deleteFn = useServerFn(deleteProduct);
-  const updateFn = useServerFn(upsertProduct);
+  const deleteFn = useServerFn(deleteProductLibraryItem);
+  const updateFn = useServerFn(upsertProductLibraryItem);
 
   const del = useMutation({
     mutationFn: () => deleteFn({ data: { id: product.id } }),
@@ -735,13 +735,13 @@ function EditProductDialog({
   onClose,
   onSaved,
 }: {
-  product: LandingProductRow;
+  product: ProductRow;
   categories: string[];
   industryNames: string[];
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const updateFn = useServerFn(upsertProduct);
+  const updateFn = useServerFn(upsertProductLibraryItem);
   const [form, setForm] = useState({
     name: product.name,
     sku: product.sku ?? "",
@@ -942,7 +942,7 @@ function ProductImagesDialog({
   onClose,
   onChanged,
 }: {
-  product: LandingProductRow;
+  product: ProductRow;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -1123,7 +1123,7 @@ function AiSuggestDialog({
   onClose,
   onSaved,
 }: {
-  product: LandingProductRow;
+  product: ProductRow;
   onClose: () => void;
   onSaved: () => void;
 }) {
