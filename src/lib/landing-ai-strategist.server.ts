@@ -259,9 +259,9 @@ export async function runLandingStrategist(args: {
     const phase2 = await runAiCompletionWithFallback({
       provider: phase1.provider,
       model: phase1.model,
-      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}`,
+      system: `${BUILD_SYSTEM}\n${EVIDENCE_ADDENDUM}\n\nCOMPACTHEID: houd tekstvelden kort en bondig (titels max ~10 woorden, body max ~40 woorden, reasons max ~25 woorden). Schrijf geen lange alinea's; de renderer toont ze letterlijk.`,
       user: `STRATEGIE (fase 1):\n${JSON.stringify(strategy)}\n\nDATASET:\n${datasetJson}`,
-      maxTokens: 12000,
+      maxTokens: 24000,
       temperature: 0.4,
     });
     totalIn += phase2.inputTokens ?? 0;
