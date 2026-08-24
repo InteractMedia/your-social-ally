@@ -8,7 +8,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ImageIcon, Images, Trash2, Upload, XCircle } from "lucide-react";
+import { CheckCircle2, ImageIcon, Images, Sparkles, Trash2, Upload, XCircle } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fulfillLandingVisualBriefs } from "@/lib/landing-ai.functions";
 import {
   createAssetUploadUrl,
   deleteLandingAsset,
