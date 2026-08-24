@@ -135,6 +135,9 @@ async function callAnthropic(req: AiCompletionRequest): Promise<RawResult> {
       "x-api-key": key,
       "anthropic-version": "2023-06-01",
     },
+    // Hard timeout: een hangende verbinding mag een run nooit eindeloos op
+    // "running" laten staan — na timeout grijpt de fallback-logica in.
+    signal: AbortSignal.timeout(300_000),
     body: JSON.stringify({
       model: req.model,
       max_tokens: req.maxTokens ?? 8000,
@@ -178,6 +181,7 @@ async function callLovableGateway(req: AiCompletionRequest): Promise<RawResult> 
       "Lovable-API-Key": key,
       "X-Lovable-AIG-SDK": "vercel-ai-sdk",
     },
+    signal: AbortSignal.timeout(300_000),
     body: JSON.stringify({
       model: req.model,
       temperature: req.temperature ?? 0.2,
