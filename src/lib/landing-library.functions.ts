@@ -11,11 +11,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  PRODUCT_SUGGESTION_FIELDS,
   assetInput,
   idInput,
   productImageInput,
   productImageMutateInput,
   productLibraryInput,
+  productSuggestApplyInput,
   quickProductInput,
   sectionVisualUpdateInput,
   uploadUrlInput,
@@ -479,6 +481,167 @@ export const updateSectionVisual = createServerFn({ method: "POST" })
       .eq("id", data.section_id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/* -------------------------------------------------- AI metadata assistant */
+
+const SUGGESTABLE = new Set<string>(PRODUCT_SUGGESTION_FIELDS);
+
+/**
+ * AI Metadata Assistant (V1.7): proposes commercial copy and classification
+ * for one product. Proposals are stored in `ai_suggestions` and are NEVER
+ * applied to product data without explicit human approval. Hard facts (price,
+ * minimum quantity, shipping) are not requested from the model and can never
+ * be applied — the apply function whitelists only PRODUCT_SUGGESTION_FIELDS.
+ */
+export const suggestProductMetadata = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => idInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
+    const [{ data: product }, { data: images }] = await Promise.all([
+      context.supabase
+        .from("landing_products")
+        .select(PRODUCT_COLUMNS)
+        .eq("id", data.id)
+        .eq("workspace_id", workspaceId)
+        .maybeSingle(),
+      context.supabase
+        .from("landing_product_images")
+        .select("image_type,alt_text,is_primary")
+        .eq("product_id", data.id),
+    ]);
+    if (!product) throw new Error("Product niet gevonden");
+
+    const { runAiCompletionWithFallback, extractJsonObject } = await import("./ai-provider.server");
+
+    const system = [
+      "Je bent een Nederlandse B2B-copywriter voor ZoetBezorgen, een leverancier van zakelijke geschenken en relatiegeschenken.",
+      "Je stelt productmetadata voor op basis van de productnaam, de notities van de eigenaar en de aanwezige productfoto's.",
+      "Strikt verboden: verzin NOOIT prijzen, minimale afname, verzendmogelijkheden, levertijden of andere harde producteigenschappen. Die velden staan niet in je output.",
+      "Schrijf commercieel maar feitelijk: geen superlatieven die niet uit de invoer blijken.",
+      "Antwoord UITSLUITEND met één JSON-object, zonder markdown of toelichting, met exact deze sleutels:",
+      '{ "short_text": string (max 160 tekens, commerciële korte omschrijving), "long_text": string (2-4 zinnen), "category": string, "tags": string[] (max 8), "industries": string[] (geschikte branches, max 6), "occasions": string[] (gelegenheden/use cases, max 6), "personalization_options": string[] (aannemelijke personalisatievormen zoals logo, kaartje, sleeve — max 6), "image_alt": string (beschrijvende alt-tekst voor de primaire productfoto) }',
+      "Laat een sleutel weg als je onvoldoende basis hebt voor een betrouwbaar voorstel.",
+    ].join("\n");
+
+    const user = JSON.stringify({
+      product: {
+        name: product.name,
+        category: product.category,
+        notes: product.notes,
+        product_url: product.product_url,
+        existing: {
+          short_text: product.short_text,
+          long_text: product.long_text,
+          tags: product.tags,
+          industries: product.industries,
+          occasions: product.occasions,
+          personalization_options: product.personalization_options,
+        },
+      },
+      images: (images ?? []).map((i: any) => ({
+        image_type: i.image_type,
+        alt_text: i.alt_text,
+        is_primary: i.is_primary,
+      })),
+    });
+
+    const result = await runAiCompletionWithFallback({
+      provider: "anthropic",
+      model: "claude-sonnet-4-5",
+      system,
+      user,
+      temperature: 0.4,
+      maxTokens: 2000,
+    });
+
+    const parsed = extractJsonObject(result.text) as Record<string, unknown>;
+    const fields: Record<string, string | string[]> = {};
+    for (const key of PRODUCT_SUGGESTION_FIELDS) {
+      const value = parsed[key];
+      if (value === undefined || value === null) continue;
+      if (["tags", "industries", "occasions", "personalization_options"].includes(key)) {
+        if (Array.isArray(value)) {
+          const list = value.filter((v) => typeof v === "string" && v.trim()).slice(0, 10);
+          if (list.length) fields[key] = list;
+        }
+      } else if (typeof value === "string" && value.trim()) {
+        fields[key] = value.trim().slice(0, key === "long_text" ? 6000 : 1000);
+      }
+    }
+    if (Object.keys(fields).length === 0) {
+      throw new Error("De AI kon geen bruikbare voorstellen genereren voor dit product.");
+    }
+
+    const suggestions = {
+      suggested_at: new Date().toISOString(),
+      provider: result.provider,
+      model: result.model,
+      fields,
+    };
+    const { error } = await context.supabase
+      .from("landing_products")
+      .update({ ai_suggestions: suggestions as never })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
+    if (error) throw new Error(error.message);
+    return { suggestions };
+  });
+
+/**
+ * Applies only the explicitly approved suggestion fields. The whitelist makes
+ * it structurally impossible for AI to write price, minimum quantity or
+ * shipping facts.
+ */
+export const applyProductSuggestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => productSuggestApplyInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const workspaceId = await requireUserWorkspace(context.supabase, context.userId);
+    const { data: product } = await context.supabase
+      .from("landing_products")
+      .select("id,ai_suggestions")
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (!product) throw new Error("Product niet gevonden");
+
+    const suggested = ((product.ai_suggestions as any)?.fields ?? {}) as Record<string, unknown>;
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const applied: string[] = [];
+    for (const key of data.fields) {
+      if (!SUGGESTABLE.has(key)) continue;
+      const value = suggested[key];
+      if (value === undefined) continue;
+      patch[key === "image_alt" ? "image_alt" : key] = value;
+      applied.push(key);
+    }
+    if (!applied.length) throw new Error("Geen geldige voorstellen geselecteerd.");
+
+    // Also write the alt text onto the primary product image when approved.
+    if (applied.includes("image_alt")) {
+      const { data: primary } = await context.supabase
+        .from("landing_product_images")
+        .select("id")
+        .eq("product_id", data.id)
+        .eq("is_primary", true)
+        .maybeSingle();
+      if (primary) {
+        await context.supabase
+          .from("landing_product_images")
+          .update({ alt_text: patch["image_alt"] as string })
+          .eq("id", primary.id);
+      }
+    }
+
+    const { error } = await context.supabase
+      .from("landing_products")
+      .update({ ...patch, ai_suggestions: null as never })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, applied };
   });
 
 /* ------------------------------------------------------ content readiness */
