@@ -521,13 +521,17 @@ export type Database = {
         Row: {
           active: boolean
           applies_to: string[]
+          audience: string
           context: string | null
           created_at: string
           created_by: string | null
+          devices: string
           evidence_level: string
+          funnel_type: string[]
           id: string
           limitations: string | null
           metric: string | null
+          not_applicable_to: string[]
           principle: string
           published_at: string | null
           recommended_application: string | null
@@ -541,13 +545,17 @@ export type Database = {
         Insert: {
           active?: boolean
           applies_to?: string[]
+          audience?: string
           context?: string | null
           created_at?: string
           created_by?: string | null
+          devices?: string
           evidence_level?: string
+          funnel_type?: string[]
           id?: string
           limitations?: string | null
           metric?: string | null
+          not_applicable_to?: string[]
           principle: string
           published_at?: string | null
           recommended_application?: string | null
@@ -561,13 +569,17 @@ export type Database = {
         Update: {
           active?: boolean
           applies_to?: string[]
+          audience?: string
           context?: string | null
           created_at?: string
           created_by?: string | null
+          devices?: string
           evidence_level?: string
+          funnel_type?: string[]
           id?: string
           limitations?: string | null
           metric?: string | null
+          not_applicable_to?: string[]
           principle?: string
           published_at?: string | null
           recommended_application?: string | null
