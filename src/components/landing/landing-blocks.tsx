@@ -503,7 +503,11 @@ export function LandingBlock({
     case "personalization": {
       /* V1.9 — before_after: standaard vs. gepersonaliseerd naast elkaar. */
       const pDesign = resolveSectionDesign(c.design);
-      if (pDesign.composition === "before_after" && (c.image_url || c.image_url_2)) {
+      /* Geen stille fallback: zonder beeld toont de preview de before/after-
+         compositie met expliciete AI VISUAL NEEDED-placeholders. */
+      const beforeAfterMissing =
+        !c.image_url && !c.image_url_2 && showVisualPlaceholders && visualIsMissing(visual);
+      if (pDesign.composition === "before_after" && (c.image_url || c.image_url_2 || beforeAfterMissing)) {
         const beforeLabel = items[0]?.title ?? "Standaard cadeau";
         const afterLabel = items[1]?.title ?? "Met jouw merk";
         return (
@@ -519,7 +523,13 @@ export function LandingBlock({
                     className="aspect-4/3 w-full rounded-2xl border object-cover"
                   />
                 ) : (
-                  <div className="bg-muted aspect-4/3 w-full rounded-2xl border" />
+                  <MediaSlot
+                    src={undefined}
+                    alt={beforeLabel}
+                    visual={visual}
+                    design={pDesign}
+                    showPlaceholder={showVisualPlaceholders}
+                  />
                 )}
                 <figcaption className="text-muted-foreground text-center text-xs font-medium tracking-wide uppercase">
                   {beforeLabel}
