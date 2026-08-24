@@ -597,17 +597,26 @@ export async function applyLandingProposal(args: {
     const { data: insertedSections } = await dbAdmin
       .from("landing_page_sections")
       .insert(
-        sections.map((s, index) => ({
-          workspace_id: args.workspaceId,
-          landing_page_id: newPageId,
-          block_type: s.block_type,
-          sort_order: index,
-          enabled: s.enabled !== false,
-          use_global: false,
-          global_key: null,
-          variant_key: "A",
-          content: s.content as never,
-        })),
+        sections.map((s, index) => {
+          /* Resolve a planned existing asset to a real image URL so the
+             renderer shows the image instead of a missing-visual placeholder. */
+          const content = { ...((s.content ?? {}) as Record<string, any>) };
+          const assetId = (content.visual as any)?.asset_id;
+          if (assetId && !content.image_url) {
+            content.image_url = `/api/public/landing-asset/${assetId}`;
+          }
+          return {
+            workspace_id: args.workspaceId,
+            landing_page_id: newPageId,
+            block_type: s.block_type,
+            sort_order: index,
+            enabled: s.enabled !== false,
+            use_global: false,
+            global_key: null,
+            variant_key: "A",
+            content: content as never,
+          };
+        }),
       )
       .select("id,block_type,sort_order,content");
 
