@@ -656,7 +656,9 @@ export const applyProductSuggestions = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("landing_products")
-      .update({ ...patch, ai_suggestions: null as never })
+      // ai_suggestions is NOT NULL — clear consumed suggestions with an empty
+      // object instead of null.
+      .update({ ...patch, ai_suggestions: {} as never })
       .eq("id", data.id)
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
