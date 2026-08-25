@@ -1066,6 +1066,53 @@ export function LandingBlock({
         layout: "grid_2",
         ...(c.design ?? {}),
       });
+      /* V2.1 — testimonial_cards: speelse, licht geroteerde kaartjes op een
+         cream canvas met candy-dots — alsof ze op een prikbord hangen.
+         Data-driven uit page.testimonials. */
+      if (tDesign.composition === "testimonial_cards" && page.testimonials.length > 0) {
+        const cardRotations = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "-rotate-3", "rotate-1"];
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.badge && <ZbPill>{c.badge}</ZbPill>}
+                {c.title && (
+                  <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />
+                )}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-4 text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+              </div>
+              <div className="mt-14 flex flex-wrap justify-center gap-6">
+                {page.testimonials.map((t, i) => (
+                  <blockquote
+                    key={t.id}
+                    className={cn(
+                      "bg-card border-zb-ink/10 w-full max-w-xs rounded-2xl border-2 p-6 shadow-lg transition-transform hover:scale-[1.03] hover:rotate-0",
+                      cardRotations[i % cardRotations.length],
+                    )}
+                  >
+                    <Quote className="text-primary h-5 w-5" />
+                    <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
+                    <footer className="mt-5">
+                      <span className="bg-zb-ink text-zb-cream inline-block rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-wide uppercase">
+                        {t.author}
+                        {t.company ? ` — ${t.company}` : ""}
+                      </span>
+                      {t.role_title && (
+                        <span className="text-zb-ink/55 mt-2 block text-xs font-medium">
+                          {t.role_title}
+                        </span>
+                      )}
+                    </footer>
+                  </blockquote>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
       /* V1.9 — large_quote: eerste quote groot en centraal, rest compact. */
       if (tDesign.composition === "large_quote" && page.testimonials.length > 0) {
         /* V2.0 — large_quote op ZB-niveau: blush canvas met candy-dots,
@@ -1551,6 +1598,82 @@ export function LandingBlock({
     case "how_it_works":
     case "use_cases": {
       const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
+      /* V2.1 — steps_dots: speelse stappenstippen zoals het cadeauplatform —
+         grote gekleurde cirkels met icoon, nummer-badge en een golvende
+         stippellijn als connector. Data-driven. */
+      if (section.block_type === "how_it_works" && stepDesign.composition === "steps_dots") {
+        const stepIcons = [Gift, Palette, Truck, HeartHandshake, Package, Sparkles];
+        const stepColors = [
+          "bg-secondary text-zb-ink",
+          "bg-primary text-primary-foreground",
+          "bg-zb-teal text-white",
+          "bg-zb-honey text-zb-ink",
+        ];
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.badge && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
+                {c.title && <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-4 text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+              </div>
+              <div className="relative mt-16">
+                <svg
+                  className="text-zb-ink/25 absolute top-12 left-0 hidden w-full lg:block"
+                  viewBox="0 0 1000 100"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M 0 50 Q 125 0 250 50 T 500 50 T 750 50 T 1000 50"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray="1 14"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <ol className="relative grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+                  {items.map((item, i) => {
+                    const StepIcon = stepIcons[i % stepIcons.length];
+                    return (
+                      <li key={i} className={cn("group text-center", i % 2 === 1 && "lg:mt-10")}>
+                        <div
+                          className={cn(
+                            "relative mx-auto flex h-24 w-24 items-center justify-center rounded-full shadow-xl transition-transform group-hover:scale-110",
+                            stepColors[i % stepColors.length],
+                          )}
+                        >
+                          <StepIcon className="h-10 w-10" />
+                          <span className="bg-zb-ink text-zb-cream font-display absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold shadow-md">
+                            {i + 1}
+                          </span>
+                        </div>
+                        <p className="font-display mt-5 text-xl leading-snug font-semibold">
+                          {(item.title ?? "").replace(/^\d+\.\s*/, "")}
+                        </p>
+                        {item.text && (
+                          <p className="text-zb-ink/65 mt-2 text-sm leading-relaxed">{item.text}</p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+              {c.footnote && (
+                <p className="text-zb-ink/55 mt-12 text-center text-xs font-medium">{c.footnote}</p>
+              )}
+            </div>
+          </section>
+        );
+      }
       /* V1.9C — steps_strip: compacte horizontale stappenlijst met verbinding,
          geen cards. */
       if (section.block_type === "how_it_works" && stepDesign.composition === "steps_strip") {
@@ -1741,6 +1864,56 @@ export function LandingBlock({
         density: "compact",
         ...(c.design ?? {}),
       });
+      /* V2.1 — logo_cloud_stats: donker ink-paneel met klantlogo's (witte
+         varianten) en KPI-stats zoals reviewscore. Data-driven via
+         content.logos / content.stats. */
+      if (spDesign.composition === "logo_cloud_stats") {
+        const logos = (c.logos ?? []).filter((l) => l.url);
+        const stats = (c.stats ?? []).filter((s) => s.value);
+        return (
+          <section className="bg-zb-ink text-zb-cream relative overflow-hidden">
+            <div className="zb-hazard absolute inset-x-0 top-0 h-2.5" />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-16 md:px-8 md:py-20">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.title && (
+                  <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-balance md:text-4xl">
+                    {c.title}
+                  </h2>
+                )}
+                {c.subtitle && <p className="mt-3 text-white/70">{c.subtitle}</p>}
+              </div>
+              {stats.length > 0 && (
+                <div className="mt-10 flex flex-wrap items-stretch justify-center gap-4">
+                  {stats.map((s, i) => (
+                    <div
+                      key={i}
+                      className="rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-center"
+                    >
+                      <p className="font-display text-zb-honey text-2xl font-semibold md:text-3xl">
+                        {s.value}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-white/60">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {logos.length > 0 && (
+                <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+                  {logos.map((l, i) => (
+                    <img
+                      key={i}
+                      src={l.url}
+                      alt={l.alt ?? ""}
+                      loading="lazy"
+                      className="h-8 w-auto opacity-80 transition hover:opacity-100 md:h-10"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
       /* V1.9 — trust_strip: compacte pillen-strip zonder koppen. */
       if (spDesign.composition === "trust_strip") {
         /* V2.0 — trust_strip op ZB-niveau: donker ink-bandje met cream
