@@ -6,7 +6,19 @@
  * can only pick pre-approved design variants, so AI-generated pages stay on
  * brand and can never inject markup or arbitrary styling.
  */
-import { ArrowRight, Check, ImageOff, Plus, Quote, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Gift,
+  HeartHandshake,
+  ImageOff,
+  Package,
+  Palette,
+  Plus,
+  Quote,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 
 import {
   LANDING_DESIGN_TOKENS as T,
@@ -170,7 +182,7 @@ function ZbCtaSolid({ label, url, onClick }: { label?: string; url?: string; onC
     <a
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-semibold shadow-lg transition-colors"
+      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-7 text-sm font-semibold shadow-lg transition-colors"
     >
       {label}
       <ArrowRight className="h-4 w-4" />
@@ -185,7 +197,7 @@ function ZbCtaGhost({ label, url, dark, onClick }: { label?: string; url?: strin
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
       className={cn(
-        "inline-flex h-12 items-center justify-center rounded-full border px-7 text-sm font-semibold transition-colors",
+        "inline-flex h-12 items-center justify-center rounded-2xl border px-7 text-sm font-semibold transition-colors",
         dark ? "border-white/60 text-white hover:bg-white/10" : "border-zb-ink/30 text-zb-ink hover:bg-zb-ink/5",
       )}
     >
@@ -290,10 +302,18 @@ export function LandingBlock({
     Boolean(
       c.title || c.subtitle || c.body || c.badge || c.cta_label || c.secondary_cta_label || c.image_url,
     );
+  /* social_proof mag ook leven op logo's/stats (logo_cloud_stats, V2.1). */
+  const socialProofHasData =
+    (c.logos?.filter((l) => l.url).length ?? 0) > 0 ||
+    (c.stats?.filter((s) => s.value).length ?? 0) > 0;
   if (
     (section.block_type === "testimonials" && page.testimonials.length === 0) ||
-    (section.block_type === "products" && page.products.length === 0) ||
-    (itemsDependent && items.length === 0) ||
+    (section.block_type === "products" &&
+      page.products.length === 0 &&
+      (c.gallery?.filter((g) => g.url).length ?? 0) === 0) ||
+    (itemsDependent &&
+      items.length === 0 &&
+      !(section.block_type === "social_proof" && socialProofHasData)) ||
     (!designedEmptyState && !itemsDependent && !hasAnyContent)
   ) {
     return null;
@@ -597,9 +617,17 @@ export function LandingBlock({
               </div>
               <div className="relative">
                 {c.image_url ? (
-                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} eager />
+                  /* V2.1 — hoofdbeeld als rond portret (i.p.v. boogvorm) */
+                  <div className="border-zb-ink/10 aspect-square overflow-hidden rounded-full border-4 shadow-2xl">
+                    <img
+                      src={c.image_url}
+                      alt={c.image_alt ?? visual?.purpose ?? ""}
+                      loading="eager"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 ) : (
-                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed p-5">
                     <ImageOff className="h-8 w-8" />
                     <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
                     {visual?.visual_brief && (
@@ -614,7 +642,7 @@ export function LandingBlock({
                     src={heroProduct.image_url}
                     alt={heroProduct.image_alt ?? heroProduct.name}
                     loading="eager"
-                    className="absolute -bottom-8 -left-6 w-36 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-12 md:w-52"
+                    className="absolute -bottom-10 -left-6 w-44 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-16 md:w-72"
                   />
                 )}
                 {c.image_badge && (
