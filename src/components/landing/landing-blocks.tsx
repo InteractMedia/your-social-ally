@@ -543,9 +543,10 @@ export function LandingBlock({
             <ZbCandyDots />
             <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
               <div>
-                {page.industry_name && (
+                {(c.badge || page.industry_name) && (
                   <ZbPill>
-                    <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
+                    <Sparkles className="h-3.5 w-3.5" />{" "}
+                    {c.badge ?? `Zakelijke geschenken voor ${page.industry_name}`}
                   </ZbPill>
                 )}
                 <ZbHeading as="h1" text={c.title ?? ""} className="mt-6 text-5xl md:text-7xl" />
@@ -556,9 +557,9 @@ export function LandingBlock({
                   <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
                   <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} onClick={onCtaClick} />
                 </div>
-                <p className="text-zb-ink/55 mt-3 text-xs font-medium">
-                  100% vrijblijvend · reactie binnen 1 werkdag
-                </p>
+                {c.footnote && (
+                  <p className="text-zb-ink/55 mt-3 text-xs font-medium">{c.footnote}</p>
+                )}
                 <div className="mt-7 flex items-center gap-3">
                   <span className="zb-hazard h-2.5 w-24 rounded-full" />
                   {c.body && (
@@ -590,9 +591,11 @@ export function LandingBlock({
                     className="absolute -bottom-8 -left-6 w-36 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-12 md:w-52"
                   />
                 )}
-                <span className="bg-card text-zb-ink absolute top-10 -right-3 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl md:-right-6">
-                  Met jullie logo & kaartje
-                </span>
+                {c.image_badge && (
+                  <span className="bg-card text-zb-ink absolute top-10 -right-3 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl md:-right-6">
+                    {c.image_badge}
+                  </span>
+                )}
               </div>
             </div>
           </section>
@@ -620,9 +623,10 @@ export function LandingBlock({
               <div className="from-zb-ink/85 via-zb-ink/45 absolute inset-0 bg-gradient-to-r to-transparent" />
               <div className="relative mx-auto w-full max-w-6xl px-5 py-24 md:px-8 md:py-40">
                 <div className="max-w-xl">
-                  {page.industry_name && (
+                  {(c.badge || page.industry_name) && (
                     <ZbPill className="bg-white/15 text-white backdrop-blur">
-                      <Sparkles className="h-3.5 w-3.5" /> {page.industry_name} · vanaf 25 stuks
+                      <Sparkles className="h-3.5 w-3.5" />{" "}
+                      {c.badge ?? `${page.industry_name} · vanaf 25 stuks`}
                     </ZbPill>
                   )}
                   <ZbHeading as="h1" text={c.title ?? ""} className="mt-6 text-5xl md:text-7xl drop-shadow-lg" />
@@ -633,9 +637,9 @@ export function LandingBlock({
                     <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
                     <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} dark onClick={onCtaClick} />
                   </div>
-                  <p className="mt-3 text-xs font-medium text-white/60">
-                    100% vrijblijvend · reactie binnen 1 werkdag
-                  </p>
+                  {c.footnote && (
+                    <p className="mt-3 text-xs font-medium text-white/60">{c.footnote}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1267,9 +1271,11 @@ export function LandingBlock({
             <div className="zb-hazard absolute inset-x-0 top-0 h-3" />
             <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
               <div>
-                <ZbPill className="bg-zb-honey text-zb-ink">
-                  <Sparkles className="h-3.5 w-3.5" /> Gratis offerte
-                </ZbPill>
+                {c.badge && (
+                  <ZbPill className="bg-zb-honey text-zb-ink">
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
                 {c.title && (
                   <h2 className="font-display mt-6 text-4xl leading-[1.05] font-semibold tracking-tight text-balance md:text-6xl">
                     {c.title}
@@ -1295,9 +1301,9 @@ export function LandingBlock({
                     ))}
                   </ul>
                 )}
-                <p className="mt-6 text-xs font-medium text-white/50">
-                  100% vrijblijvend · reactie binnen 1 werkdag · geen verplichtingen
-                </p>
+                {c.footnote && (
+                  <p className="mt-6 text-xs font-medium text-white/50">{c.footnote}</p>
+                )}
               </div>
               <div className="bg-card text-foreground rounded-3xl border-4 border-white/10 p-6 shadow-2xl md:p-8">
                 {formSlot}
@@ -1356,9 +1362,9 @@ export function LandingBlock({
             <ZbCandyDots />
             <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-28">
               <div className="max-w-3xl">
-                {page.industry_name && (
+                {(c.badge || page.industry_name) && (
                   <ZbPill>
-                    <Sparkles className="h-3.5 w-3.5" /> Momenten in {page.industry_name}
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge ?? `Momenten in ${page.industry_name}`}
                   </ZbPill>
                 )}
                 {c.title && (
@@ -1629,9 +1635,9 @@ export function LandingBlock({
             <ZbCandyDots />
             <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-28">
               <div className="max-w-3xl">
-                {page.industry_name && (
+                {(c.badge || page.industry_name) && (
                   <ZbPill>
-                    <Sparkles className="h-3.5 w-3.5" /> Momenten in {page.industry_name}
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge ?? `Momenten in ${page.industry_name}`}
                   </ZbPill>
                 )}
                 {c.title && (

@@ -349,6 +349,40 @@ function SectionCard({
             <Label>Alt-tekst</Label>
             <Input value={content.image_alt ?? ""} onChange={(e) => set({ image_alt: e.target.value })} />
           </div>
+          <div className="space-y-1.5">
+            <Label>Afbeelding 2 (URL)</Label>
+            <Input value={content.image_url_2 ?? ""} onChange={(e) => set({ image_url_2: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Alt-tekst afbeelding 2</Label>
+            <Input value={content.image_alt_2 ?? ""} onChange={(e) => set({ image_alt_2: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Secundaire CTA-label</Label>
+            <Input
+              value={content.secondary_cta_label ?? ""}
+              onChange={(e) => set({ secondary_cta_label: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Secundaire CTA-link</Label>
+            <Input
+              value={content.secondary_cta_url ?? ""}
+              onChange={(e) => set({ secondary_cta_url: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Badge / pill-tekst</Label>
+            <Input value={content.badge ?? ""} onChange={(e) => set({ badge: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Zwevend label op afbeelding</Label>
+            <Input value={content.image_badge ?? ""} onChange={(e) => set({ image_badge: e.target.value })} />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Microcopy onder CTA's (footnote)</Label>
+          <Input value={content.footnote ?? ""} onChange={(e) => set({ footnote: e.target.value })} />
         </div>
 
         <VisualSlotEditor
