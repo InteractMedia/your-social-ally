@@ -981,65 +981,15 @@ export function LandingBlock({
                 </article>
               ))}
             </div>
+          ) : composition === "product_showcase_polaroids" ? (
+            /* V2.1 — polaroid-wand + featured: eerst een speelse fotowand
+               onder de titel, daarna het featured-blok. */
+            <div className="space-y-16">
+              {polaroidWall}
+              {page.products.length > 0 && featuredShowcase()}
+            </div>
           ) : composition === "product_showcase_featured" && page.products.length > 0 ? (
-            /* V2.0 — ProductShowcase featured: één heldproduct oversized op
-               een warme blush-band; geen card, maar editorial presentatie met
-               personalisatie-badge en USP-lijst. Data-driven. */
-            (() => {
-              const featured = page.products[0];
-              return (
-                <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
-                  <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
-                    <div className="relative order-2 md:order-1">
-                      <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
-                      {featured.image_url && (
-                        <img
-                          src={featured.image_url}
-                          alt={featured.image_alt ?? featured.name}
-                          loading="lazy"
-                          className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
-                        />
-                      )}
-                      <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
-                        Met eigen logo & kaartje
-                      </span>
-                    </div>
-                    <div className="order-1 md:order-2">
-                      <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
-                      <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
-                      {featured.short_text && (
-                        <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
-                          {featured.short_text}
-                        </p>
-                      )}
-                      {featured.price_from !== null && (
-                        <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
-                          vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
-                        </p>
-                      )}
-                      <ul className="mt-7 space-y-3">
-                        {(items.length > 0 ? items : [
-                          { title: "Vanaf 25 stuks — ook voor één team of project" },
-                          { title: "Volledig gepersonaliseerd in jullie huisstijl" },
-                          { title: "Levering op locatie of thuis bij medewerkers" },
-                        ]).map((u, i) => (
-                          <li key={i} className="flex items-start gap-3 text-base font-medium">
-                            <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                              <Check className="h-3.5 w-3.5" />
-                            </span>
-                            {u.title}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-8 flex flex-wrap gap-3">
-                        <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
-                        <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              );
-            })()
+            featuredShowcase()
           ) : composition === "product_showcase_trio" && page.products.length >= 2 ? (
             /* V2.0 — ProductShowcase trio: drie producten overlappen elkaar
                met rotatie op een cream canvas met zachte blob; pill-labels
