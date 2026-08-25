@@ -10,11 +10,13 @@ import {
   Eye,
   GripVertical,
   History,
+  Loader2,
   Plus,
   Rocket,
   Trash2,
+  Upload,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -57,7 +59,94 @@ import {
   upsertLandingProduct,
   upsertLandingTestimonial,
 } from "@/lib/landing.functions";
+import { createAssetUploadUrl, upsertLandingAsset } from "@/lib/landing-library.functions";
+import { assetPublicUrl, uploadLandingFile } from "@/lib/landing-upload";
 import { cn } from "@/lib/utils";
+
+/* ---------------------------------------------------------- image upload */
+
+/**
+ * URL-veld met uploadknop: uploadt naar de (private) landing-assets bucket,
+ * registreert een goedgekeurde asset en zet de stabiele publieke asset-URL
+ * in het veld. Werkt voor elke landingspagina zonder codewijziging.
+ */
+function ImageUrlField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label?: string;
+  value: string;
+  onChange: (url: string) => void;
+  placeholder?: string;
+}) {
+  const uploadUrlFn = useServerFn(createAssetUploadUrl);
+  const saveAsset = useServerFn(upsertLandingAsset);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const { path, mimeType } = await uploadLandingFile(file, uploadUrlFn as never);
+      const saved = await saveAsset({
+        data: {
+          name: file.name.replace(/\.[^.]+$/, ""),
+          url: path,
+          storage_path: path,
+          mime_type: mimeType,
+          asset_type: "product_lifestyle",
+          source: "upload",
+          approval_status: "approved",
+          active: true,
+        },
+      });
+      onChange(assetPublicUrl(saved.id));
+      toast.success("Beeld geüpload");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {label && <Label>{label}</Label>}
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          placeholder={placeholder ?? "https://… of upload een beeld"}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="shrink-0"
+          title="Beeld uploaden"
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+      {value && (
+        <img src={value} alt="" className="h-16 w-auto rounded-md border object-cover" />
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/landingpages/$id")({
   head: () => ({
