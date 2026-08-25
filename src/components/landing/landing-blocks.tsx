@@ -6,7 +6,7 @@
  * can only pick pre-approved design variants, so AI-generated pages stay on
  * brand and can never inject markup or arbitrary styling.
  */
-import { ArrowRight, Check, ImageOff, Quote, Sparkles } from "lucide-react";
+import { ArrowRight, Check, ImageOff, Plus, Quote, Sparkles } from "lucide-react";
 
 import {
   LANDING_DESIGN_TOKENS as T,
@@ -960,34 +960,59 @@ export function LandingBlock({
       });
       /* V1.9 — large_quote: eerste quote groot en centraal, rest compact. */
       if (tDesign.composition === "large_quote" && page.testimonials.length > 0) {
+        /* V2.0 — large_quote op ZB-niveau: blush canvas met candy-dots,
+           oversized display-serif quote en auteur als ink-pill. Data-driven. */
         const [first, ...rest] = page.testimonials;
         return (
-          <Section design={tDesign}>
-            <Heading title={c.title} subtitle={c.subtitle} design={tDesign} />
-            <blockquote className="mx-auto max-w-3xl text-center">
-              <Quote className="text-primary mx-auto h-8 w-8" />
-              <p className="mt-5 text-xl leading-relaxed font-medium md:text-2xl">{first.quote}</p>
-              <footer className="text-muted-foreground mt-5 text-sm">
-                {first.author}
-                {first.role_title ? `, ${first.role_title}` : ""}
-                {first.company ? ` — ${first.company}` : ""}
-              </footer>
-            </blockquote>
-            {rest.length > 0 && (
-              <div className={cn("mt-10", tDesign.gridClass)}>
-                {rest.map((t) => (
-                  <blockquote key={t.id} className={T.cards.elevated}>
-                    <p className="text-sm leading-relaxed">{t.quote}</p>
-                    <footer className="text-muted-foreground mt-4 text-xs">
-                      {t.author}
-                      {t.role_title ? `, ${t.role_title}` : ""}
-                      {t.company ? ` — ${t.company}` : ""}
-                    </footer>
-                  </blockquote>
-                ))}
-              </div>
-            )}
-          </Section>
+          <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-5xl px-5 py-20 md:px-8 md:py-28">
+              {(c.badge || c.title) && (
+                <div className="text-center">
+                  {c.badge && <ZbPill>{c.badge}</ZbPill>}
+                  {c.title && (
+                    <ZbHeading text={c.title} className="mx-auto mt-6 max-w-2xl text-4xl md:text-5xl" />
+                  )}
+                  {c.subtitle && (
+                    <p className="text-zb-ink/70 mx-auto mt-4 max-w-xl text-lg leading-relaxed">
+                      {c.subtitle}
+                    </p>
+                  )}
+                </div>
+              )}
+              <blockquote className="mx-auto mt-12 max-w-3xl text-center">
+                <Quote className="text-primary mx-auto h-10 w-10" />
+                <p className="font-display mt-6 text-2xl leading-snug font-semibold tracking-tight text-balance md:text-4xl">
+                  {first.quote}
+                </p>
+                <footer className="mt-8">
+                  <span className="bg-zb-ink text-zb-cream inline-block rounded-full px-5 py-2 text-xs font-bold tracking-wide uppercase">
+                    {first.author}
+                    {first.role_title ? ` · ${first.role_title}` : ""}
+                    {first.company ? ` — ${first.company}` : ""}
+                  </span>
+                </footer>
+              </blockquote>
+              {rest.length > 0 && (
+                <div className="mt-14 grid gap-5 sm:grid-cols-2">
+                  {rest.map((t) => (
+                    <blockquote
+                      key={t.id}
+                      className="bg-card border-zb-ink/10 rounded-2xl border-2 p-6 shadow-sm"
+                    >
+                      <Quote className="text-primary h-4 w-4" />
+                      <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
+                      <footer className="text-zb-ink/60 mt-4 text-xs font-semibold">
+                        {t.author}
+                        {t.role_title ? `, ${t.role_title}` : ""}
+                        {t.company ? ` — ${t.company}` : ""}
+                      </footer>
+                    </blockquote>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         );
       }
       return (
@@ -1104,6 +1129,83 @@ export function LandingBlock({
           </Section>
         );
       }
+      /* V2.0 — PersonalizationShowcase (editorial_split): cream canvas met
+         candy-dots, boogfoto met hazard-streep en zwevend label links,
+         display-serif copy en personalisatie-checks rechts. Data-driven. */
+      if (pDesign.composition === "editorial_split" && (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))) {
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[0.95fr_1.05fr] md:px-8 md:py-28">
+              <div className="relative">
+                {c.image_url ? (
+                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
+                ) : (
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                    <ImageOff className="h-8 w-8" />
+                    <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    {visual?.visual_brief && (
+                      <span className="text-muted-foreground line-clamp-3 text-center text-xs italic">
+                        {visual.visual_brief}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <span className="zb-hazard absolute -bottom-5 left-8 h-3 w-40 rotate-[-2deg] rounded-full shadow-md" />
+                {c.image_badge && (
+                  <span className="bg-card text-zb-ink absolute top-8 -right-3 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl md:-right-6">
+                    {c.image_badge}
+                  </span>
+                )}
+              </div>
+              <div>
+                {c.badge && (
+                  <ZbPill className="bg-primary text-primary-foreground">
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
+                {c.title && <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-6 max-w-md text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+                {c.body && (
+                  <div className="mt-4 max-w-md">
+                    <Body body={c.body} />
+                  </div>
+                )}
+                {items.length > 0 && (
+                  <ul className="mt-8 space-y-3">
+                    {items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-base font-medium">
+                        <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                        <span>
+                          {item.title}
+                          {item.text && (
+                            <span className="text-zb-ink/60 mt-0.5 block text-sm font-normal">
+                              {item.text}
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {(c.cta_label || c.secondary_cta_label) && (
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                    <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} onClick={onCtaClick} />
+                  </div>
+                )}
+                {c.footnote && (
+                  <p className="text-zb-ink/55 mt-3 text-xs font-medium">{c.footnote}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      }
       /* Andere composities vallen terug op de standaard intro-rendering. */
       const media = <MediaSlot
           src={c.image_url}
@@ -1146,20 +1248,42 @@ export function LandingBlock({
     }
 
     case "faq":
+      /* V2.0 — FAQ op ZB-niveau: cream canvas, display-serif kop en
+         afgeronde kaarten met plus-pill i.p.v. een kale scheidingslijst.
+         Data-driven. */
       return (
-        <Section design={design}>
-          <Heading title={c.title} subtitle={c.subtitle} design={design} />
-          <div className="divide-border divide-y rounded-xl border">
-            {items.map((item, i) => (
-              <details key={i} className="group p-4">
-                <summary className="cursor-pointer text-sm font-medium">{item.title}</summary>
-                {item.text && (
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{item.text}</p>
-                )}
-              </details>
-            ))}
+        <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+          <div className="relative mx-auto w-full max-w-4xl px-5 py-20 md:px-8 md:py-24">
+            <div className="max-w-2xl">
+              {c.badge && <ZbPill>{c.badge}</ZbPill>}
+              {c.title && <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />}
+              {c.subtitle && (
+                <p className="text-zb-ink/70 mt-4 text-lg leading-relaxed">{c.subtitle}</p>
+              )}
+            </div>
+            <div className="mt-12 space-y-4">
+              {items.map((item, i) => (
+                <details
+                  key={i}
+                  className="group bg-card border-zb-ink/10 open:border-primary/40 rounded-2xl border-2 p-5 shadow-sm transition-colors open:shadow-md"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 text-base font-semibold [&::-webkit-details-marker]:hidden">
+                    {item.title}
+                    <span className="bg-primary/10 text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform group-open:rotate-45">
+                      <Plus className="h-4 w-4" />
+                    </span>
+                  </summary>
+                  {item.text && (
+                    <p className="text-zb-ink/70 mt-3 text-sm leading-relaxed">{item.text}</p>
+                  )}
+                </details>
+              ))}
+            </div>
+            {c.footnote && (
+              <p className="text-zb-ink/55 mt-8 text-xs font-medium">{c.footnote}</p>
+            )}
           </div>
-        </Section>
+        </section>
       );
 
     case "cta_banner": {
@@ -1326,26 +1450,48 @@ export function LandingBlock({
       /* V1.9C — steps_strip: compacte horizontale stappenlijst met verbinding,
          geen cards. */
       if (section.block_type === "how_it_works" && stepDesign.composition === "steps_strip") {
+        /* V2.0 — StepsTimeline op ZB-niveau: cream canvas, display-serif kop,
+           ink-nummerballen met display-cijfers en een dashed connector in
+           merkkleur. Royale whitespace, geen cards. Data-driven. */
         return (
-          <Section design={stepDesign}>
-            <Heading title={c.title} subtitle={c.subtitle} design={stepDesign} />
-            <ol className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {items.map((item, i) => (
-                <li key={i} className="relative">
-                  <div className="flex items-center gap-3">
-                    <span className="bg-primary text-primary-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
-                      {i + 1}
-                    </span>
-                    {i < items.length - 1 && (
-                      <span className="border-border hidden h-px flex-1 border-t border-dashed lg:block" />
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="max-w-2xl">
+                {c.badge && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
+                {c.title && <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-4 max-w-xl text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+              </div>
+              <ol className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+                {items.map((item, i) => (
+                  <li key={i} className="relative">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-zb-ink text-zb-cream font-display flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold shadow-lg">
+                        {i + 1}
+                      </span>
+                      {i < items.length - 1 && (
+                        <span className="border-zb-ink/25 hidden h-px flex-1 border-t-2 border-dashed lg:block" />
+                      )}
+                    </div>
+                    <p className="font-display mt-5 text-xl leading-snug font-semibold">
+                      {(item.title ?? "").replace(/^\d+\.\s*/, "")}
+                    </p>
+                    {item.text && (
+                      <p className="text-zb-ink/65 mt-2 text-sm leading-relaxed">{item.text}</p>
                     )}
-                  </div>
-                  <p className="mt-3 text-sm font-semibold">{(item.title ?? "").replace(/^\d+\.\s*/, "")}</p>
-                  {item.text && <p className="text-muted-foreground mt-1 text-sm">{item.text}</p>}
-                </li>
-              ))}
-            </ol>
-          </Section>
+                  </li>
+                ))}
+              </ol>
+              {c.footnote && (
+                <p className="text-zb-ink/55 mt-10 text-xs font-medium">{c.footnote}</p>
+              )}
+            </div>
+          </section>
         );
       }
       /* V2.0 — industry_story_moments: statement-headline met twee versprongen,
@@ -1493,32 +1639,42 @@ export function LandingBlock({
       });
       /* V1.9 — trust_strip: compacte pillen-strip zonder koppen. */
       if (spDesign.composition === "trust_strip") {
+        /* V2.0 — trust_strip op ZB-niveau: donker ink-bandje met cream
+           pillen en teal checks. Data-driven. */
         return (
-          <Section design={spDesign}>
-            <div className="flex flex-wrap items-center justify-center gap-3">
+          <section className="bg-zb-ink text-zb-cream px-5 py-10 md:px-8">
+            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-3">
               {c.title && (
-                <span className="text-muted-foreground mr-2 text-xs font-medium tracking-wide uppercase">
+                <span className="text-zb-cream/60 mr-2 text-xs font-semibold tracking-widest uppercase">
                   {c.title}
                 </span>
               )}
               {items.map((item, i) => (
                 <span
                   key={i}
-                  className="bg-background rounded-full border px-4 py-1.5 text-sm font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium"
                 >
+                  <Check className="text-zb-teal h-4 w-4 shrink-0" />
                   {item.title}
                 </span>
               ))}
             </div>
-          </Section>
+          </section>
         );
       }
+      /* V2.0 — social proof default: ZB-pillen i.p.v. kale tekstregel. */
       return (
         <Section design={spDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={spDesign} />
-          <div className="text-muted-foreground flex flex-wrap gap-x-8 gap-y-3 text-sm font-medium">
+          <div className="flex flex-wrap gap-3">
             {items.map((item, i) => (
-              <span key={i}>{item.title}</span>
+              <span
+                key={i}
+                className="border-zb-ink/15 bg-card text-zb-ink/80 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-sm"
+              >
+                <Check className="text-primary h-4 w-4 shrink-0" />
+                {item.title}
+              </span>
             ))}
           </div>
         </Section>
@@ -1527,6 +1683,57 @@ export function LandingBlock({
 
     default: {
       // intro / personalization / why_us and any future block type
+      /* V2.0 — trust_strip voor why_us: donker ink-paneel met hazard-rand,
+         display-serif kop en trust-tegels met teal checks. Data-driven. */
+      if (design.composition === "trust_strip") {
+        return (
+          <section className="bg-zb-ink text-zb-cream relative overflow-hidden">
+            <div className="zb-hazard absolute inset-x-0 top-0 h-3" />
+            <div className="mx-auto w-full max-w-6xl px-5 py-16 md:px-8 md:py-24">
+              <div className="max-w-2xl">
+                {c.badge && (
+                  <ZbPill className="bg-zb-honey text-zb-ink">
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
+                {c.title && (
+                  <h2 className="font-display mt-6 text-3xl leading-[1.05] font-semibold tracking-tight text-balance md:text-5xl">
+                    {c.title}
+                  </h2>
+                )}
+                {c.subtitle && (
+                  <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70">{c.subtitle}</p>
+                )}
+                {c.body && (
+                  <div className="mt-4 max-w-xl text-white/70">
+                    <Body body={c.body} />
+                  </div>
+                )}
+              </div>
+              {items.length > 0 && (
+                <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {items.map((item, i) => (
+                    <li key={i} className="rounded-2xl border border-white/15 bg-white/5 p-5">
+                      <span className="bg-zb-teal/20 text-zb-teal flex h-7 w-7 items-center justify-center rounded-full">
+                        <Check className="h-4 w-4" />
+                      </span>
+                      <p className="mt-3 font-semibold">{item.title}</p>
+                      {item.text && <p className="mt-1 text-sm text-white/65">{item.text}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {(c.cta_label || c.secondary_cta_label) && (
+                <div className="mt-10 flex flex-wrap gap-3">
+                  <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                  <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} dark onClick={onCtaClick} />
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
       /* V1.9C — statement_intro: editorial statement met oversized typografie,
          subtiele decoratieve laag en geen card. */
       if (design.composition === "statement_intro") {
