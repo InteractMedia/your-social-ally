@@ -1044,23 +1044,19 @@ export function LandingBlock({
       return (
         <Section design={tDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={tDesign} />
-          {page.testimonials.length === 0 ? (
-            <Body body={c.body} />
-          ) : (
-            <div className={tDesign.gridClass}>
-              {page.testimonials.map((t) => (
-                <blockquote key={t.id} className={T.cards.elevated}>
-                  <Quote className="text-primary h-4 w-4" />
-                  <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
-                  <footer className="text-muted-foreground mt-4 text-xs">
-                    {t.author}
-                    {t.role_title ? `, ${t.role_title}` : ""}
-                    {t.company ? ` — ${t.company}` : ""}
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          )}
+          <div className={tDesign.gridClass}>
+            {page.testimonials.map((t) => (
+              <blockquote key={t.id} className={T.cards.elevated}>
+                <Quote className="text-primary h-4 w-4" />
+                <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
+                <footer className="text-muted-foreground mt-4 text-xs">
+                  {t.author}
+                  {t.role_title ? `, ${t.role_title}` : ""}
+                  {t.company ? ` — ${t.company}` : ""}
+                </footer>
+              </blockquote>
+            ))}
+          </div>
         </Section>
       );
     }
