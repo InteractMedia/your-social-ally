@@ -85,6 +85,11 @@ export const SECTION_COMPOSITIONS = [
   "industry_story_moments",
   "product_showcase_featured",
   "product_showcase_trio",
+  /* V2.1 — conversie-upgrade (polaroid-wand, speelse stappen, logo-cloud) */
+  "product_showcase_polaroids",
+  "steps_dots",
+  "testimonial_cards",
+  "logo_cloud_stats",
 ] as const;
 export type SectionComposition = (typeof SECTION_COMPOSITIONS)[number];
 
@@ -154,11 +159,11 @@ export const LANDING_DESIGN_TOKENS = {
   },
   buttons: {
     solid:
-      "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors",
+      "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
     outline:
-      "border border-border text-foreground hover:bg-accent inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors",
+      "border border-border text-foreground hover:bg-accent inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
     soft:
-      "bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors",
+      "bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
   },
   grids: {
     stacked: "grid gap-4",
@@ -272,5 +277,9 @@ export const DESIGN_LABELS = {
     industry_story_moments: "IndustryStory — versprongen momenten",
     product_showcase_featured: "ProductShowcase — featured product",
     product_showcase_trio: "ProductShowcase — trio (overlappend)",
+    product_showcase_polaroids: "ProductShowcase — polaroid-wand + featured",
+    steps_dots: "Stappen — speelse stippen (cadeauplatform-stijl)",
+    testimonial_cards: "Testimonials — speelse kaarten",
+    logo_cloud_stats: "Logo-cloud + stats (social proof)",
   } satisfies Record<SectionComposition, string>,
 };

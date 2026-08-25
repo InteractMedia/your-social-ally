@@ -10,11 +10,13 @@ import {
   Eye,
   GripVertical,
   History,
+  Loader2,
   Plus,
   Rocket,
   Trash2,
+  Upload,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -57,7 +59,94 @@ import {
   upsertLandingProduct,
   upsertLandingTestimonial,
 } from "@/lib/landing.functions";
+import { createAssetUploadUrl, upsertLandingAsset } from "@/lib/landing-library.functions";
+import { assetPublicUrl, uploadLandingFile } from "@/lib/landing-upload";
 import { cn } from "@/lib/utils";
+
+/* ---------------------------------------------------------- image upload */
+
+/**
+ * URL-veld met uploadknop: uploadt naar de (private) landing-assets bucket,
+ * registreert een goedgekeurde asset en zet de stabiele publieke asset-URL
+ * in het veld. Werkt voor elke landingspagina zonder codewijziging.
+ */
+function ImageUrlField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label?: string;
+  value: string;
+  onChange: (url: string) => void;
+  placeholder?: string;
+}) {
+  const uploadUrlFn = useServerFn(createAssetUploadUrl);
+  const saveAsset = useServerFn(upsertLandingAsset);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const { path, mimeType } = await uploadLandingFile(file, uploadUrlFn as never);
+      const saved = await saveAsset({
+        data: {
+          name: file.name.replace(/\.[^.]+$/, ""),
+          url: path,
+          storage_path: path,
+          mime_type: mimeType,
+          asset_type: "product_lifestyle",
+          source: "upload",
+          approval_status: "approved",
+          active: true,
+        },
+      });
+      onChange(assetPublicUrl(saved.id));
+      toast.success("Beeld geüpload");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {label && <Label>{label}</Label>}
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          placeholder={placeholder ?? "https://… of upload een beeld"}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="shrink-0"
+          title="Beeld uploaden"
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+      {value && (
+        <img src={value} alt="" className="h-16 w-auto rounded-md border object-cover" />
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/landingpages/$id")({
   head: () => ({
@@ -341,22 +430,34 @@ function SectionCard({
             <Label>CTA-link</Label>
             <Input value={content.cta_url ?? ""} onChange={(e) => set({ cta_url: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Afbeelding (URL)</Label>
-            <Input value={content.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} />
-          </div>
+          <ImageUrlField
+            label="Afbeelding"
+            value={content.image_url ?? ""}
+            onChange={(url) => set({ image_url: url })}
+          />
           <div className="space-y-1.5">
             <Label>Alt-tekst</Label>
             <Input value={content.image_alt ?? ""} onChange={(e) => set({ image_alt: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Afbeelding 2 (URL)</Label>
-            <Input value={content.image_url_2 ?? ""} onChange={(e) => set({ image_url_2: e.target.value })} />
-          </div>
+          <ImageUrlField
+            label="Afbeelding 2"
+            value={content.image_url_2 ?? ""}
+            onChange={(url) => set({ image_url_2: url })}
+          />
           <div className="space-y-1.5">
             <Label>Alt-tekst afbeelding 2</Label>
             <Input value={content.image_alt_2 ?? ""} onChange={(e) => set({ image_alt_2: e.target.value })} />
           </div>
+          <ImageUrlField
+            label="Afbeelding 3"
+            value={content.image_url_3 ?? ""}
+            onChange={(url) => set({ image_url_3: url })}
+          />
+          <ImageUrlField
+            label="Afbeelding 4"
+            value={content.image_url_4 ?? ""}
+            onChange={(url) => set({ image_url_4: url })}
+          />
           <div className="space-y-1.5">
             <Label>Secundaire CTA-label</Label>
             <Input
@@ -429,6 +530,133 @@ function SectionCard({
                 variant="ghost"
                 size="icon"
                 onClick={() => set({ items: items.filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Fotowand / galerij (polaroid-compositie) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Fotowand / galerij (polaroids)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ gallery: [...(content.gallery ?? []), { url: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Foto
+            </Button>
+          </div>
+          {(content.gallery ?? []).map((g, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_auto]">
+              <ImageUrlField
+                value={g.url}
+                onChange={(url) => {
+                  const next = [...(content.gallery ?? [])];
+                  next[i] = { ...g, url };
+                  set({ gallery: next });
+                }}
+              />
+              <Input
+                placeholder="Bijschrift"
+                value={g.caption ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.gallery ?? [])];
+                  next[i] = { ...g, caption: e.target.value };
+                  set({ gallery: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ gallery: (content.gallery ?? []).filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Logo-cloud (social proof) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Logo's (social proof)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ logos: [...(content.logos ?? []), { url: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Logo
+            </Button>
+          </div>
+          {(content.logos ?? []).map((l, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_auto]">
+              <ImageUrlField
+                value={l.url}
+                onChange={(url) => {
+                  const next = [...(content.logos ?? [])];
+                  next[i] = { ...l, url };
+                  set({ logos: next });
+                }}
+              />
+              <Input
+                placeholder="Naam (alt-tekst)"
+                value={l.alt ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.logos ?? [])];
+                  next[i] = { ...l, alt: e.target.value };
+                  set({ logos: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ logos: (content.logos ?? []).filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Stats (social proof) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Statistieken (bv. reviewscore)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ stats: [...(content.stats ?? []), { value: "", label: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Stat
+            </Button>
+          </div>
+          {(content.stats ?? []).map((s, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_2fr_auto]">
+              <Input
+                placeholder="Waarde (bv. 9,4/10)"
+                value={s.value}
+                onChange={(e) => {
+                  const next = [...(content.stats ?? [])];
+                  next[i] = { ...s, value: e.target.value };
+                  set({ stats: next });
+                }}
+              />
+              <Input
+                placeholder="Label (bv. WebwinkelKeur score)"
+                value={s.label}
+                onChange={(e) => {
+                  const next = [...(content.stats ?? [])];
+                  next[i] = { ...s, label: e.target.value };
+                  set({ stats: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ stats: (content.stats ?? []).filter((_, x) => x !== i) })}
               >
                 <Trash2 className="text-destructive h-4 w-4" />
               </Button>

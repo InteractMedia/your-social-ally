@@ -6,7 +6,19 @@
  * can only pick pre-approved design variants, so AI-generated pages stay on
  * brand and can never inject markup or arbitrary styling.
  */
-import { ArrowRight, Check, ImageOff, Plus, Quote, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Gift,
+  HeartHandshake,
+  ImageOff,
+  Package,
+  Palette,
+  Plus,
+  Quote,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 
 import {
   LANDING_DESIGN_TOKENS as T,
@@ -170,7 +182,7 @@ function ZbCtaSolid({ label, url, onClick }: { label?: string; url?: string; onC
     <a
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-semibold shadow-lg transition-colors"
+      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-7 text-sm font-semibold shadow-lg transition-colors"
     >
       {label}
       <ArrowRight className="h-4 w-4" />
@@ -185,7 +197,7 @@ function ZbCtaGhost({ label, url, dark, onClick }: { label?: string; url?: strin
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
       className={cn(
-        "inline-flex h-12 items-center justify-center rounded-full border px-7 text-sm font-semibold transition-colors",
+        "inline-flex h-12 items-center justify-center rounded-2xl border px-7 text-sm font-semibold transition-colors",
         dark ? "border-white/60 text-white hover:bg-white/10" : "border-zb-ink/30 text-zb-ink hover:bg-zb-ink/5",
       )}
     >
@@ -290,10 +302,18 @@ export function LandingBlock({
     Boolean(
       c.title || c.subtitle || c.body || c.badge || c.cta_label || c.secondary_cta_label || c.image_url,
     );
+  /* social_proof mag ook leven op logo's/stats (logo_cloud_stats, V2.1). */
+  const socialProofHasData =
+    (c.logos?.filter((l) => l.url).length ?? 0) > 0 ||
+    (c.stats?.filter((s) => s.value).length ?? 0) > 0;
   if (
     (section.block_type === "testimonials" && page.testimonials.length === 0) ||
-    (section.block_type === "products" && page.products.length === 0) ||
-    (itemsDependent && items.length === 0) ||
+    (section.block_type === "products" &&
+      page.products.length === 0 &&
+      (c.gallery?.filter((g) => g.url).length ?? 0) === 0) ||
+    (itemsDependent &&
+      items.length === 0 &&
+      !(section.block_type === "social_proof" && socialProofHasData)) ||
     (!designedEmptyState && !itemsDependent && !hasAnyContent)
   ) {
     return null;
@@ -597,9 +617,17 @@ export function LandingBlock({
               </div>
               <div className="relative">
                 {c.image_url ? (
-                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} eager />
+                  /* V2.1 — hoofdbeeld als rond portret (i.p.v. boogvorm) */
+                  <div className="border-zb-ink/10 aspect-square overflow-hidden rounded-full border-4 shadow-2xl">
+                    <img
+                      src={c.image_url}
+                      alt={c.image_alt ?? visual?.purpose ?? ""}
+                      loading="eager"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 ) : (
-                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed p-5">
                     <ImageOff className="h-8 w-8" />
                     <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
                     {visual?.visual_brief && (
@@ -614,7 +642,7 @@ export function LandingBlock({
                     src={heroProduct.image_url}
                     alt={heroProduct.image_alt ?? heroProduct.name}
                     loading="eager"
-                    className="absolute -bottom-8 -left-6 w-36 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-12 md:w-52"
+                    className="absolute -bottom-10 -left-6 w-44 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-16 md:w-72"
                   />
                 )}
                 {c.image_badge && (
@@ -810,10 +838,114 @@ export function LandingBlock({
           </div>
         </article>
       );
+      /* V2.0 — featured-blok als herbruikbare closure (ook gebruikt door de
+         polaroid-wand variant, V2.1). Data-driven. */
+      const featuredShowcase = () => {
+        const featured = page.products[0];
+        return (
+          <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+            <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
+              <div className="relative order-2 md:order-1">
+                <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
+                {featured.image_url && (
+                  <img
+                    src={featured.image_url}
+                    alt={featured.image_alt ?? featured.name}
+                    loading="lazy"
+                    className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
+                  />
+                )}
+                <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
+                  Met eigen logo & kaartje
+                </span>
+              </div>
+              <div className="order-1 md:order-2">
+                <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
+                <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
+                {featured.short_text && (
+                  <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
+                    {featured.short_text}
+                  </p>
+                )}
+                {featured.price_from !== null && (
+                  <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
+                    vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
+                  </p>
+                )}
+                <ul className="mt-7 space-y-3">
+                  {(items.length > 0 ? items : [
+                    { title: "Vanaf 25 stuks — ook voor één team of project" },
+                    { title: "Volledig gepersonaliseerd in jullie huisstijl" },
+                    { title: "Levering op locatie of thuis bij medewerkers" },
+                  ]).map((u, i) => (
+                    <li key={i} className="flex items-start gap-3 text-base font-medium">
+                      <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                      {u.title}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
+                  <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      };
+      /* V2.1 — polaroid-wand: content.gallery (of productbeelden als
+         fallback) als speelse, licht geroteerde polaroids. Data-driven. */
+      const polaroids = (
+        (c.gallery ?? []).filter((g) => g.url).length > 0
+          ? (c.gallery ?? []).filter((g) => g.url)
+          : page.products
+              .filter((p) => p.image_url)
+              .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
+      ).slice(0, 10);
+      const polaroidRotations = [
+        "-rotate-3",
+        "rotate-2",
+        "-rotate-2",
+        "rotate-3",
+        "-rotate-1",
+        "rotate-1",
+        "-rotate-2",
+        "rotate-2",
+        "-rotate-3",
+        "rotate-1",
+      ];
+      const polaroidWall =
+        polaroids.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-5 md:gap-7">
+            {polaroids.map((g, i) => (
+              <figure
+                key={i}
+                className={cn(
+                  "bg-card border-zb-ink/10 w-32 shrink-0 rounded-lg border p-2 pb-3 shadow-lg transition-transform hover:scale-105 hover:rotate-0 sm:w-40 md:w-44",
+                  polaroidRotations[i % polaroidRotations.length],
+                )}
+              >
+                <img
+                  src={g.url}
+                  alt={g.alt ?? ""}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md object-cover"
+                />
+                {g.caption && (
+                  <figcaption className="text-zb-ink/70 mt-2 line-clamp-1 text-center text-[11px] font-medium">
+                    {g.caption}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        ) : null;
       return (
         <Section id="producten" design={productDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
-          {page.products.length === 0 ? (
+          {page.products.length === 0 && polaroids.length === 0 ? (
             <Body body={c.body} />
           ) : composition === "masonry_showcase" ? (
             /* V1.9C — masonry_showcase: echte asymmetrische masonry met
@@ -849,65 +981,15 @@ export function LandingBlock({
                 </article>
               ))}
             </div>
+          ) : composition === "product_showcase_polaroids" ? (
+            /* V2.1 — polaroid-wand + featured: eerst een speelse fotowand
+               onder de titel, daarna het featured-blok. */
+            <div className="space-y-16">
+              {polaroidWall}
+              {page.products.length > 0 && featuredShowcase()}
+            </div>
           ) : composition === "product_showcase_featured" && page.products.length > 0 ? (
-            /* V2.0 — ProductShowcase featured: één heldproduct oversized op
-               een warme blush-band; geen card, maar editorial presentatie met
-               personalisatie-badge en USP-lijst. Data-driven. */
-            (() => {
-              const featured = page.products[0];
-              return (
-                <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
-                  <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
-                    <div className="relative order-2 md:order-1">
-                      <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
-                      {featured.image_url && (
-                        <img
-                          src={featured.image_url}
-                          alt={featured.image_alt ?? featured.name}
-                          loading="lazy"
-                          className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
-                        />
-                      )}
-                      <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
-                        Met eigen logo & kaartje
-                      </span>
-                    </div>
-                    <div className="order-1 md:order-2">
-                      <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
-                      <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
-                      {featured.short_text && (
-                        <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
-                          {featured.short_text}
-                        </p>
-                      )}
-                      {featured.price_from !== null && (
-                        <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
-                          vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
-                        </p>
-                      )}
-                      <ul className="mt-7 space-y-3">
-                        {(items.length > 0 ? items : [
-                          { title: "Vanaf 25 stuks — ook voor één team of project" },
-                          { title: "Volledig gepersonaliseerd in jullie huisstijl" },
-                          { title: "Levering op locatie of thuis bij medewerkers" },
-                        ]).map((u, i) => (
-                          <li key={i} className="flex items-start gap-3 text-base font-medium">
-                            <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                              <Check className="h-3.5 w-3.5" />
-                            </span>
-                            {u.title}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-8 flex flex-wrap gap-3">
-                        <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
-                        <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              );
-            })()
+            featuredShowcase()
           ) : composition === "product_showcase_trio" && page.products.length >= 2 ? (
             /* V2.0 — ProductShowcase trio: drie producten overlappen elkaar
                met rotatie op een cream canvas met zachte blob; pill-labels
@@ -984,6 +1066,53 @@ export function LandingBlock({
         layout: "grid_2",
         ...(c.design ?? {}),
       });
+      /* V2.1 — testimonial_cards: speelse, licht geroteerde kaartjes op een
+         cream canvas met candy-dots — alsof ze op een prikbord hangen.
+         Data-driven uit page.testimonials. */
+      if (tDesign.composition === "testimonial_cards" && page.testimonials.length > 0) {
+        const cardRotations = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "-rotate-3", "rotate-1"];
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.badge && <ZbPill>{c.badge}</ZbPill>}
+                {c.title && (
+                  <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />
+                )}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-4 text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+              </div>
+              <div className="mt-14 flex flex-wrap justify-center gap-6">
+                {page.testimonials.map((t, i) => (
+                  <blockquote
+                    key={t.id}
+                    className={cn(
+                      "bg-card border-zb-ink/10 w-full max-w-xs rounded-2xl border-2 p-6 shadow-lg transition-transform hover:scale-[1.03] hover:rotate-0",
+                      cardRotations[i % cardRotations.length],
+                    )}
+                  >
+                    <Quote className="text-primary h-5 w-5" />
+                    <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
+                    <footer className="mt-5">
+                      <span className="bg-zb-ink text-zb-cream inline-block rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-wide uppercase">
+                        {t.author}
+                        {t.company ? ` — ${t.company}` : ""}
+                      </span>
+                      {t.role_title && (
+                        <span className="text-zb-ink/55 mt-2 block text-xs font-medium">
+                          {t.role_title}
+                        </span>
+                      )}
+                    </footer>
+                  </blockquote>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
       /* V1.9 — large_quote: eerste quote groot en centraal, rest compact. */
       if (tDesign.composition === "large_quote" && page.testimonials.length > 0) {
         /* V2.0 — large_quote op ZB-niveau: blush canvas met candy-dots,
@@ -1469,6 +1598,82 @@ export function LandingBlock({
     case "how_it_works":
     case "use_cases": {
       const stepDesign = resolveSectionDesign({ layout: "grid_4", ...(c.design ?? {}) });
+      /* V2.1 — steps_dots: speelse stappenstippen zoals het cadeauplatform —
+         grote gekleurde cirkels met icoon, nummer-badge en een golvende
+         stippellijn als connector. Data-driven. */
+      if (section.block_type === "how_it_works" && stepDesign.composition === "steps_dots") {
+        const stepIcons = [Gift, Palette, Truck, HeartHandshake, Package, Sparkles];
+        const stepColors = [
+          "bg-secondary text-zb-ink",
+          "bg-primary text-primary-foreground",
+          "bg-zb-teal text-white",
+          "bg-zb-honey text-zb-ink",
+        ];
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.badge && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> {c.badge}
+                  </ZbPill>
+                )}
+                {c.title && <ZbHeading text={c.title} className="mt-6 text-4xl md:text-5xl" />}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-4 text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+              </div>
+              <div className="relative mt-16">
+                <svg
+                  className="text-zb-ink/25 absolute top-12 left-0 hidden w-full lg:block"
+                  viewBox="0 0 1000 100"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M 0 50 Q 125 0 250 50 T 500 50 T 750 50 T 1000 50"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray="1 14"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <ol className="relative grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+                  {items.map((item, i) => {
+                    const StepIcon = stepIcons[i % stepIcons.length];
+                    return (
+                      <li key={i} className={cn("group text-center", i % 2 === 1 && "lg:mt-10")}>
+                        <div
+                          className={cn(
+                            "relative mx-auto flex h-24 w-24 items-center justify-center rounded-full shadow-xl transition-transform group-hover:scale-110",
+                            stepColors[i % stepColors.length],
+                          )}
+                        >
+                          <StepIcon className="h-10 w-10" />
+                          <span className="bg-zb-ink text-zb-cream font-display absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold shadow-md">
+                            {i + 1}
+                          </span>
+                        </div>
+                        <p className="font-display mt-5 text-xl leading-snug font-semibold">
+                          {(item.title ?? "").replace(/^\d+\.\s*/, "")}
+                        </p>
+                        {item.text && (
+                          <p className="text-zb-ink/65 mt-2 text-sm leading-relaxed">{item.text}</p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+              {c.footnote && (
+                <p className="text-zb-ink/55 mt-12 text-center text-xs font-medium">{c.footnote}</p>
+              )}
+            </div>
+          </section>
+        );
+      }
       /* V1.9C — steps_strip: compacte horizontale stappenlijst met verbinding,
          geen cards. */
       if (section.block_type === "how_it_works" && stepDesign.composition === "steps_strip") {
@@ -1516,15 +1721,31 @@ export function LandingBlock({
           </section>
         );
       }
-      /* V2.0 — industry_story_moments: statement-headline met twee versprongen,
-         geroteerde foto's die elkaar overlappen; moment-labels zweven over de
-         beelden. Geen cards. Data-driven. */
+      /* V2.1 — industry_story_moments: vier grote foto's als versprongen,
+         geroteerde collage; moment-labels zweven over de beelden. Geen cards.
+         Data-driven (image_url t/m image_url_4 + items als labels). */
       if (
         section.block_type === "use_cases" &&
         stepDesign.composition === "industry_story_moments" &&
         (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))
       ) {
-        const moment2 = c.image_url_2 || page.products.find((p) => p.image_url)?.image_url;
+        const momentImages = [
+          { src: c.image_url, alt: c.image_alt },
+          {
+            src: c.image_url_2 || page.products.find((p) => p.image_url)?.image_url,
+            alt: c.image_alt_2,
+          },
+          { src: c.image_url_3, alt: c.image_alt_3 },
+          { src: c.image_url_4, alt: c.image_alt_4 },
+        ].filter((m) => m.src);
+        const momentRotations = ["-rotate-1", "rotate-2", "rotate-1", "-rotate-2"];
+        const momentOffsets = ["", "md:mt-12", "md:-mt-4", "md:mt-8"];
+        const momentLabelColors = [
+          "bg-primary text-primary-foreground -rotate-3",
+          "bg-zb-teal text-white rotate-2",
+          "bg-zb-ink text-zb-cream -rotate-2",
+          "bg-zb-honey text-zb-ink rotate-3",
+        ];
         return (
           <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
             <ZbCandyDots />
@@ -1539,54 +1760,37 @@ export function LandingBlock({
                   <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />
                 )}
               </div>
-              <div className="relative mt-14 grid gap-10 md:grid-cols-12 md:gap-0">
-                <div className="relative md:col-span-7">
-                  {c.image_url ? (
+              <div className="mt-14 grid gap-8 sm:grid-cols-2">
+                {momentImages.map((m, i) => (
+                  <figure key={i} className={cn("relative", momentOffsets[i % 4])}>
                     <img
-                      src={c.image_url}
-                      alt={c.image_alt ?? ""}
+                      src={m.src!}
+                      alt={m.alt ?? ""}
                       loading="lazy"
-                      className="w-full -rotate-1 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                      className={cn(
+                        "aspect-[4/3] w-full rounded-3xl border-4 border-white object-cover shadow-2xl",
+                        momentRotations[i % 4],
+                      )}
                     />
-                  ) : (
-                    <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
-                      <ImageOff className="h-8 w-8" />
-                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
-                    </div>
-                  )}
-                  {items[0]?.title && (
-                    <span className="bg-primary text-primary-foreground absolute -top-4 left-6 -rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-lg">
-                      {items[0].title}
-                    </span>
-                  )}
-                </div>
-                <div className="relative md:col-span-5 md:-ml-16 md:mt-24">
-                  {moment2 ? (
-                    <img
-                      src={moment2}
-                      alt={c.image_alt_2 ?? ""}
-                      loading="lazy"
-                      className="w-full rotate-2 rounded-3xl border-4 border-white object-cover shadow-2xl"
-                    />
-                  ) : (
-                    <div className="border-zb-teal/40 bg-zb-teal/5 text-zb-teal flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
-                      <ImageOff className="h-8 w-8" />
-                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
-                    </div>
-                  )}
-                  {items[1]?.title && (
-                    <span className="bg-zb-teal absolute -bottom-4 right-6 rotate-2 rounded-full px-4 py-2 text-xs font-bold text-white shadow-lg">
-                      {items[1].title}
-                    </span>
-                  )}
-                </div>
+                    {items[i]?.title && (
+                      <span
+                        className={cn(
+                          "absolute -top-4 left-6 rounded-full px-4 py-2 text-xs font-bold shadow-lg",
+                          momentLabelColors[i % 4],
+                        )}
+                      >
+                        {items[i].title}
+                      </span>
+                    )}
+                  </figure>
+                ))}
               </div>
               {c.subtitle && (
                 <p className="text-zb-ink/70 mt-12 max-w-xl text-lg leading-relaxed">{c.subtitle}</p>
               )}
-              {items.length > 2 && (
+              {items.length > momentImages.length && (
                 <div className="mt-8 flex flex-wrap gap-2">
-                  {items.slice(2).map((m) => (
+                  {items.slice(momentImages.length).map((m) => (
                     <span
                       key={m.title}
                       className="border-zb-ink/20 text-zb-ink/80 rounded-full border px-3.5 py-1.5 text-xs font-semibold"
@@ -1659,6 +1863,56 @@ export function LandingBlock({
         density: "compact",
         ...(c.design ?? {}),
       });
+      /* V2.1 — logo_cloud_stats: donker ink-paneel met klantlogo's (witte
+         varianten) en KPI-stats zoals reviewscore. Data-driven via
+         content.logos / content.stats. */
+      if (spDesign.composition === "logo_cloud_stats") {
+        const logos = (c.logos ?? []).filter((l) => l.url);
+        const stats = (c.stats ?? []).filter((s) => s.value);
+        return (
+          <section className="bg-zb-ink text-zb-cream relative overflow-hidden">
+            <div className="zb-hazard absolute inset-x-0 top-0 h-2.5" />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-16 md:px-8 md:py-20">
+              <div className="mx-auto max-w-2xl text-center">
+                {c.title && (
+                  <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-balance md:text-4xl">
+                    {c.title}
+                  </h2>
+                )}
+                {c.subtitle && <p className="mt-3 text-white/70">{c.subtitle}</p>}
+              </div>
+              {stats.length > 0 && (
+                <div className="mt-10 flex flex-wrap items-stretch justify-center gap-4">
+                  {stats.map((s, i) => (
+                    <div
+                      key={i}
+                      className="rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-center"
+                    >
+                      <p className="font-display text-zb-honey text-2xl font-semibold md:text-3xl">
+                        {s.value}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-white/60">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {logos.length > 0 && (
+                <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+                  {logos.map((l, i) => (
+                    <img
+                      key={i}
+                      src={l.url}
+                      alt={l.alt ?? ""}
+                      loading="lazy"
+                      className="h-8 w-auto opacity-80 transition hover:opacity-100 md:h-10"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
       /* V1.9 — trust_strip: compacte pillen-strip zonder koppen. */
       if (spDesign.composition === "trust_strip") {
         /* V2.0 — trust_strip op ZB-niveau: donker ink-bandje met cream
