@@ -95,6 +95,12 @@ export type BlockContent = {
   cta_url?: string;
   secondary_cta_label?: string;
   secondary_cta_url?: string;
+  /** Pill/badge-tekst boven de kop (V2.0 ZB-composities). */
+  badge?: string;
+  /** Microcopy onder de CTA's, bv. risk-reversal (V2.0). */
+  footnote?: string;
+  /** Zwevend label op de hero-afbeelding (V2.0 candy_hero_collage). */
+  image_badge?: string;
   items?: BlockItem[];
 };
 
