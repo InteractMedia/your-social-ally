@@ -91,6 +91,109 @@ function Cta({
   );
 }
 
+/* =========================================================== V2.0 — ZB primitives
+ * ZoetBezorgen Conversion Design System visuele primitieven.
+ * Gedeeld door alle ZB-composities (candy_hero, industry_story,
+ * product_showcase, premium_form). Data-driven, geen hardcoded content. */
+
+function ZbPill({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "bg-zb-ink text-zb-cream inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide uppercase",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function ZbCandyDots() {
+  return (
+    <>
+      <span className="zb-dot bg-primary/70 h-4 w-4" style={{ top: "8%", left: "4%" }} />
+      <span className="zb-dot bg-secondary h-3 w-3" style={{ top: "16%", right: "8%" }} />
+      <span className="zb-dot bg-zb-teal/60 h-2.5 w-2.5" style={{ bottom: "12%", left: "10%" }} />
+      <span className="zb-dot bg-zb-honey h-5 w-5" style={{ bottom: "6%", right: "14%" }} />
+    </>
+  );
+}
+
+/** Arch-shaped (boogvormig) fotokader — kenmerkend voor ZB-hero's. */
+function ZbArchFrame({ src, alt, eager, className }: { src: string; alt: string; eager?: boolean; className?: string }) {
+  return (
+    <div className={cn("border-zb-ink/10 overflow-hidden rounded-t-[999px] rounded-b-3xl border-4 shadow-2xl", className)}>
+      <img
+        src={src}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        className="aspect-[4/5] w-full object-cover"
+      />
+    </div>
+  );
+}
+
+/** Display-serif heading met optionele <em> accent. */
+function ZbHeading({
+  text,
+  accent,
+  className,
+  as: As = "h2",
+}: {
+  text: string;
+  accent?: string;
+  className?: string;
+  as?: "h1" | "h2";
+}) {
+  // Als accent aanwezig is in de tekst, vervang dat deel door een <em>
+  if (accent && text.includes(accent)) {
+    const [before, after] = text.split(accent);
+    return (
+      <As className={cn("font-display leading-[1.05] font-semibold tracking-tight text-balance", className)}>
+        {before}
+        <em className="text-primary not-italic">{accent}</em>
+        {after}
+      </As>
+    );
+  }
+  return (
+    <As className={cn("font-display leading-[1.05] font-semibold tracking-tight text-balance", className)}>
+      {text}
+    </As>
+  );
+}
+
+function ZbCtaSolid({ label, url, onClick }: { label?: string; url?: string; onClick?: (l: string) => void }) {
+  if (!label) return null;
+  return (
+    <a
+      href={url || "#offerte"}
+      onClick={() => onClick?.(label)}
+      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-semibold shadow-lg transition-colors"
+    >
+      {label}
+      <ArrowRight className="h-4 w-4" />
+    </a>
+  );
+}
+
+function ZbCtaGhost({ label, url, dark, onClick }: { label?: string; url?: string; dark?: boolean; onClick?: (l: string) => void }) {
+  if (!label) return null;
+  return (
+    <a
+      href={url || "#offerte"}
+      onClick={() => onClick?.(label)}
+      className={cn(
+        "inline-flex h-12 items-center justify-center rounded-full border px-7 text-sm font-semibold transition-colors",
+        dark ? "border-white/60 text-white hover:bg-white/10" : "border-zb-ink/30 text-zb-ink hover:bg-zb-ink/5",
+      )}
+    >
+      {label}
+    </a>
+  );
+}
+
 /**
  * Structured image slot.
  *
@@ -430,6 +533,136 @@ export function LandingBlock({
         );
       }
 
+      /* V2.0 — candy_hero_collage: warme cream canvas, display-serif headline,
+         boogvormige (arch) foto met product-polaroid die over het kader breekt,
+         candy-dots en hazard-stripe als merkmotief. Data-driven uit BlockContent. */
+      if (heroDesign.composition === "candy_hero_collage" && (c.image_url || layeredMissing)) {
+        const heroProduct = page.products.find((p) => p.image_url);
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
+              <div>
+                {page.industry_name && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> Zakelijke geschenken voor {page.industry_name}
+                  </ZbPill>
+                )}
+                <ZbHeading as="h1" text={c.title ?? ""} className="mt-6 text-5xl md:text-7xl" />
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-6 max-w-md text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                  <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} onClick={onCtaClick} />
+                </div>
+                <p className="text-zb-ink/55 mt-3 text-xs font-medium">
+                  100% vrijblijvend · reactie binnen 1 werkdag
+                </p>
+                <div className="mt-7 flex items-center gap-3">
+                  <span className="zb-hazard h-2.5 w-24 rounded-full" />
+                  {c.body && (
+                    <span className="text-zb-ink/60 text-xs font-semibold tracking-wide uppercase">
+                      {c.body.split("\n")[0]}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="relative">
+                {c.image_url ? (
+                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} eager />
+                ) : (
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                    <ImageOff className="h-8 w-8" />
+                    <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    {visual?.visual_brief && (
+                      <span className="text-muted-foreground line-clamp-3 text-center text-xs italic">
+                        {visual.visual_brief}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {heroProduct?.image_url && (
+                  <img
+                    src={heroProduct.image_url}
+                    alt={heroProduct.image_alt ?? heroProduct.name}
+                    loading="eager"
+                    className="absolute -bottom-8 -left-6 w-36 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-12 md:w-52"
+                  />
+                )}
+                <span className="bg-card text-zb-ink absolute top-10 -right-3 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl md:-right-6">
+                  Met jullie logo & kaartje
+                </span>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* V2.0 — candy_hero_editorial: full-bleed sfeerbeeld met warm verloop,
+         witte display-typografie en product-polaroid die over de sectiegrens
+         breekt. Data-driven. */
+      if (heroDesign.composition === "candy_hero_editorial" && (c.image_url || layeredMissing)) {
+        const heroProduct = page.products.find((p) => p.image_url);
+        return (
+          <section className="relative overflow-visible text-white">
+            <div className="relative overflow-hidden">
+              {c.image_url ? (
+                <img
+                  src={c.image_url}
+                  alt={c.image_alt ?? visual?.purpose ?? ""}
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="bg-primary/15 absolute inset-0" />
+              )}
+              <div className="from-zb-ink/85 via-zb-ink/45 absolute inset-0 bg-gradient-to-r to-transparent" />
+              <div className="relative mx-auto w-full max-w-6xl px-5 py-24 md:px-8 md:py-40">
+                <div className="max-w-xl">
+                  {page.industry_name && (
+                    <ZbPill className="bg-white/15 text-white backdrop-blur">
+                      <Sparkles className="h-3.5 w-3.5" /> {page.industry_name} · vanaf 25 stuks
+                    </ZbPill>
+                  )}
+                  <ZbHeading as="h1" text={c.title ?? ""} className="mt-6 text-5xl md:text-7xl drop-shadow-lg" />
+                  {c.subtitle && (
+                    <p className="mt-6 max-w-md text-lg leading-relaxed text-white/85">{c.subtitle}</p>
+                  )}
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                    <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} dark onClick={onCtaClick} />
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-white/60">
+                    100% vrijblijvend · reactie binnen 1 werkdag
+                  </p>
+                </div>
+              </div>
+            </div>
+            {heroProduct?.image_url && (
+              <img
+                src={heroProduct.image_url}
+                alt={heroProduct.image_alt ?? heroProduct.name}
+                loading="eager"
+                className="absolute right-6 -bottom-8 z-10 w-32 rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:right-24 md:-bottom-10 md:w-52"
+              />
+            )}
+            {layeredMissing && (
+              <div className="relative mx-auto -mt-16 w-full max-w-6xl px-5 pb-6 md:px-8">
+                <MediaSlot
+                  src={undefined}
+                  alt={c.image_alt}
+                  visual={visual}
+                  design={heroDesign}
+                  showPlaceholder={showVisualPlaceholders}
+                  eager
+                />
+              </div>
+            )}
+          </section>
+        );
+      }
+
       return (
         <Section design={heroDesign}>
           {heroDesign.isSplit && slotVisible ? (
@@ -586,16 +819,119 @@ export function LandingBlock({
                 </article>
               ))}
             </div>
-          ) : composition === "oversized_showcase" ? (
-            /* V1.9 — één held-product groot, de rest ondergeschikt. */
-            <div className="grid gap-5">
-              {productCard(page.products[0], true)}
-              {page.products.length > 1 && (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {page.products.slice(1).map((p) => productCard(p))}
-                </div>
-              )}
-            </div>
+          ) : composition === "product_showcase_featured" && page.products.length > 0 ? (
+            /* V2.0 — ProductShowcase featured: één heldproduct oversized op
+               een warme blush-band; geen card, maar editorial presentatie met
+               personalisatie-badge en USP-lijst. Data-driven. */
+            (() => {
+              const featured = page.products[0];
+              return (
+                <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+                  <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
+                    <div className="relative order-2 md:order-1">
+                      <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
+                      {featured.image_url && (
+                        <img
+                          src={featured.image_url}
+                          alt={featured.image_alt ?? featured.name}
+                          loading="lazy"
+                          className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
+                        />
+                      )}
+                      <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
+                        Met eigen logo & kaartje
+                      </span>
+                    </div>
+                    <div className="order-1 md:order-2">
+                      <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
+                      <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
+                      {featured.short_text && (
+                        <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
+                          {featured.short_text}
+                        </p>
+                      )}
+                      {featured.price_from !== null && (
+                        <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
+                          vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
+                        </p>
+                      )}
+                      <ul className="mt-7 space-y-3">
+                        {(items.length > 0 ? items : [
+                          { title: "Vanaf 25 stuks — ook voor één team of project" },
+                          { title: "Volledig gepersonaliseerd in jullie huisstijl" },
+                          { title: "Levering op locatie of thuis bij medewerkers" },
+                        ]).map((u, i) => (
+                          <li key={i} className="flex items-start gap-3 text-base font-medium">
+                            <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                            {u.title}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-8 flex flex-wrap gap-3">
+                        <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
+                        <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            })()
+          ) : composition === "product_showcase_trio" && page.products.length >= 2 ? (
+            /* V2.0 — ProductShowcase trio: drie producten overlappen elkaar
+               met rotatie op een cream canvas met zachte blob; pill-labels
+               i.p.v. cards. Data-driven. */
+            (() => {
+              const trio = page.products.filter((p) => p.image_url).slice(0, 3);
+              const rotations = ["-rotate-6", "rotate-2", "rotate-6"];
+              const zIndices = ["z-10", "z-20", "z-10"];
+              return (
+                <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+                  <ZbCandyDots />
+                  <div className="relative mx-auto w-full max-w-6xl px-5 py-20 text-center md:px-8 md:py-28">
+                    <ZbPill className="bg-zb-teal text-white">Onze favorieten</ZbPill>
+                    {c.title && (
+                      <ZbHeading text={c.title} className="mx-auto mt-6 max-w-2xl text-4xl md:text-6xl" />
+                    )}
+                    {c.subtitle && (
+                      <p className="text-zb-ink/70 mx-auto mt-4 max-w-md text-lg leading-relaxed">{c.subtitle}</p>
+                    )}
+                    <div className="relative mx-auto mt-16 flex max-w-4xl items-end justify-center">
+                      <div className="bg-secondary/25 absolute inset-x-10 bottom-0 -z-0 h-56 rounded-full blur-3xl" />
+                      {trio.map((p, i) => (
+                        <figure key={p.id} className={cn("relative", zIndices[i], i > 0 && "-ml-6 md:-ml-10")}>
+                          <img
+                            src={p.image_url!}
+                            alt={p.image_alt ?? p.name}
+                            loading="lazy"
+                            className={cn(
+                              "aspect-[3/4] w-32 rounded-2xl border-4 border-white object-cover shadow-2xl transition-transform hover:scale-105 sm:w-44 md:w-56",
+                              rotations[i],
+                              i === 1 && "md:-mb-6 md:w-64",
+                            )}
+                          />
+                          <figcaption className="relative z-30 mt-4">
+                            <span className="bg-card text-zb-ink inline-block rounded-full px-4 py-1.5 text-xs font-bold shadow-md">
+                              {p.name}
+                            </span>
+                            {p.price_from !== null && (
+                              <span className="text-zb-ink/60 mt-1.5 block text-xs font-medium">
+                                vanaf € {Number(p.price_from).toFixed(2).replace(".", ",")}
+                              </span>
+                            )}
+                          </figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                    <div className="mt-14 flex flex-wrap justify-center gap-3">
+                      <ZbCtaSolid label={c.cta_label ?? "Stel je geschenk samen"} url={c.cta_url} onClick={onCtaClick} />
+                      <ZbCtaGhost label={c.secondary_cta_label ?? "Offerte binnen 1 werkdag"} url={c.secondary_cta_url} onClick={onCtaClick} />
+                    </div>
+                  </div>
+                </section>
+              );
+            })()
           ) : (
             <div className={productDesign.gridClass}>
               {page.products.map((p, i) => (
@@ -927,35 +1263,47 @@ export function LandingBlock({
       if (formDesign.composition === "premium_form") {
         const formImage = c.image_url ?? page.products.find((p) => p.image_url)?.image_url;
         return (
-          <Section id="offerte" design={formDesign}>
-            <div className="bg-card grid overflow-hidden rounded-3xl border shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="from-primary/15 to-primary/5 relative flex flex-col justify-center gap-5 bg-gradient-to-br p-8 md:p-10">
-                {formImage && (
-                  <img
-                    src={formImage}
-                    alt={c.image_alt ?? ""}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover opacity-15"
-                  />
+          <section id="offerte" className="bg-zb-ink text-zb-cream relative overflow-hidden">
+            <div className="zb-hazard absolute inset-x-0 top-0 h-3" />
+            <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
+              <div>
+                <ZbPill className="bg-zb-honey text-zb-ink">
+                  <Sparkles className="h-3.5 w-3.5" /> Gratis offerte
+                </ZbPill>
+                {c.title && (
+                  <h2 className="font-display mt-6 text-4xl leading-[1.05] font-semibold tracking-tight text-balance md:text-6xl">
+                    {c.title}
+                  </h2>
                 )}
-                <div className="relative">
-                  <h2 className={formDesign.headingClass}>{c.title}</h2>
-                  {c.subtitle && <p className="text-muted-foreground mt-3">{c.subtitle}</p>}
-                  {items.length > 0 && (
-                    <ul className="mt-6 space-y-3">
-                      {items.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <Check className="text-primary mt-0.5 h-4 w-4 shrink-0" />
-                          <span className="text-sm font-medium">{item.title}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                {c.subtitle && (
+                  <p className="mt-6 max-w-md text-lg leading-relaxed text-white/75">{c.subtitle}</p>
+                )}
+                {c.body && (
+                  <div className="mt-4 max-w-md text-white/70">
+                    <Body body={c.body} />
+                  </div>
+                )}
+                {items.length > 0 && (
+                  <ul className="mt-8 space-y-3">
+                    {items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-base font-medium">
+                        <span className="bg-zb-teal/20 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-white/90">{item.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-6 text-xs font-medium text-white/50">
+                  100% vrijblijvend · reactie binnen 1 werkdag · geen verplichtingen
+                </p>
               </div>
-              <div className="p-6 md:p-10">{formSlot}</div>
+              <div className="bg-card text-foreground rounded-3xl border-4 border-white/10 p-6 shadow-2xl md:p-8">
+                {formSlot}
+              </div>
             </div>
-          </Section>
+          </section>
         );
       }
       return (
@@ -992,6 +1340,90 @@ export function LandingBlock({
               ))}
             </ol>
           </Section>
+        );
+      }
+      /* V2.0 — industry_story_moments: statement-headline met twee versprongen,
+         geroteerde foto's die elkaar overlappen; moment-labels zweven over de
+         beelden. Geen cards. Data-driven. */
+      if (
+        section.block_type === "use_cases" &&
+        stepDesign.composition === "industry_story_moments" &&
+        (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))
+      ) {
+        const moment2 = c.image_url_2 || page.products.find((p) => p.image_url)?.image_url;
+        return (
+          <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-28">
+              <div className="max-w-3xl">
+                {page.industry_name && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> Momenten in {page.industry_name}
+                  </ZbPill>
+                )}
+                {c.title && (
+                  <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />
+                )}
+              </div>
+              <div className="relative mt-14 grid gap-10 md:grid-cols-12 md:gap-0">
+                <div className="relative md:col-span-7">
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.image_alt ?? ""}
+                      loading="lazy"
+                      className="w-full -rotate-1 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                    />
+                  ) : (
+                    <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
+                      <ImageOff className="h-8 w-8" />
+                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    </div>
+                  )}
+                  {items[0]?.title && (
+                    <span className="bg-primary text-primary-foreground absolute -top-4 left-6 -rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-lg">
+                      {items[0].title}
+                    </span>
+                  )}
+                </div>
+                <div className="relative md:col-span-5 md:-ml-16 md:mt-24">
+                  {moment2 ? (
+                    <img
+                      src={moment2}
+                      alt={c.image_alt_2 ?? ""}
+                      loading="lazy"
+                      className="w-full rotate-2 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                    />
+                  ) : (
+                    <div className="border-zb-teal/40 bg-zb-teal/5 text-zb-teal flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
+                      <ImageOff className="h-8 w-8" />
+                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    </div>
+                  )}
+                  {items[1]?.title && (
+                    <span className="bg-zb-teal absolute -bottom-4 right-6 rotate-2 rounded-full px-4 py-2 text-xs font-bold text-white shadow-lg">
+                      {items[1].title}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {c.subtitle && (
+                <p className="text-zb-ink/70 mt-12 max-w-xl text-lg leading-relaxed">{c.subtitle}</p>
+              )}
+              {items.length > 2 && (
+                <div className="mt-8 flex flex-wrap gap-2">
+                  {items.slice(2).map((m) => (
+                    <span
+                      key={m.title}
+                      className="border-zb-ink/20 text-zb-ink/80 rounded-full border px-3.5 py-1.5 text-xs font-semibold"
+                    >
+                      {m.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         );
       }
       /* V1.9 — asymmetric_grid voor use_cases: eerste moment groot, de rest
@@ -1125,6 +1557,148 @@ export function LandingBlock({
           </section>
         );
       }
+
+      /* V2.0 — industry_story_split: magazine-achtige split: boogfoto links,
+         oversized quote in display-serif rechts, hazard-stripe als scheiding.
+         Data-driven. */
+      if (design.composition === "industry_story_split" && (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))) {
+        return (
+          <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
+            <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:px-8 md:py-28">
+              <div className="relative">
+                {c.image_url ? (
+                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
+                ) : (
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                    <ImageOff className="h-8 w-8" />
+                    <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    {visual?.visual_brief && (
+                      <span className="text-muted-foreground line-clamp-3 text-center text-xs italic">
+                        {visual.visual_brief}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <span className="zb-hazard absolute -bottom-5 left-8 h-3 w-40 rotate-[-2deg] rounded-full shadow-md" />
+              </div>
+              <div>
+                {page.industry_name && (
+                  <ZbPill className="bg-zb-teal text-white">
+                    <Sparkles className="h-3.5 w-3.5" /> {page.industry_name}
+                  </ZbPill>
+                )}
+                {c.title && (
+                  <blockquote className="font-display mt-6 text-3xl leading-snug font-semibold tracking-tight text-balance md:text-5xl">
+                    <Quote className="text-primary mb-3 h-8 w-8" />
+                    {c.title}
+                  </blockquote>
+                )}
+                {c.subtitle && (
+                  <p className="text-zb-ink/70 mt-6 max-w-md text-lg leading-relaxed">{c.subtitle}</p>
+                )}
+                {c.body && (
+                  <div className="mt-4">
+                    <Body body={c.body} />
+                  </div>
+                )}
+                {items.length > 0 && (
+                  <div className="mt-8 flex flex-wrap gap-2">
+                    {items.map((m) => (
+                      <span
+                        key={m.title}
+                        className="border-zb-ink/20 text-zb-ink/80 rounded-full border px-3.5 py-1.5 text-xs font-semibold"
+                      >
+                        {m.title}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* V2.0 — industry_story_moments: statement-headline met twee versprongen,
+         geroteerde foto's die elkaar overlappen; moment-labels zweven over de
+         beelden. Geen cards. Data-driven. */
+      if (design.composition === "industry_story_moments" && (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))) {
+        const moment2 = c.image_url_2 || page.products.find((p) => p.image_url)?.image_url;
+        return (
+          <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+            <ZbCandyDots />
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-28">
+              <div className="max-w-3xl">
+                {page.industry_name && (
+                  <ZbPill>
+                    <Sparkles className="h-3.5 w-3.5" /> Momenten in {page.industry_name}
+                  </ZbPill>
+                )}
+                {c.title && (
+                  <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />
+                )}
+              </div>
+              <div className="relative mt-14 grid gap-10 md:grid-cols-12 md:gap-0">
+                <div className="relative md:col-span-7">
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.image_alt ?? ""}
+                      loading="lazy"
+                      className="w-full -rotate-1 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                    />
+                  ) : (
+                    <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
+                      <ImageOff className="h-8 w-8" />
+                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    </div>
+                  )}
+                  {items[0]?.title && (
+                    <span className="bg-primary text-primary-foreground absolute -top-4 left-6 -rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-lg">
+                      {items[0].title}
+                    </span>
+                  )}
+                </div>
+                <div className="relative md:col-span-5 md:-ml-16 md:mt-24">
+                  {moment2 ? (
+                    <img
+                      src={moment2}
+                      alt={c.image_alt_2 ?? ""}
+                      loading="lazy"
+                      className="w-full rotate-2 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                    />
+                  ) : (
+                    <div className="border-zb-teal/40 bg-zb-teal/5 text-zb-teal flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
+                      <ImageOff className="h-8 w-8" />
+                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
+                    </div>
+                  )}
+                  {items[1]?.title && (
+                    <span className="bg-zb-teal absolute -bottom-4 right-6 rotate-2 rounded-full px-4 py-2 text-xs font-bold text-white shadow-lg">
+                      {items[1].title}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {c.subtitle && (
+                <p className="text-zb-ink/70 mt-12 max-w-xl text-lg leading-relaxed">{c.subtitle}</p>
+              )}
+              {c.body && (
+                <div className="mt-4 max-w-xl">
+                  <Body body={c.body} />
+                </div>
+              )}
+              {(c.cta_label || c.secondary_cta_label) && (
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                  <ZbCtaGhost label={c.secondary_cta_label} url={c.secondary_cta_url} onClick={onCtaClick} />
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
       const media = <MediaSlot
           src={c.image_url}
           alt={c.image_alt}
