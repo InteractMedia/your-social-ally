@@ -1721,15 +1721,31 @@ export function LandingBlock({
           </section>
         );
       }
-      /* V2.0 — industry_story_moments: statement-headline met twee versprongen,
-         geroteerde foto's die elkaar overlappen; moment-labels zweven over de
-         beelden. Geen cards. Data-driven. */
+      /* V2.1 — industry_story_moments: vier grote foto's als versprongen,
+         geroteerde collage; moment-labels zweven over de beelden. Geen cards.
+         Data-driven (image_url t/m image_url_4 + items als labels). */
       if (
         section.block_type === "use_cases" &&
         stepDesign.composition === "industry_story_moments" &&
         (c.image_url || (showVisualPlaceholders && visualIsMissing(visual)))
       ) {
-        const moment2 = c.image_url_2 || page.products.find((p) => p.image_url)?.image_url;
+        const momentImages = [
+          { src: c.image_url, alt: c.image_alt },
+          {
+            src: c.image_url_2 || page.products.find((p) => p.image_url)?.image_url,
+            alt: c.image_alt_2,
+          },
+          { src: c.image_url_3, alt: c.image_alt_3 },
+          { src: c.image_url_4, alt: c.image_alt_4 },
+        ].filter((m) => m.src);
+        const momentRotations = ["-rotate-1", "rotate-2", "rotate-1", "-rotate-2"];
+        const momentOffsets = ["", "md:mt-12", "md:-mt-4", "md:mt-8"];
+        const momentLabelColors = [
+          "bg-primary text-primary-foreground -rotate-3",
+          "bg-zb-teal text-white rotate-2",
+          "bg-zb-ink text-zb-cream -rotate-2",
+          "bg-zb-honey text-zb-ink rotate-3",
+        ];
         return (
           <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
             <ZbCandyDots />
@@ -1744,54 +1760,37 @@ export function LandingBlock({
                   <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />
                 )}
               </div>
-              <div className="relative mt-14 grid gap-10 md:grid-cols-12 md:gap-0">
-                <div className="relative md:col-span-7">
-                  {c.image_url ? (
+              <div className="mt-14 grid gap-8 sm:grid-cols-2">
+                {momentImages.map((m, i) => (
+                  <figure key={i} className={cn("relative", momentOffsets[i % 4])}>
                     <img
-                      src={c.image_url}
-                      alt={c.image_alt ?? ""}
+                      src={m.src!}
+                      alt={m.alt ?? ""}
                       loading="lazy"
-                      className="w-full -rotate-1 rounded-3xl border-4 border-white object-cover shadow-2xl"
+                      className={cn(
+                        "aspect-[4/3] w-full rounded-3xl border-4 border-white object-cover shadow-2xl",
+                        momentRotations[i % 4],
+                      )}
                     />
-                  ) : (
-                    <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
-                      <ImageOff className="h-8 w-8" />
-                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
-                    </div>
-                  )}
-                  {items[0]?.title && (
-                    <span className="bg-primary text-primary-foreground absolute -top-4 left-6 -rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-lg">
-                      {items[0].title}
-                    </span>
-                  )}
-                </div>
-                <div className="relative md:col-span-5 md:-ml-16 md:mt-24">
-                  {moment2 ? (
-                    <img
-                      src={moment2}
-                      alt={c.image_alt_2 ?? ""}
-                      loading="lazy"
-                      className="w-full rotate-2 rounded-3xl border-4 border-white object-cover shadow-2xl"
-                    />
-                  ) : (
-                    <div className="border-zb-teal/40 bg-zb-teal/5 text-zb-teal flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed p-5">
-                      <ImageOff className="h-8 w-8" />
-                      <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
-                    </div>
-                  )}
-                  {items[1]?.title && (
-                    <span className="bg-zb-teal absolute -bottom-4 right-6 rotate-2 rounded-full px-4 py-2 text-xs font-bold text-white shadow-lg">
-                      {items[1].title}
-                    </span>
-                  )}
-                </div>
+                    {items[i]?.title && (
+                      <span
+                        className={cn(
+                          "absolute -top-4 left-6 rounded-full px-4 py-2 text-xs font-bold shadow-lg",
+                          momentLabelColors[i % 4],
+                        )}
+                      >
+                        {items[i].title}
+                      </span>
+                    )}
+                  </figure>
+                ))}
               </div>
               {c.subtitle && (
                 <p className="text-zb-ink/70 mt-12 max-w-xl text-lg leading-relaxed">{c.subtitle}</p>
               )}
-              {items.length > 2 && (
+              {items.length > momentImages.length && (
                 <div className="mt-8 flex flex-wrap gap-2">
-                  {items.slice(2).map((m) => (
+                  {items.slice(momentImages.length).map((m) => (
                     <span
                       key={m.title}
                       className="border-zb-ink/20 text-zb-ink/80 rounded-full border px-3.5 py-1.5 text-xs font-semibold"
