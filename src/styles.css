@@ -241,3 +241,41 @@
 @utility gradient-neon {
   background-image: var(--gradient-neon);
 }
+
+/* ---------------------------------------------------------------------------
+ * POC — ZoetBezorgen Conversion Design System (visuele POC, nog geen productie)
+ * Merklaag: warm cream canvas, diepbruine inkt, teal/honey accenten,
+ * display-serif typografie en grafische motieven (hazard-stripe voor Bouw).
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --color-zb-ink: var(--zb-ink);
+  --color-zb-teal: var(--zb-teal);
+  --color-zb-cream: var(--zb-cream);
+  --color-zb-blush: var(--zb-blush);
+  --color-zb-honey: var(--zb-honey);
+}
+
+:root {
+  --zb-ink: oklch(0.3 0.045 45);
+  --zb-teal: oklch(0.55 0.09 200);
+  --zb-cream: oklch(0.965 0.025 82);
+  --zb-blush: oklch(0.94 0.045 15);
+  --zb-honey: oklch(0.85 0.12 85);
+}
+
+/* Bouw-motief: veiligheidsstreep (hazard) als grafisch element */
+.zb-hazard {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--zb-honey) 0 12px,
+    var(--zb-ink) 12px 24px
+  );
+}
+
+/* Snoep-dots: speelse decoratieve cirkels */
+.zb-dot {
+  border-radius: 9999px;
+  position: absolute;
+  pointer-events: none;
+}
