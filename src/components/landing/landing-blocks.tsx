@@ -838,10 +838,114 @@ export function LandingBlock({
           </div>
         </article>
       );
+      /* V2.0 — featured-blok als herbruikbare closure (ook gebruikt door de
+         polaroid-wand variant, V2.1). Data-driven. */
+      const featuredShowcase = () => {
+        const featured = page.products[0];
+        return (
+          <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
+            <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
+              <div className="relative order-2 md:order-1">
+                <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
+                {featured.image_url && (
+                  <img
+                    src={featured.image_url}
+                    alt={featured.image_alt ?? featured.name}
+                    loading="lazy"
+                    className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
+                  />
+                )}
+                <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
+                  Met eigen logo & kaartje
+                </span>
+              </div>
+              <div className="order-1 md:order-2">
+                <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
+                <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
+                {featured.short_text && (
+                  <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
+                    {featured.short_text}
+                  </p>
+                )}
+                {featured.price_from !== null && (
+                  <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
+                    vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
+                  </p>
+                )}
+                <ul className="mt-7 space-y-3">
+                  {(items.length > 0 ? items : [
+                    { title: "Vanaf 25 stuks — ook voor één team of project" },
+                    { title: "Volledig gepersonaliseerd in jullie huisstijl" },
+                    { title: "Levering op locatie of thuis bij medewerkers" },
+                  ]).map((u, i) => (
+                    <li key={i} className="flex items-start gap-3 text-base font-medium">
+                      <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                      {u.title}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
+                  <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      };
+      /* V2.1 — polaroid-wand: content.gallery (of productbeelden als
+         fallback) als speelse, licht geroteerde polaroids. Data-driven. */
+      const polaroids = (
+        (c.gallery ?? []).filter((g) => g.url).length > 0
+          ? (c.gallery ?? []).filter((g) => g.url)
+          : page.products
+              .filter((p) => p.image_url)
+              .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
+      ).slice(0, 10);
+      const polaroidRotations = [
+        "-rotate-3",
+        "rotate-2",
+        "-rotate-2",
+        "rotate-3",
+        "-rotate-1",
+        "rotate-1",
+        "-rotate-2",
+        "rotate-2",
+        "-rotate-3",
+        "rotate-1",
+      ];
+      const polaroidWall =
+        polaroids.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-5 md:gap-7">
+            {polaroids.map((g, i) => (
+              <figure
+                key={i}
+                className={cn(
+                  "bg-card border-zb-ink/10 w-32 shrink-0 rounded-lg border p-2 pb-3 shadow-lg transition-transform hover:scale-105 hover:rotate-0 sm:w-40 md:w-44",
+                  polaroidRotations[i % polaroidRotations.length],
+                )}
+              >
+                <img
+                  src={g.url}
+                  alt={g.alt ?? ""}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md object-cover"
+                />
+                {g.caption && (
+                  <figcaption className="text-zb-ink/70 mt-2 line-clamp-1 text-center text-[11px] font-medium">
+                    {g.caption}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        ) : null;
       return (
         <Section id="producten" design={productDesign}>
           <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
-          {page.products.length === 0 ? (
+          {page.products.length === 0 && polaroids.length === 0 ? (
             <Body body={c.body} />
           ) : composition === "masonry_showcase" ? (
             /* V1.9C — masonry_showcase: echte asymmetrische masonry met
