@@ -91,6 +91,17 @@ export type BlockContent = {
   /** Second image slot — used by the before/after composition (V1.9). */
   image_url_2?: string;
   image_alt_2?: string;
+  /** Extra beeldslots 3 & 4 — o.a. de 4-foto moments-compositie (V2.1). */
+  image_url_3?: string;
+  image_alt_3?: string;
+  image_url_4?: string;
+  image_alt_4?: string;
+  /** Vrije fotowand (product_showcase_polaroids) — polaroid-raster (V2.1). */
+  gallery?: { url: string; alt?: string; caption?: string }[];
+  /** Logo-cloud (social_proof logo_cloud_stats) (V2.1). */
+  logos?: { url: string; alt?: string }[];
+  /** Statistieken zoals reviewscore (social_proof logo_cloud_stats) (V2.1). */
+  stats?: { value: string; label: string }[];
   cta_label?: string;
   cta_url?: string;
   secondary_cta_label?: string;
