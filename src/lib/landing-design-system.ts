@@ -21,7 +21,17 @@ export const SECTION_LAYOUTS = [
 ] as const;
 export type SectionLayout = (typeof SECTION_LAYOUTS)[number];
 
-export const SECTION_BACKGROUNDS = ["plain", "tinted", "card", "warm", "contrast", "bordered"] as const;
+export const SECTION_BACKGROUNDS = [
+  "plain",
+  "tinted",
+  "card",
+  "warm",
+  "contrast",
+  "bordered",
+  "cream",
+  "blush",
+  "ink",
+] as const;
 export type SectionBackground = (typeof SECTION_BACKGROUNDS)[number];
 
 export const SECTION_WIDTHS = ["narrow", "default", "wide", "full"] as const;
@@ -68,6 +78,13 @@ export const SECTION_COMPOSITIONS = [
   "industry_story",
   "editorial_cta",
   "premium_form",
+  /* V2.0 — ZoetBezorgen Conversion Design System (POC → productie) */
+  "candy_hero_collage",
+  "candy_hero_editorial",
+  "industry_story_split",
+  "industry_story_moments",
+  "product_showcase_featured",
+  "product_showcase_trio",
 ] as const;
 export type SectionComposition = (typeof SECTION_COMPOSITIONS)[number];
 
@@ -118,6 +135,9 @@ export const LANDING_DESIGN_TOKENS = {
     warm: "bg-gradient-to-br from-primary/10 via-background to-background",
     contrast: "bg-foreground/[0.04]",
     bordered: "border-border/60 border-y bg-card/30",
+    cream: "bg-zb-cream text-zb-ink",
+    blush: "bg-zb-blush text-zb-ink",
+    ink: "bg-zb-ink text-zb-cream",
   },
   radius: { card: "rounded-xl", media: "rounded-2xl", pill: "rounded-full" },
   cards: {
@@ -219,6 +239,9 @@ export const DESIGN_LABELS = {
     warm: "Warm verloop",
     contrast: "Contrast",
     bordered: "Met randen",
+    cream: "ZB cream",
+    blush: "ZB blush",
+    ink: "ZB inkt (donker)",
   } satisfies Record<SectionBackground, string>,
   composition: {
     default: "Standaard",
@@ -243,5 +266,11 @@ export const DESIGN_LABELS = {
     industry_story: "Branche-verhaal (visueel)",
     editorial_cta: "Editorial CTA (full-bleed)",
     premium_form: "Premium formulier (beeld + benefits)",
+    candy_hero_collage: "CandyHero — collage (boogfoto + polaroid)",
+    candy_hero_editorial: "CandyHero — editorial (full-bleed sfeer)",
+    industry_story_split: "IndustryStory — split (boogfoto + quote)",
+    industry_story_moments: "IndustryStory — versprongen momenten",
+    product_showcase_featured: "ProductShowcase — featured product",
+    product_showcase_trio: "ProductShowcase — trio (overlappend)",
   } satisfies Record<SectionComposition, string>,
 };
