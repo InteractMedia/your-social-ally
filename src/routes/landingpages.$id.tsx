@@ -537,6 +537,133 @@ function SectionCard({
           ))}
         </div>
 
+        {/* Fotowand / galerij (polaroid-compositie) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Fotowand / galerij (polaroids)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ gallery: [...(content.gallery ?? []), { url: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Foto
+            </Button>
+          </div>
+          {(content.gallery ?? []).map((g, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_auto]">
+              <ImageUrlField
+                value={g.url}
+                onChange={(url) => {
+                  const next = [...(content.gallery ?? [])];
+                  next[i] = { ...g, url };
+                  set({ gallery: next });
+                }}
+              />
+              <Input
+                placeholder="Bijschrift"
+                value={g.caption ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.gallery ?? [])];
+                  next[i] = { ...g, caption: e.target.value };
+                  set({ gallery: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ gallery: (content.gallery ?? []).filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Logo-cloud (social proof) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Logo's (social proof)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ logos: [...(content.logos ?? []), { url: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Logo
+            </Button>
+          </div>
+          {(content.logos ?? []).map((l, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_auto]">
+              <ImageUrlField
+                value={l.url}
+                onChange={(url) => {
+                  const next = [...(content.logos ?? [])];
+                  next[i] = { ...l, url };
+                  set({ logos: next });
+                }}
+              />
+              <Input
+                placeholder="Naam (alt-tekst)"
+                value={l.alt ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.logos ?? [])];
+                  next[i] = { ...l, alt: e.target.value };
+                  set({ logos: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ logos: (content.logos ?? []).filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Stats (social proof) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Statistieken (bv. reviewscore)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set({ stats: [...(content.stats ?? []), { value: "", label: "" }] })}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Stat
+            </Button>
+          </div>
+          {(content.stats ?? []).map((s, i) => (
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_2fr_auto]">
+              <Input
+                placeholder="Waarde (bv. 9,4/10)"
+                value={s.value}
+                onChange={(e) => {
+                  const next = [...(content.stats ?? [])];
+                  next[i] = { ...s, value: e.target.value };
+                  set({ stats: next });
+                }}
+              />
+              <Input
+                placeholder="Label (bv. WebwinkelKeur score)"
+                value={s.label}
+                onChange={(e) => {
+                  const next = [...(content.stats ?? [])];
+                  next[i] = { ...s, label: e.target.value };
+                  set({ stats: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => set({ stats: (content.stats ?? []).filter((_, x) => x !== i) })}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
         <Button size="sm" onClick={() => onSave(content)}>
           Blok opslaan
         </Button>
