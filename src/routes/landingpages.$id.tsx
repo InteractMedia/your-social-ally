@@ -430,22 +430,34 @@ function SectionCard({
             <Label>CTA-link</Label>
             <Input value={content.cta_url ?? ""} onChange={(e) => set({ cta_url: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Afbeelding (URL)</Label>
-            <Input value={content.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} />
-          </div>
+          <ImageUrlField
+            label="Afbeelding"
+            value={content.image_url ?? ""}
+            onChange={(url) => set({ image_url: url })}
+          />
           <div className="space-y-1.5">
             <Label>Alt-tekst</Label>
             <Input value={content.image_alt ?? ""} onChange={(e) => set({ image_alt: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Afbeelding 2 (URL)</Label>
-            <Input value={content.image_url_2 ?? ""} onChange={(e) => set({ image_url_2: e.target.value })} />
-          </div>
+          <ImageUrlField
+            label="Afbeelding 2"
+            value={content.image_url_2 ?? ""}
+            onChange={(url) => set({ image_url_2: url })}
+          />
           <div className="space-y-1.5">
             <Label>Alt-tekst afbeelding 2</Label>
             <Input value={content.image_alt_2 ?? ""} onChange={(e) => set({ image_alt_2: e.target.value })} />
           </div>
+          <ImageUrlField
+            label="Afbeelding 3"
+            value={content.image_url_3 ?? ""}
+            onChange={(url) => set({ image_url_3: url })}
+          />
+          <ImageUrlField
+            label="Afbeelding 4"
+            value={content.image_url_4 ?? ""}
+            onChange={(url) => set({ image_url_4: url })}
+          />
           <div className="space-y-1.5">
             <Label>Secundaire CTA-label</Label>
             <Input
