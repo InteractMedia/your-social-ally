@@ -410,3 +410,138 @@ export function ShowcaseTrio() {
     </section>
   );
 }
+
+/* ========================================================== PROOFSTRIP */
+
+/**
+ * ProofStrip — compacte social-proof-band.
+ * Editorial "logo's" in display-serif (tekstueel, geen gefabuleerde
+ * klantnamen: sectorlabels als placeholder tot echte klantlogo's
+ * beschikbaar zijn), gecombineerd met harde bewijspunten.
+ */
+export function ProofStrip() {
+  return (
+    <section className="border-zb-ink/10 bg-zb-cream border-y py-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-5 md:flex-row md:justify-between md:px-8">
+        <p className="text-zb-ink/50 text-xs font-semibold tracking-widest uppercase">
+          Vertrouwd door teams in
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+          {["Aannemers", "Installatiebedrijven", "Bouwondernemingen", "Projectontwikkelaars"].map(
+            (label) => (
+              <span
+                key={label}
+                className="font-display text-zb-ink/35 text-lg font-semibold tracking-tight whitespace-nowrap md:text-xl"
+              >
+                {label}
+              </span>
+            ),
+          )}
+        </div>
+        <div className="text-zb-ink/60 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
+          <span className="bg-zb-teal inline-block h-2 w-2 rounded-full" />
+          Persoonlijk gegeven, verzorgd bezorgd
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ========================================================== PREMIUMFORM */
+
+/**
+ * PremiumForm — offertefunnel-sectie met minimale frictie.
+ * Donker inktvlak, editorial benefits-lijst links, compact formulier
+ * rechts in een zwevend paneel. Risk-reversal microcopy direct onder de
+ * submit: geen verplichtingen, reactie binnen 1 werkdag.
+ */
+export function PremiumFormSection() {
+  return (
+    <section id="poc-cta" className="bg-zb-ink text-zb-cream relative overflow-hidden">
+      <div className="zb-hazard absolute inset-x-0 top-0 h-3" />
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
+        <div>
+          <Pill className="bg-zb-honey text-zb-ink">
+            <Sparkles className="h-3.5 w-3.5" /> Gratis offerte
+          </Pill>
+          <h2 className="font-display mt-6 text-4xl leading-[1.05] font-semibold tracking-tight text-balance md:text-6xl">
+            Jouw offerte binnen <em className="text-zb-honey not-italic">één werkdag</em>
+          </h2>
+          <p className="mt-6 max-w-md text-lg leading-relaxed text-white/75">
+            Vertel kort wie je wilt verrassen en met hoeveel — wij sturen een voorstel op
+            maat, inclusief personalisatie met jullie logo.
+          </p>
+          <ul className="mt-8 space-y-3">
+            {[
+              "Geen verplichtingen — je ontvangt alleen een voorstel",
+              "Inclusief ontwerpvoorbeeld met jullie logo",
+              "Levering op de bouwplaats of bij medewerkers thuis",
+            ].map((b) => (
+              <li key={b} className="flex items-start gap-3 text-base font-medium text-white/85">
+                <span className="bg-zb-teal/25 text-zb-honey mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                  <Check className="h-3.5 w-3.5" />
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <form
+          className="bg-card text-zb-ink rounded-3xl p-7 shadow-2xl md:-mt-6 md:p-9"
+          onSubmit={(e) => e.preventDefault()}
+        >
+          <h3 className="font-display text-2xl font-semibold tracking-tight">
+            Vraag je offerte aan
+          </h3>
+          <div className="mt-6 space-y-4">
+            <label className="block">
+              <span className="text-zb-ink/70 text-xs font-semibold tracking-wide uppercase">
+                Bedrijfsnaam
+              </span>
+              <input
+                type="text"
+                placeholder="Bijv. Van Dijk Bouw BV"
+                className="border-zb-ink/15 focus:border-primary mt-1.5 h-12 w-full rounded-xl border bg-transparent px-4 text-sm outline-none transition-colors"
+              />
+            </label>
+            <label className="block">
+              <span className="text-zb-ink/70 text-xs font-semibold tracking-wide uppercase">
+                E-mailadres
+              </span>
+              <input
+                type="email"
+                placeholder="jij@bedrijf.nl"
+                className="border-zb-ink/15 focus:border-primary mt-1.5 h-12 w-full rounded-xl border bg-transparent px-4 text-sm outline-none transition-colors"
+              />
+            </label>
+            <label className="block">
+              <span className="text-zb-ink/70 text-xs font-semibold tracking-wide uppercase">
+                Aantal geschenken
+              </span>
+              <select
+                className="border-zb-ink/15 focus:border-primary mt-1.5 h-12 w-full rounded-xl border bg-transparent px-4 text-sm outline-none transition-colors"
+                defaultValue="25–50"
+              >
+                <option>25–50</option>
+                <option>50–150</option>
+                <option>150–500</option>
+                <option>500+</option>
+              </select>
+            </label>
+          </div>
+          <button
+            type="submit"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-lg transition-colors"
+          >
+            Stuur mijn offerte <ArrowRight className="h-4 w-4" />
+          </button>
+          {/* Risk-reversal microcopy — direct onder de CTA */}
+          <p className="text-zb-ink/55 mt-4 text-center text-xs leading-relaxed">
+            100% vrijblijvend · reactie binnen 1 werkdag · je gegevens worden niet gedeeld
+          </p>
+        </form>
+      </div>
+    </section>
+  );
+}
