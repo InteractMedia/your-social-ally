@@ -13,6 +13,8 @@ import {
   CandyHeroEditorial,
   IndustryStoryMoments,
   IndustryStorySplit,
+  PremiumFormSection,
+  ProofStrip,
   ShowcaseFeatured,
   ShowcaseTrio,
 } from "@/components/landing/poc/poc-blocks";
@@ -42,6 +44,8 @@ function PocBouwPage() {
       <CandyHeroCollage />
       <VariantLabel family="CandyHero" variant="B" name="Full-bleed editorial" />
       <CandyHeroEditorial />
+      <VariantLabel family="ProofStrip" variant="—" name="Social proof (boven de vouw na hero)" />
+      <ProofStrip />
       <VariantLabel family="IndustryStory" variant="A" name="Editorial split" />
       <IndustryStorySplit />
       <VariantLabel family="IndustryStory" variant="B" name="Staggered moments" />
@@ -50,6 +54,8 @@ function PocBouwPage() {
       <ShowcaseFeatured />
       <VariantLabel family="ProductShowcase" variant="B" name="Product trio overlapping" />
       <ShowcaseTrio />
+      <VariantLabel family="PremiumForm" variant="—" name="Offertefunnel + risk reversal" />
+      <PremiumFormSection />
     </main>
   );
 }

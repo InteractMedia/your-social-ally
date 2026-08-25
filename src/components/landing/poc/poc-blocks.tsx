@@ -104,7 +104,10 @@ export function CandyHeroCollage() {
             <CtaSolid>Offerte aanvragen</CtaSolid>
             <CtaGhost>Bekijk voorbeelden</CtaGhost>
           </div>
-          <div className="mt-10 flex items-center gap-3">
+          <p className="text-zb-ink/55 mt-3 text-xs font-medium">
+            100% vrijblijvend · reactie binnen 1 werkdag
+          </p>
+          <div className="mt-7 flex items-center gap-3">
             <span className="zb-hazard h-2.5 w-24 rounded-full" />
             <span className="text-zb-ink/60 text-xs font-semibold tracking-wide uppercase">
               Vanaf 25 stuks · met eigen logo
