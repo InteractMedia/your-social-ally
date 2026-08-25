@@ -274,6 +274,32 @@ export function LandingBlock({
   const visual = c.visual;
   const slotVisible = Boolean(c.image_url) || (showVisualPlaceholders && visualIsMissing(visual));
 
+  /* Generieke leeg-regel (geldt voor alle huidige en toekomstige pagina's):
+     content-afhankelijke secties zonder data renderen helemaal niet — geen
+     titel, achtergrond of whitespace. Alleen componenten met een expliciet
+     ontworpen lege/placeholder-staat (hero, form, cta_banner, personalization)
+     mogen zonder data blijven staan. */
+  const itemsDependent = ["usps", "faq", "how_it_works", "use_cases", "social_proof"].includes(
+    section.block_type,
+  );
+  const designedEmptyState = ["hero", "form", "cta_banner", "personalization"].includes(
+    section.block_type,
+  );
+  const hasAnyContent =
+    items.length > 0 ||
+    Boolean(
+      c.title || c.subtitle || c.body || c.badge || c.cta_label || c.secondary_cta_label || c.image_url,
+    );
+  if (
+    (section.block_type === "testimonials" && page.testimonials.length === 0) ||
+    (section.block_type === "products" && page.products.length === 0) ||
+    (itemsDependent && items.length === 0) ||
+    (!designedEmptyState && !itemsDependent && !hasAnyContent)
+  ) {
+    return null;
+  }
+
+
 
   switch (section.block_type) {
     case "hero": {
