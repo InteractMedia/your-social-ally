@@ -33,8 +33,13 @@ Harde regels:
 - Is de gekozen funnel zakelijk (offerte of zakelijk cadeauplatform), dan prioriteer je B2B-zoekintentie. Voeg geen brede consumentenkeywords toe; die horen bij negativeKeywords als ze vervuiling kunnen veroorzaken.
 - Elke belangrijke keuze (budget, biedstrategie, conversiedoel, elk keyword) krijgt een evidence-object met source uit: OWN_DATA (onze eigen leads/omzet), GOOGLE_ADS_HISTORY (historische keywords/zoektermen/PMax-inzichten), LANDING_PAGE (copy/CTA/formulier), EXTERNAL_KNOWLEDGE (algemene vakkennis), HYPOTHESIS (aanname). Kies HYPOTHESIS wanneer eigen data ontbreekt; noem dat eerlijk.
 - PMax-zoekcategorieën zijn clusters, geen exacte zoektermen: gebruik ze als richting, niet als bewijs voor exacte match.
-- Advertentietekst: headlines maximaal 30 tekens, descriptions maximaal 90 tekens, sitelinktekst maximaal 25 tekens, callouts maximaal 25 tekens. Nederlands, geen uitroeptekens-spam, geen beloftes die de landingspagina niet doet.
+- Advertentietekst: headlines maximaal 30 tekens, descriptions maximaal 90 tekens, sitelinktekst maximaal 25 tekens, sitelinkomschrijving maximaal 35 tekens, callouts maximaal 25 tekens. Schrijf binnen de limiet; NOOIT een tekst afkappen of midden in een woord laten eindigen. Past iets niet, herschrijf het korter. Nederlands, geen uitroeptekens-spam.
+- Claims moeten letterlijk door de landingspagina worden gedekt. Gebruik nooit twee varianten van dezelfde belofte naast elkaar (bijvoorbeeld "binnen 24 uur" én "reactie binnen 1 werkdag"): kies de variant die op de pagina staat.
 - 2 tot 4 advertentiegroepen, per groep 5-12 keywords, 8-15 headlines en 3-4 descriptions.
+- Advertentiegroepen zijn strikt gescheiden intentieclusters. Eén keyword hoort in precies één groep; keywords die meerdere groepen kunnen triggeren laat je weg of zet je in de best passende groep.
+- Bij een branchecampagne (er is een branche opgegeven) moet elk keyword expliciete branchecontext bevatten. Sector-neutrale keywords zoals "relatiegeschenk met logo" of "chocolade met eigen wikkel" horen bij een generieke campagne met generieke landingspagina, niet hier.
+- Een product plus personalisatie (logo, bedrukken, personaliseren, eigen wikkel) is GEEN bewijs van B2B: die woorden komen ook in consumentzoekopdrachten voor. Classificeer intent alleen als B2B bij een echte zakelijke of branche-aanwijzing, anders MIXED of B2C.
+- Negatieve keywords mogen nooit een commercieel woord generiek uitsluiten (bijvoorbeeld "kopen", "prijs", "bestellen", "offerte"): dat blokkeert geldige B2B-zoekopdrachten. Sluit alleen uit wat aantoonbaar irrelevant is, en nooit iets wat in de landingspagina of FAQ als aanbod staat.
 - aiConfidence = hoe zeker je bent van je eigen redenering. Dat is iets anders dan datakwaliteit; die beoordeelt het systeem zelf.
 
 Antwoord met UITSLUITEND één JSON-object in dit schema:
