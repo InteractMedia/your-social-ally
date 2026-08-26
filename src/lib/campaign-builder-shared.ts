@@ -107,6 +107,10 @@ export type BuilderKeyword = {
   intent: AudienceIntent | string;
   evidence: EvidenceNote;
   enabled: boolean;
+  /** V1.1: fijnmazige B2B-classificatie (CLEAR_B2B … CLEAR_B2C). */
+  b2bLevel?: string;
+  /** V1.1: guardrail-vlaggen, bv. GENERIC_INTENT_REQUIRES_GENERIC_LANDING_PAGE. */
+  flags?: string[];
 };
 
 export type BuilderAsset = { text: string; enabled: boolean };
