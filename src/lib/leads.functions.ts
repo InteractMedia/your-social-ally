@@ -474,11 +474,23 @@ export const updateLeadStatus = createServerFn({ method: "POST" })
     });
     const conversionEvent = conversionEventForStatus(data.status);
     if (conversionEvent) {
-      await context.supabase.from("lead_conversion_events").insert({
-        lead_id: data.id,
-        conversion_event: conversionEvent,
-      });
+      // Eén conversie-event per status: bij heen-en-weer schakelen mag er geen
+      // tweede pending upload ontstaan voor dezelfde stap.
+      const { data: existing } = await context.supabase
+        .from("lead_conversion_events")
+        .select("id")
+        .eq("lead_id", data.id)
+        .eq("conversion_event", conversionEvent)
+        .limit(1)
+        .maybeSingle();
+      if (!existing) {
+        await context.supabase.from("lead_conversion_events").insert({
+          lead_id: data.id,
+          conversion_event: conversionEvent,
+        });
+      }
     }
+
     return { ok: true as const };
   });
 
