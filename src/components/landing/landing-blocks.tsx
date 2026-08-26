@@ -7,6 +7,10 @@
  * brand and can never inject markup or arbitrary styling.
  */
 import {
+  isPlatformComposition,
+  PlatformBlock,
+} from "@/components/landing/landing-platform-blocks";
+import {
   ArrowRight,
   Check,
   Gift,
