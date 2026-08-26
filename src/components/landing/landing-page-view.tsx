@@ -82,8 +82,13 @@ export function LandingPageView({
     />
   );
 
+  const themeVars = {
+    ...(page.theme?.hazard_color_1 ? { "--zb-hazard-1": page.theme.hazard_color_1 } : {}),
+    ...(page.theme?.hazard_color_2 ? { "--zb-hazard-2": page.theme.hazard_color_2 } : {}),
+  } as React.CSSProperties;
+
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div className="bg-background text-foreground min-h-screen" style={themeVars}>
       {page.is_preview && (
         <div className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs font-medium">
           Preview — deze pagina is nog niet gepubliceerd en wordt niet meegeteld in de statistieken.

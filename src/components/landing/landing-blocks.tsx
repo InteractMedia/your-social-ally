@@ -176,13 +176,27 @@ function ZbHeading({
   );
 }
 
+/** Rond (cirkelvormig) fotokader — V2.2 alternatief voor de boogvorm. */
+function ZbRoundFrame({ src, alt, eager, className }: { src: string; alt: string; eager?: boolean; className?: string }) {
+  return (
+    <div className={cn("border-zb-ink/10 aspect-square overflow-hidden rounded-full border-4 shadow-2xl", className)}>
+      <img
+        src={src}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+}
+
 function ZbCtaSolid({ label, url, onClick }: { label?: string; url?: string; onClick?: (l: string) => void }) {
   if (!label) return null;
   return (
     <a
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-7 text-sm font-semibold shadow-lg transition-colors"
+      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-12 items-center justify-center gap-2 rounded-sm px-7 text-sm font-semibold shadow-lg transition-colors"
     >
       {label}
       <ArrowRight className="h-4 w-4" />
@@ -197,7 +211,7 @@ function ZbCtaGhost({ label, url, dark, onClick }: { label?: string; url?: strin
       href={url || "#offerte"}
       onClick={() => onClick?.(label)}
       className={cn(
-        "inline-flex h-12 items-center justify-center rounded-2xl border px-7 text-sm font-semibold transition-colors",
+        "inline-flex h-12 items-center justify-center rounded-sm border px-7 text-sm font-semibold transition-colors",
         dark ? "border-white/60 text-white hover:bg-white/10" : "border-zb-ink/30 text-zb-ink hover:bg-zb-ink/5",
       )}
     >
@@ -760,11 +774,16 @@ export function LandingBlock({
          i.p.v. cards. Scant in één oogopslag. */
       if (uspDesign.composition === "usp_strip") {
         return (
-          <section className="border-border/60 bg-card/30 border-y px-5 py-5 md:px-8">
-            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <section className="border-border/60 bg-card/30 border-y px-5 py-8 md:px-8 md:py-10">
+            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-5">
               {items.map((item, i) => (
-                <span key={i} className="inline-flex items-center gap-2 text-sm font-medium">
-                  <Check className="text-primary h-4 w-4 shrink-0" />
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-3 text-base font-semibold md:text-lg"
+                >
+                  <span className="bg-zb-teal/15 text-zb-teal flex h-9 w-9 shrink-0 items-center justify-center rounded-full md:h-10 md:w-10">
+                    <Check className="h-5 w-5 md:h-6 md:w-6" />
+                  </span>
                   {item.title}
                 </span>
               ))}
@@ -841,55 +860,96 @@ export function LandingBlock({
       /* V2.0 — featured-blok als herbruikbare closure (ook gebruikt door de
          polaroid-wand variant, V2.1). Data-driven. */
       const featuredShowcase = () => {
-        const featured = page.products[0];
+        /* V2.2 — twee tips naast elkaar op het blush canvas. Valt terug op
+           één product als er maar één gekoppeld is. Data-driven. */
+        const tips = page.products.slice(0, 2);
+        const tipAccents = [
+          "bg-primary/15",
+          "bg-zb-teal/15",
+        ];
+        const tipRotations = ["-rotate-3", "rotate-2"];
+        const benefits =
+          items.length > 0
+            ? items
+            : [
+                { title: "Vanaf 25 stuks — ook voor één team of project" },
+                { title: "Volledig gepersonaliseerd in jullie huisstijl" },
+                { title: "Levering op locatie of thuis bij medewerkers" },
+              ];
         return (
           <section className="bg-zb-blush text-zb-ink relative overflow-hidden">
-            <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
-              <div className="relative order-2 md:order-1">
-                <div className="bg-primary/15 absolute inset-0 -z-0 scale-110 rounded-full blur-3xl" />
-                {featured.image_url && (
-                  <img
-                    src={featured.image_url}
-                    alt={featured.image_alt ?? featured.name}
-                    loading="lazy"
-                    className="relative mx-auto w-64 -rotate-3 drop-shadow-2xl md:w-96"
-                  />
-                )}
-                <span className="bg-zb-ink text-zb-cream absolute top-4 right-4 rotate-3 rounded-full px-4 py-2 text-xs font-bold shadow-xl">
-                  Met eigen logo & kaartje
-                </span>
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-20 md:px-8 md:py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                <ZbPill className="bg-primary text-primary-foreground">
+                  {tips.length > 1 ? "Twee favorieten" : "Featured · meest gekozen"}
+                </ZbPill>
+                
               </div>
-              <div className="order-1 md:order-2">
-                <ZbPill className="bg-primary text-primary-foreground">Featured · meest gekozen</ZbPill>
-                <ZbHeading text={featured.name} className="mt-6 text-4xl md:text-6xl" />
-                {featured.short_text && (
-                  <p className="text-zb-ink/70 mt-5 max-w-md text-lg leading-relaxed">
-                    {featured.short_text}
-                  </p>
-                )}
-                {featured.price_from !== null && (
-                  <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
-                    vanaf € {Number(featured.price_from).toFixed(2).replace(".", ",")}
-                  </p>
-                )}
-                <ul className="mt-7 space-y-3">
-                  {(items.length > 0 ? items : [
-                    { title: "Vanaf 25 stuks — ook voor één team of project" },
-                    { title: "Volledig gepersonaliseerd in jullie huisstijl" },
-                    { title: "Levering op locatie of thuis bij medewerkers" },
-                  ]).map((u, i) => (
-                    <li key={i} className="flex items-start gap-3 text-base font-medium">
-                      <span className="bg-zb-teal/15 text-zb-teal mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                        <Check className="h-3.5 w-3.5" />
-                      </span>
-                      {u.title}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
-                  <ZbCtaGhost label={c.secondary_cta_label ?? "Bekijk alle geschenken"} url={c.secondary_cta_url} onClick={onCtaClick} />
-                </div>
+              <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
+                {tips.map((p, i) => (
+                  <div key={p.id} className="relative text-center">
+                    <div className="relative">
+                      <div
+                        className={cn(
+                          "absolute inset-0 -z-0 scale-105 rounded-full blur-3xl",
+                          tipAccents[i % tipAccents.length],
+                        )}
+                      />
+                      {p.image_url && (
+                        <img
+                          src={p.image_url}
+                          alt={p.image_alt ?? p.name}
+                          loading="lazy"
+                          className={cn(
+                            "relative mx-auto w-56 drop-shadow-2xl transition-transform hover:rotate-0 md:w-80",
+                            tipRotations[i % tipRotations.length],
+                          )}
+                        />
+                      )}
+                    </div>
+                    <ZbHeading text={p.name} className="mt-8 text-3xl md:text-4xl" />
+                    {p.short_text && (
+                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
+                        {p.short_text}
+                      </p>
+                    )}
+                    {p.price_from !== null && (
+                      <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
+                        vanaf € {Number(p.price_from).toFixed(2).replace(".", ",")}
+                      </p>
+                    )}
+                    {p.personalization_options.length > 0 && (
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        {p.personalization_options.slice(0, 3).map((o) => (
+                          <span
+                            key={o}
+                            className="border-zb-ink/20 text-zb-ink/75 rounded-full border px-3 py-1 text-xs font-semibold"
+                          >
+                            {o}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <ul className="mx-auto mt-14 flex max-w-4xl flex-wrap justify-center gap-x-8 gap-y-3">
+                {benefits.map((u, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-sm font-medium md:text-base">
+                    <span className="bg-zb-teal/15 text-zb-teal flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                      <Check className="h-3.5 w-3.5" />
+                    </span>
+                    {u.title}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-10 flex flex-wrap justify-center gap-3">
+                <ZbCtaSolid label={c.cta_label ?? "Vraag offerte aan"} url={c.cta_url} onClick={onCtaClick} />
+                <ZbCtaGhost
+                  label={c.secondary_cta_label ?? "Bekijk alle geschenken"}
+                  url={c.secondary_cta_url}
+                  onClick={onCtaClick}
+                />
               </div>
             </div>
           </section>
@@ -916,22 +976,26 @@ export function LandingBlock({
         "-rotate-3",
         "rotate-1",
       ];
+      /* V2.2 — polaroids vallen speels over elkaar heen: op mobiel twee
+         kolommen met kleine overlap, op desktop een losse fotowand. */
       const polaroidWall =
         polaroids.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-5 md:gap-7">
+          <div className="flex flex-wrap justify-center gap-y-6">
             {polaroids.map((g, i) => (
               <figure
                 key={i}
                 className={cn(
-                  "bg-card border-zb-ink/10 w-32 shrink-0 rounded-lg border p-2 pb-3 shadow-lg transition-transform hover:scale-105 hover:rotate-0 sm:w-40 md:w-44",
+                  "bg-card border-zb-ink/10 relative w-32 shrink-0 rounded-md border p-2 pb-3 shadow-xl transition-transform hover:z-30 hover:scale-110 hover:rotate-0 sm:w-40 md:w-44",
                   polaroidRotations[i % polaroidRotations.length],
+                  i > 0 && "-ml-5 sm:-ml-6 md:-ml-8",
+                  i % 2 === 1 ? "z-10 mt-5 md:mt-8" : "z-20",
                 )}
               >
                 <img
                   src={g.url}
                   alt={g.alt ?? ""}
                   loading="lazy"
-                  className="aspect-square w-full rounded-md object-cover"
+                  className="aspect-square w-full rounded-sm object-cover"
                 />
                 {g.caption && (
                   <figcaption className="text-zb-ink/70 mt-2 line-clamp-1 text-center text-[11px] font-medium">
@@ -944,7 +1008,19 @@ export function LandingBlock({
         ) : null;
       return (
         <Section id="producten" design={productDesign}>
-          <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
+          {composition === "product_showcase_polaroids" ? (
+            /* V2.2 — sierlijke display-serif kop voor de fotowand. */
+            <div className="mb-10 max-w-2xl">
+              {c.title && (
+                <ZbHeading text={c.title} className="text-zb-ink text-4xl md:text-5xl" />
+              )}
+              {c.subtitle && (
+                <p className="text-zb-ink/70 mt-3 text-lg leading-relaxed">{c.subtitle}</p>
+              )}
+            </div>
+          ) : (
+            <Heading title={c.title} subtitle={c.subtitle} design={productDesign} />
+          )}
           {page.products.length === 0 && polaroids.length === 0 ? (
             <Body body={c.body} />
           ) : composition === "masonry_showcase" ? (
@@ -1290,9 +1366,9 @@ export function LandingBlock({
             <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[0.95fr_1.05fr] md:px-8 md:py-28">
               <div className="relative">
                 {c.image_url ? (
-                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
+                  <ZbRoundFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
                 ) : (
-                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed p-5">
                     <ImageOff className="h-8 w-8" />
                     <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
                     {visual?.visual_brief && (
@@ -1739,7 +1815,8 @@ export function LandingBlock({
           { src: c.image_url_4, alt: c.image_alt_4 },
         ].filter((m) => m.src);
         const momentRotations = ["-rotate-1", "rotate-2", "rotate-1", "-rotate-2"];
-        const momentOffsets = ["", "md:mt-12", "md:-mt-4", "md:mt-8"];
+        /* V2.2 — foto's vallen een klein beetje over elkaar heen. */
+        const momentOffsets = ["", "md:mt-14", "md:-mt-8", "md:mt-6"];
         const momentLabelColors = [
           "bg-primary text-primary-foreground -rotate-3",
           "bg-zb-teal text-white rotate-2",
@@ -1760,9 +1837,16 @@ export function LandingBlock({
                   <ZbHeading text={c.title} className="mt-6 text-4xl md:text-6xl" />
                 )}
               </div>
-              <div className="mt-14 grid gap-8 sm:grid-cols-2">
+              <div className="mt-14 grid gap-6 sm:grid-cols-2 md:gap-0">
                 {momentImages.map((m, i) => (
-                  <figure key={i} className={cn("relative", momentOffsets[i % 4])}>
+                  <figure
+                    key={i}
+                    className={cn(
+                      "relative transition-transform hover:z-30",
+                      i % 2 === 1 ? "z-10 md:-ml-6" : "z-20",
+                      momentOffsets[i % 4],
+                    )}
+                  >
                     <img
                       src={m.src!}
                       alt={m.alt ?? ""}
@@ -1897,15 +1981,20 @@ export function LandingBlock({
                 </div>
               )}
               {logos.length > 0 && (
-                <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+                /* V2.2 — logo's altijd op één regel, in eigen chips. */
+                <div className="mt-12 -mx-5 flex snap-x items-center justify-start gap-3 overflow-x-auto px-5 pb-2 md:-mx-8 md:justify-center md:px-8 md:gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {logos.map((l, i) => (
-                    <img
+                    <span
                       key={i}
-                      src={l.url}
-                      alt={l.alt ?? ""}
-                      loading="lazy"
-                      className="h-8 w-auto opacity-80 transition hover:opacity-100 md:h-10"
-                    />
+                      className="flex shrink-0 snap-start items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-4 py-3 md:px-5"
+                    >
+                      <img
+                        src={l.url}
+                        alt={l.alt ?? ""}
+                        loading="lazy"
+                        className="h-6 w-auto max-w-[110px] object-contain opacity-85 transition hover:opacity-100 md:h-8"
+                      />
+                    </span>
                   ))}
                 </div>
               )}
@@ -1987,16 +2076,40 @@ export function LandingBlock({
                 )}
               </div>
               {items.length > 0 && (
-                <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map((item, i) => (
-                    <li key={i} className="rounded-2xl border border-white/15 bg-white/5 p-5">
-                      <span className="bg-zb-teal/20 text-zb-teal flex h-7 w-7 items-center justify-center rounded-full">
-                        <Check className="h-4 w-4" />
-                      </span>
-                      <p className="mt-3 font-semibold">{item.title}</p>
-                      {item.text && <p className="mt-1 text-sm text-white/65">{item.text}</p>}
-                    </li>
-                  ))}
+                /* V2.2 — speelse, licht gekantelde tegels met groot serif-cijfer. */
+                <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {items.map((item, i) => {
+                    const tilt = ["-rotate-1", "rotate-1", "rotate-[-0.5deg]"][i % 3];
+                    const dot = ["bg-primary", "bg-zb-honey", "bg-zb-teal"][i % 3];
+                    return (
+                      <li
+                        key={i}
+                        className={cn(
+                          "group relative rounded-lg border border-white/15 bg-white/[0.06] p-6 pt-8 transition-transform hover:rotate-0 hover:bg-white/[0.1]",
+                          tilt,
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "text-zb-ink absolute -top-4 left-6 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shadow-lg",
+                            dot,
+                          )}
+                        >
+                          {i + 1}
+                        </span>
+                        <p className="font-display text-2xl leading-tight">{item.title}</p>
+                        {item.text && (
+                          <p className="mt-2 text-sm leading-relaxed text-white/65">{item.text}</p>
+                        )}
+                        <span
+                          className={cn(
+                            "mt-5 block h-1 w-10 rounded-full transition-all group-hover:w-16",
+                            dot,
+                          )}
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
               {(c.cta_label || c.secondary_cta_label) && (
@@ -2056,9 +2169,9 @@ export function LandingBlock({
             <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:px-8 md:py-28">
               <div className="relative">
                 {c.image_url ? (
-                  <ZbArchFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
+                  <ZbRoundFrame src={c.image_url} alt={c.image_alt ?? visual?.purpose ?? ""} />
                 ) : (
-                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-t-[999px] rounded-b-3xl border-2 border-dashed p-5">
+                  <div className="border-primary/40 bg-primary/5 text-primary flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed p-5">
                     <ImageOff className="h-8 w-8" />
                     <span className="text-xs font-semibold tracking-wide uppercase">AI visual needed</span>
                     {visual?.visual_brief && (
