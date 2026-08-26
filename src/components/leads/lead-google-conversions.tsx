@@ -67,9 +67,13 @@ export function LeadGoogleConversions({ leadId }: { leadId: string }) {
                 {e.google_conversion_value != null
                   ? ` · ${formatMoney(Number(e.google_conversion_value))}`
                   : ""}
-                {e.click_identifier_type
-                  ? ` · ${CLICK_ID_LABELS[e.click_identifier_type] ?? e.click_identifier_type}`
-                  : " · geen click-ID"}
+                {(() => {
+                  const type = e.click_identifier_type ?? leadClickType;
+                  if (!type) return " · geen click-ID";
+                  const label = CLICK_ID_LABELS[type] ?? type;
+                  return e.click_identifier_type ? ` · ${label}` : ` · ${label} beschikbaar`;
+                })()}
+
                 {e.google_upload_timestamp
                   ? ` · verzonden ${formatDateTime(e.google_upload_timestamp)}`
                   : ""}
