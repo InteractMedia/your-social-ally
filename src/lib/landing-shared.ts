@@ -295,6 +295,8 @@ export type LandingPageRow = {
   preview_token: string;
   notify_channel: string | null;
   notify_target: string | null;
+  notify_email: string | null;
+  notify_test_email: boolean;
   created_at: string;
   updated_at: string;
 };
