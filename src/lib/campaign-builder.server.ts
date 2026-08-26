@@ -717,9 +717,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     execution,
     dataConfidenceBand: dataConfidence.band,
   };
-  const missingData = [
-    ...new Set([...missing, ...parsed.missingData, ...report.warnings.map((w) => w)]),
-  ];
+  const missingData = [...new Set([...missing, ...parsed.missingData, ...report.claimFindings])];
 
   const { data: inserted, error } = await ctx.supabase
     .from("search_campaign_drafts")
