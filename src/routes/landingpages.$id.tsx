@@ -270,7 +270,16 @@ function LandingPageEditor() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <SettingsEditor page={page} industries={query.data!.industries} />
+            <SettingsEditor
+              page={{
+                ...page,
+                theme: (page.theme ?? null) as {
+                  hazard_color_1?: string | null;
+                  hazard_color_2?: string | null;
+                } | null,
+              }}
+              industries={query.data!.industries}
+            />
           </TabsContent>
 
           <TabsContent value="versions" className="mt-6">
