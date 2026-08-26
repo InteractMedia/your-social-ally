@@ -39,9 +39,13 @@ import {
   Truck,
   UserPlus,
   Users,
+  X,
+  ZoomIn,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 
+import logoAsset from "@/assets/logo-zoetbezorgen.avif.asset.json";
 import { paragraphs, type BlockContent, type BlockItem, type LandingSection } from "@/lib/landing-shared";
 import type { PublicPage } from "@/lib/landing.server";
 import { cn } from "@/lib/utils";
