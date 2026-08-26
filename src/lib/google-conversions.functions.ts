@@ -298,9 +298,19 @@ export const getLeadOfflineConversions = createServerFn({ method: "POST" })
       )
       .eq("lead_id", data.leadId)
       .order("conversion_timestamp", { ascending: true });
-    if (error) return { ok: false as const, events: [], error: error.message };
-    return { ok: true as const, events: events ?? [], error: null as string | null };
+    if (error) return { ok: false as const, events: [], leadClickType: null, error: error.message };
+    // Voor nog niet geüploade events is click_identifier_type leeg; toon dan het
+    // click-ID dat op de lead staat (prioriteit gclid → gbraid → wbraid).
+    const { data: lead } = await ctx.supabase
+      .from("leads")
+      .select("gclid,gbraid,wbraid")
+      .eq("id", data.leadId)
+      .maybeSingle();
+    const leadClickType =
+      (["gclid", "gbraid", "wbraid"] as const).find((k) => lead?.[k]) ?? null;
+    return { ok: true as const, events: events ?? [], leadClickType, error: null as string | null };
   });
+
 
 /** Audit trail of upload decisions (newest first). */
 export const getOfflineUploadLog = createServerFn({ method: "GET" })
