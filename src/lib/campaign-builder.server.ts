@@ -621,7 +621,7 @@ export async function runSearchConceptForWorkspace(opts: {
 
   const { data: page } = await ctx.supabase
     .from("landing_pages")
-    .select("id, name, slug, funnel_type, base_url, canonical_url, industry_id")
+    .select("id, name, slug, status, funnel_type, base_url, canonical_url, industry_id")
     .eq("id", opts.landingPageId)
     .maybeSingle();
   if (!page) return { ok: false as const, draftId: null, error: "Landingspagina niet gevonden." };
