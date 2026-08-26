@@ -423,8 +423,10 @@ export function toProposal(
         evidence: normEvidence(k.evidence),
         enabled: true,
       })),
-      headlines: g.headlines.map((text) => ({ text: text.slice(0, 30), enabled: true })),
-      descriptions: g.descriptions.map((text) => ({ text: text.slice(0, 90), enabled: true })),
+      // V1.1: NOOIT afkappen. Te lange teksten worden door de guardrails
+      // herschreven of uitgezet, nooit geknipt.
+      headlines: g.headlines.map((text) => ({ text: text.trim(), enabled: true })),
+      descriptions: g.descriptions.map((text) => ({ text: text.trim(), enabled: true })),
     })),
     negativeKeywords: parsed.negativeKeywords.map((n) => ({
       text: n.text,
@@ -433,11 +435,11 @@ export function toProposal(
       enabled: true,
     })),
     sitelinks: parsed.sitelinks.map((s) => ({
-      text: s.text.slice(0, 25),
-      description: s.description.slice(0, 35),
+      text: s.text.trim(),
+      description: (s.description ?? "").trim(),
       enabled: true,
     })),
-    callouts: parsed.callouts.map((text) => ({ text: text.slice(0, 25), enabled: true })),
+    callouts: parsed.callouts.map((text) => ({ text: text.trim(), enabled: true })),
     expectedIntent: parsed.expectedIntent,
     risks: parsed.risks,
     summary: parsed.summary,
