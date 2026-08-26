@@ -1981,21 +1981,26 @@ export function LandingBlock({
                 </div>
               )}
               {logos.length > 0 && (
-                /* V2.2 — alle logo's op één regel, full-width, in eigen chips. */
-                <div className="mt-12 flex w-full items-stretch gap-2 md:gap-3">
-                  {logos.map((l, i) => (
-                    <span
-                      key={i}
-                      className="flex min-w-0 flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-2 py-3 transition hover:bg-white/[0.12] md:px-3"
-                    >
-                      <img
-                        src={l.url}
-                        alt={l.alt ?? ""}
-                        loading="lazy"
-                        className="h-4 w-full object-contain opacity-85 transition hover:opacity-100 sm:h-5 md:h-7"
-                      />
-                    </span>
-                  ))}
+                /* V2.3 — logo-slider: doorlopende marquee met grotere logo's;
+                   pauzeert bij hover. Track is verdubbeld voor een naadloze loop. */
+                <div className="zb-marquee relative mt-12 -mx-5 overflow-hidden md:-mx-8">
+                  <div className="from-zb-ink pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent md:w-20" />
+                  <div className="from-zb-ink pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l to-transparent md:w-20" />
+                  <div className="zb-marquee-track flex items-stretch gap-3 md:gap-4">
+                    {[...logos, ...logos].map((l, i) => (
+                      <span
+                        key={i}
+                        className="flex w-36 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-4 py-4 transition hover:bg-white/[0.12] sm:w-44 md:w-52"
+                      >
+                        <img
+                          src={l.url}
+                          alt={l.alt ?? ""}
+                          loading="lazy"
+                          className="h-8 w-full object-contain opacity-90 transition hover:opacity-100 sm:h-10 md:h-12"
+                        />
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
