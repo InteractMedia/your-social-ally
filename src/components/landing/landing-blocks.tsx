@@ -887,13 +887,8 @@ export function LandingBlock({
               <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
                 {tips.map((p, i) => (
                   <div key={p.id} className="relative text-center">
-                    {/* V2.3 — eerst de titel, daarna de foto (recht, niet gekanteld). */}
+                    {/* V2.3 — alleen de titel boven de foto. */}
                     <ZbHeading text={p.name} className="text-3xl md:text-4xl" />
-                    {p.short_text && (
-                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
-                        {p.short_text}
-                      </p>
-                    )}
                     <div className="relative mt-8">
                       <div
                         className={cn(
