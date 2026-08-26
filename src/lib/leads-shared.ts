@@ -102,15 +102,18 @@ export const CONVERSION_EVENTS = [
   "platform_active_customer",
 ] as const;
 
+/**
+ * Statussen die een uploadbaar Google-conversie-event opleveren.
+ * Interne funnel-statussen (approved, activated, active_customer) staan hier
+ * bewust NIET in: die blijven volledig beschikbaar voor Lead Manager,
+ * funnelanalyse en AI, maar gaan nooit naar Google Ads.
+ */
 export const CONVERSION_EVENT_FOR_STATUS: Record<string, string> = {
   quote_request: "quote_request",
   qualified: "qualified_lead",
   customer_won: "customer_won",
   application: "platform_application",
-  approved: "platform_approved",
-  activated: "platform_activated",
   first_order: "platform_first_order",
-  active_customer: "platform_active_customer",
 };
 
 export type LeadRow = {

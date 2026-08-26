@@ -47,24 +47,6 @@ export const OFFLINE_EVENTS = [
     advisedPrimary: false,
   },
   {
-    key: "platform_approved",
-    label: "Goedgekeurd (cadeauplatform)",
-    funnel: "platform",
-    order: 2,
-    advice: "Belangrijk kwaliteitssignaal",
-    advisedValueSource: "fixed" as ValueSource,
-    advisedPrimary: true,
-  },
-  {
-    key: "platform_activated",
-    label: "Geactiveerd (cadeauplatform)",
-    funnel: "platform",
-    order: 3,
-    advice: "Sterk kwaliteitssignaal",
-    advisedValueSource: "fixed" as ValueSource,
-    advisedPrimary: true,
-  },
-  {
     key: "platform_first_order",
     label: "Eerste bestelling (cadeauplatform)",
     funnel: "platform",
@@ -72,15 +54,6 @@ export const OFFLINE_EVENTS = [
     advice: "Zeer sterk business-signaal — echte orderwaarde",
     advisedValueSource: "dynamic" as ValueSource,
     advisedPrimary: true,
-  },
-  {
-    key: "platform_active_customer",
-    label: "Actieve klant (cadeauplatform)",
-    funnel: "platform",
-    order: 5,
-    advice: "Voorbereid — nog niet automatisch gebruiken",
-    advisedValueSource: "dynamic" as ValueSource,
-    advisedPrimary: false,
   },
   {
     key: "quote_request",
@@ -111,9 +84,21 @@ export const OFFLINE_EVENTS = [
   },
 ] as const;
 
-export const OFFLINE_EVENT_LABELS: Record<string, string> = Object.fromEntries(
-  OFFLINE_EVENTS.map((e) => [e.key, e.label]),
-);
+/**
+ * Funnel-events die uitsluitend intern in SocialCockpit leven (Lead Manager,
+ * funnelanalyse, AI). Ze worden nooit naar Google Ads geüpload en krijgen dus
+ * geen conversiemapping en geen pending conversion-events.
+ */
+export const INTERNAL_ONLY_EVENT_LABELS: Record<string, string> = {
+  platform_approved: "Goedgekeurd (cadeauplatform)",
+  platform_activated: "Geactiveerd (cadeauplatform)",
+  platform_active_customer: "Actieve klant (cadeauplatform)",
+};
+
+export const OFFLINE_EVENT_LABELS: Record<string, string> = {
+  ...INTERNAL_ONLY_EVENT_LABELS,
+  ...Object.fromEntries(OFFLINE_EVENTS.map((e) => [e.key, e.label])),
+};
 
 export const VALUE_SOURCE_LABELS: Record<ValueSource, string> = {
   none: "Geen waarde",
