@@ -223,12 +223,14 @@ export function PlatformTopBar({
   ctaLabel = "Account aanvragen",
   ctaUrl = "#offerte",
   loginUrl = "#offerte",
+  onCtaClick,
 }: {
   label?: string;
   loginLabel?: string;
   ctaLabel?: string;
   ctaUrl?: string;
   loginUrl?: string;
+  onCtaClick?: (label: string) => void;
 }) {
   return (
     <header className="bg-zp-ink">
@@ -248,6 +250,7 @@ export function PlatformTopBar({
           </a>
           <a
             href={ctaUrl}
+            onClick={() => onCtaClick?.(ctaLabel)}
             className="bg-zp-pink text-zp-surface hover:bg-zp-pink/90 inline-flex h-11 items-center justify-center rounded-[7px] px-4 text-sm font-medium transition-colors md:h-12 md:px-6 md:text-base"
           >
             {ctaLabel}

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { LandingBlock } from "@/components/landing/landing-blocks";
 import { LandingForm } from "@/components/landing/landing-form";
+import { PlatformTopBar } from "@/components/landing/landing-platform-blocks";
 import { captureAttribution, getSessionId } from "@/lib/landing-attribution";
 import type { AttributionSnapshot, LandingFunnel } from "@/lib/landing-shared";
 import type { PublicPage } from "@/lib/landing.server";
@@ -92,10 +93,7 @@ export function LandingPageView({
   return (
     <div className="bg-background text-foreground min-h-screen" style={themeVars}>
       {isPlatform && (
-        <PlatformTopBar
-          ctaLabel={page.form?.submit_label || "Account aanvragen"}
-          onCtaClick={(label) => send("cta_click", { label })}
-        />
+        <PlatformTopBar onCtaClick={(label: string) => send("cta_click", { label })} />
       )}
       {page.is_preview && (
         <div className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs font-medium">
