@@ -138,6 +138,23 @@ function DraftPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // V1.1: deterministische hervalidatie (guardrails, data-confidence, final URL).
+  const revalidate = useMutation({
+    mutationFn: () => revalidateFn({ data: { id } }),
+    onSuccess: (res: any) => {
+      if (!res.ok) return toast.error(res.error ?? "Hervalidatie mislukt");
+      setDirty(false);
+      toast.success(
+        `Guardrails toegepast · data-confidence ${res.dataConfidence}% (${res.dataConfidenceBand}) · ${
+          res.execution?.eligibility === "ALLOWED" ? "uitvoerbaar" : "geblokkeerd voor creatie"
+        }`,
+      );
+      qc.invalidateQueries({ queryKey: ["builder-draft", id] });
+      qc.invalidateQueries({ queryKey: ["builder-drafts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const remove = useMutation({
     mutationFn: () => deleteFn({ data: { id } }),
     onSuccess: () => {
