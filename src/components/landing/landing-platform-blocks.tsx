@@ -39,9 +39,13 @@ import {
   Truck,
   UserPlus,
   Users,
+  X,
+  ZoomIn,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 
+import logoAsset from "@/assets/logo-zoetbezorgen.avif.asset.json";
 import { paragraphs, type BlockContent, type BlockItem, type LandingSection } from "@/lib/landing-shared";
 import type { PublicPage } from "@/lib/landing.server";
 import { cn } from "@/lib/utils";
@@ -164,8 +168,8 @@ function ZpPill({ text, tone }: { text?: string; tone: "pink" | "teal" }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.14em] uppercase",
-        tone === "pink" ? "bg-zp-pink text-zp-surface" : "bg-zp-teal/30 text-zp-ink",
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold tracking-widest uppercase",
+        tone === "pink" ? "bg-zp-pink text-zp-surface" : "bg-zp-teal text-zp-ink",
       )}
     >
       <Sparkles className={cn("h-3.5 w-3.5", tone === "pink" ? "text-zp-surface" : "text-zp-pink")} />
@@ -187,17 +191,73 @@ function ZpTitle({
   return <As className={cn("zp-title text-zp-ink text-balance", className)}>{text}</As>;
 }
 
-function ZpBody({ body, className }: { body?: string; className?: string }) {
+function ZpBody({
+  body,
+  className,
+  size = "base",
+}: {
+  body?: string;
+  className?: string;
+  size?: "base" | "lg";
+}) {
   const parts = paragraphs(body);
   if (!parts.length) return null;
   return (
     <div className={cn("space-y-4", className)}>
       {parts.map((p, i) => (
-        <p key={i} className="text-zp-muted text-base leading-relaxed md:text-lg">
+        <p
+          key={i}
+          className={cn("text-zp-muted leading-relaxed", size === "lg" ? "text-lg" : "text-base")}
+        >
           {p}
         </p>
       ))}
     </div>
+  );
+}
+
+/** Zwarte topbalk met logo en acties, exact als op zoetbezorgen.app/cadeaus. */
+export function PlatformTopBar({
+  label = "Cadeauplatform",
+  loginLabel = "Inloggen",
+  ctaLabel = "Account aanvragen",
+  ctaUrl = "#offerte",
+  loginUrl = "#offerte",
+  onCtaClick,
+}: {
+  label?: string;
+  loginLabel?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  loginUrl?: string;
+  onCtaClick?: (label: string) => void;
+}) {
+  return (
+    <header className="bg-zp-ink">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">
+        <a href="#top" className="flex items-center gap-3">
+          <img src={logoAsset.url} alt="ZoetBezorgen" className="h-12 w-auto md:h-14" />
+          <span className="bg-zp-surface text-zp-ink hidden rounded-[7px] px-3 py-1.5 text-xs font-semibold tracking-widest uppercase sm:inline-block">
+            {label}
+          </span>
+        </a>
+        <nav className="flex items-center gap-2 md:gap-5">
+          <a
+            href={loginUrl}
+            className="text-zp-surface/90 hover:text-zp-surface px-2 text-sm transition-colors md:text-base"
+          >
+            {loginLabel}
+          </a>
+          <a
+            href={ctaUrl}
+            onClick={() => onCtaClick?.(ctaLabel)}
+            className="bg-zp-pink text-zp-surface hover:bg-zp-pink/90 inline-flex h-11 items-center justify-center rounded-[7px] px-4 text-sm font-medium transition-colors md:h-12 md:px-6 md:text-base"
+          >
+            {ctaLabel}
+          </a>
+        </nav>
+      </div>
+    </header>
   );
 }
 
@@ -303,8 +363,69 @@ function ZpSectionHeading({
   return (
     <div className={cn("mb-12", align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl")}>
       <ZpTitle text={title} className="text-3xl md:text-4xl" />
-      {subtitle && <p className="text-zp-muted mt-3 text-base md:text-lg">{subtitle}</p>}
+      {subtitle && <p className="text-zp-muted mt-2 text-base">{subtitle}</p>}
     </div>
+  );
+}
+
+/** Aanklikbare fotogalerij met lightbox (zoals op zoetbezorgen.app/cadeaus). */
+function ZpLightboxGallery({ photos }: { photos: { url?: string; alt?: string }[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  if (!photos.length) return null;
+  const active = open === null ? null : photos[open];
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {photos.map((p, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setOpen(i)}
+            className="group border-zp-ink/10 bg-zp-surface focus:ring-zp-pink relative overflow-hidden rounded-[22px] border shadow-sm transition hover:shadow-md focus:ring-2 focus:outline-none"
+          >
+            <img
+              src={p.url}
+              alt={p.alt ?? ""}
+              loading="lazy"
+              className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+            <div className="from-zp-ink/60 absolute inset-0 flex items-end justify-center bg-gradient-to-t to-transparent p-4 opacity-0 transition duration-300 group-hover:opacity-100">
+              <span className="text-zp-surface inline-flex items-center gap-1 text-xs font-medium">
+                <ZoomIn className="h-3.5 w-3.5" />
+                {p.alt || "Bekijk voorbeeld"}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {active && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpen(null)}
+          className="bg-zp-ink/80 fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            aria-label="Sluiten"
+            onClick={() => setOpen(null)}
+            className="text-zp-surface hover:bg-zp-surface/15 absolute top-5 right-5 grid h-10 w-10 place-items-center rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <figure className="max-h-full w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={active.url}
+              alt={active.alt ?? ""}
+              className="max-h-[75vh] w-full rounded-[22px] object-contain"
+            />
+            {active.alt && (
+              <figcaption className="text-zp-surface mt-3 text-center text-sm">{active.alt}</figcaption>
+            )}
+          </figure>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -343,14 +464,14 @@ export function PlatformBlock({
               <ZpTitle
                 text={c.title}
                 as="h1"
-                className="mt-5 text-4xl leading-[1.06] md:text-6xl"
+                className="mt-4 text-5xl leading-tight md:text-7xl"
               />
               {c.subtitle && (
-                <p className="zp-title text-zp-teal mt-3 text-2xl leading-tight md:text-3xl">
+                <p className="zp-title text-zp-teal mt-2 text-2xl leading-tight md:text-3xl">
                   {c.subtitle}
                 </p>
               )}
-              <ZpBody body={c.body} className="mt-5 max-w-xl" />
+              <ZpBody body={c.body} size="lg" className="mt-5 max-w-xl" />
               {(c.cta_label || c.secondary_cta_label) && (
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <ZpCtaPink label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
@@ -409,10 +530,10 @@ export function PlatformBlock({
               >
                 <ZpIconTile icon={itemIcon(item, i)} index={i} />
                 {item.title && (
-                  <h3 className="zp-card-title text-zp-ink mt-4 text-xl">{item.title}</h3>
+                  <h3 className="zp-title text-zp-ink mt-4 text-xl leading-snug">{item.title}</h3>
                 )}
                 {item.text && (
-                  <p className="zp-card-body text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
+                  <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
                 )}
               </div>
             ))}
@@ -428,31 +549,56 @@ export function PlatformBlock({
         <ZpSection>
           <ZpSectionHeading title={c.title} subtitle={c.subtitle} />
           <div className="relative">
-            <div
+            <svg
+              className="text-zp-ink pointer-events-none absolute top-12 left-0 hidden h-24 w-full md:block"
+              viewBox="0 0 1000 100"
+              preserveAspectRatio="none"
               aria-hidden
-              className="border-zp-ink/20 absolute top-12 right-[10%] left-[10%] hidden border-t-2 border-dashed md:block"
-            />
-            <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+              opacity="0.2"
+            >
+              <path
+                d="M 0 50 Q 125 0 250 50 T 500 50 T 750 50 T 1000 50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="8 8"
+              />
+            </svg>
+            <div className="relative z-10 grid grid-cols-1 gap-12 md:grid-cols-4 md:gap-8">
               {items.map((item, i) => {
                 const Icon = itemIcon(item, i);
                 const pink = i % 2 === 1;
                 return (
-                  <div key={i} className={cn("text-center", pink ? "md:mt-12" : "md:mt-0")}>
-                    <span className="relative mx-auto inline-block">
-                      <span
+                  <div
+                    key={i}
+                    className={cn(
+                      "group flex flex-col items-center text-center",
+                      pink ? "md:mt-8" : "md:mt-0",
+                    )}
+                  >
+                    <div className="relative mb-6">
+                      <div
                         className={cn(
-                          "grid h-24 w-24 place-items-center rounded-full shadow-lg",
+                          "grid h-24 w-24 place-items-center rounded-full shadow-lg transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110",
                           pink ? "bg-zp-pink" : "bg-zp-teal",
                         )}
                       >
-                        <Icon className="text-zp-surface h-9 w-9" />
-                      </span>
-                      <span className="bg-zp-canvas text-zp-ink border-zp-ink/10 absolute -right-1 -bottom-1 grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold">
-                        {i + 1}
-                      </span>
-                    </span>
-                    <ZpTitle text={item.title} as="h3" className="mt-4 text-base" />
-                    {item.text && <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>}
+                        <Icon className="text-zp-surface h-10 w-10" />
+                      </div>
+                      <div className="bg-zp-canvas border-zp-ink/10 absolute -right-2 -bottom-2 grid h-8 w-8 place-items-center rounded-full border-2 text-sm font-bold shadow-sm">
+                        <span className={pink ? "text-zp-pink" : "text-zp-teal"}>{i + 1}</span>
+                      </div>
+                    </div>
+                    {item.title && (
+                      <h3 className="zp-card-title text-zp-ink mb-3 text-xl leading-tight">
+                        {item.title}
+                      </h3>
+                    )}
+                    {item.text && (
+                      <p className="zp-card-body text-zp-muted max-w-[240px] text-sm leading-relaxed">
+                        {item.text}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -500,19 +646,7 @@ export function PlatformBlock({
                 </div>
               )}
             </div>
-            {photos.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {photos.map((p, i) => (
-                  <img
-                    key={i}
-                    src={p.url}
-                    alt={p.alt ?? ""}
-                    loading="lazy"
-                    className="border-zp-surface aspect-[3/4] w-full rounded-[16px] border-4 object-cover shadow-lg"
-                  />
-                ))}
-              </div>
-            )}
+            <ZpLightboxGallery photos={photos} />
           </div>
         </ZpSection>
       );

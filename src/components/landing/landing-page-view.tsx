@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { LandingBlock } from "@/components/landing/landing-blocks";
 import { LandingForm } from "@/components/landing/landing-form";
+import { PlatformTopBar } from "@/components/landing/landing-platform-blocks";
 import { captureAttribution, getSessionId } from "@/lib/landing-attribution";
 import type { AttributionSnapshot, LandingFunnel } from "@/lib/landing-shared";
 import type { PublicPage } from "@/lib/landing.server";
@@ -87,8 +88,13 @@ export function LandingPageView({
     ...(page.theme?.hazard_color_2 ? { "--zb-hazard-2": page.theme.hazard_color_2 } : {}),
   } as CSSProperties;
 
+  const isPlatform = page.funnel_type === "platform";
+
   return (
     <div className="bg-background text-foreground min-h-screen" style={themeVars}>
+      {isPlatform && (
+        <PlatformTopBar onCtaClick={(label: string) => send("cta_click", { label })} />
+      )}
       {page.is_preview && (
         <div className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs font-medium">
           Preview — deze pagina is nog niet gepubliceerd en wordt niet meegeteld in de statistieken.
