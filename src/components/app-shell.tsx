@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { NotificationBell } from "@/components/notification-bell";
 import logoAsset from "@/assets/logo-zoetbezorgen.avif.asset.json";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -233,6 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="m-3 space-y-2">
+          <NotificationBell />
           <ThemeToggle />
           <SignOutButton />
           <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/50 p-3 text-xs">
