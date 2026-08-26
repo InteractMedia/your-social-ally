@@ -545,7 +545,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
       output_tokens: completion.outputTokens,
       estimated_cost_usd: completion.estimatedCostUsd,
       runtime_ms: completion.runtimeMs,
-      ai_confidence: Math.round(parsed.aiConfidence),
+      ai_confidence: Math.round(parsed.aiConfidence <= 1 ? parsed.aiConfidence * 100 : parsed.aiConfidence),
       data_confidence: dataConfidence.score,
       data_confidence_reasons: dataConfidence.reasons,
       data_sources: sources,

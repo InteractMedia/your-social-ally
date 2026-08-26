@@ -46,9 +46,9 @@ import { Route as ApiPublicLeadStatusRouteImport } from './routes/api/public/lea
 import { Route as AdsGoogleStatsRouteImport } from './routes/ads.google.stats'
 import { Route as AdsGoogleNewRouteImport } from './routes/ads.google.new'
 import { Route as AdsGoogleConversionsRouteImport } from './routes/ads.google.conversions'
-import { Route as AdsGoogleBuilderRouteImport } from './routes/ads.google.builder'
 import { Route as AdsGoogleAdviceRouteImport } from './routes/ads.google.advice'
 import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$campaignId'
+import { Route as AdsGoogleBuilderIndexRouteImport } from './routes/ads.google.builder.index'
 import { Route as ApiPublicLeadIngestQuoteRouteImport } from './routes/api/public/lead-ingest.quote'
 import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/public/lead-ingest.platform'
 import { Route as ApiPublicLandingAssetIdRouteImport } from './routes/api/public/landing-asset.$id'
@@ -239,11 +239,6 @@ const AdsGoogleConversionsRoute = AdsGoogleConversionsRouteImport.update({
   path: '/conversions',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
-const AdsGoogleBuilderRoute = AdsGoogleBuilderRouteImport.update({
-  id: '/builder',
-  path: '/builder',
-  getParentRoute: () => AdsGoogleRoute,
-} as any)
 const AdsGoogleAdviceRoute = AdsGoogleAdviceRouteImport.update({
   id: '/advice',
   path: '/advice',
@@ -252,6 +247,11 @@ const AdsGoogleAdviceRoute = AdsGoogleAdviceRouteImport.update({
 const AdsGoogleCampaignIdRoute = AdsGoogleCampaignIdRouteImport.update({
   id: '/$campaignId',
   path: '/$campaignId',
+  getParentRoute: () => AdsGoogleRoute,
+} as any)
+const AdsGoogleBuilderIndexRoute = AdsGoogleBuilderIndexRouteImport.update({
+  id: '/builder/',
+  path: '/builder/',
   getParentRoute: () => AdsGoogleRoute,
 } as any)
 const ApiPublicLeadIngestQuoteRoute =
@@ -272,9 +272,9 @@ const ApiPublicLandingAssetIdRoute = ApiPublicLandingAssetIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdsGoogleBuilderIdRoute = AdsGoogleBuilderIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdsGoogleBuilderRoute,
+  id: '/builder/$id',
+  path: '/builder/$id',
+  getParentRoute: () => AdsGoogleRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -311,7 +311,6 @@ export interface FileRoutesByFullPath {
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -322,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
+  '/ads/google/builder/': typeof AdsGoogleBuilderIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -353,7 +353,6 @@ export interface FileRoutesByTo {
   '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -364,6 +363,7 @@ export interface FileRoutesByTo {
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
+  '/ads/google/builder': typeof AdsGoogleBuilderIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -400,7 +400,6 @@ export interface FileRoutesById {
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
@@ -411,6 +410,7 @@ export interface FileRoutesById {
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
+  '/ads/google/builder/': typeof AdsGoogleBuilderIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -448,7 +448,6 @@ export interface FileRouteTypes {
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
-    | '/ads/google/builder'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -459,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
+    | '/ads/google/builder/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -490,7 +490,6 @@ export interface FileRouteTypes {
     | '/leads'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
-    | '/ads/google/builder'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -501,6 +500,7 @@ export interface FileRouteTypes {
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
+    | '/ads/google/builder'
   id:
     | '__root__'
     | '/'
@@ -536,7 +536,6 @@ export interface FileRouteTypes {
     | '/leads/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
-    | '/ads/google/builder'
     | '/ads/google/conversions'
     | '/ads/google/new'
     | '/ads/google/stats'
@@ -547,6 +546,7 @@ export interface FileRouteTypes {
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
+    | '/ads/google/builder/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -839,13 +839,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsGoogleConversionsRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
-    '/ads/google/builder': {
-      id: '/ads/google/builder'
-      path: '/builder'
-      fullPath: '/ads/google/builder'
-      preLoaderRoute: typeof AdsGoogleBuilderRouteImport
-      parentRoute: typeof AdsGoogleRoute
-    }
     '/ads/google/advice': {
       id: '/ads/google/advice'
       path: '/advice'
@@ -858,6 +851,13 @@ declare module '@tanstack/react-router' {
       path: '/$campaignId'
       fullPath: '/ads/google/$campaignId'
       preLoaderRoute: typeof AdsGoogleCampaignIdRouteImport
+      parentRoute: typeof AdsGoogleRoute
+    }
+    '/ads/google/builder/': {
+      id: '/ads/google/builder/'
+      path: '/builder'
+      fullPath: '/ads/google/builder/'
+      preLoaderRoute: typeof AdsGoogleBuilderIndexRouteImport
       parentRoute: typeof AdsGoogleRoute
     }
     '/api/public/lead-ingest/quote': {
@@ -883,43 +883,34 @@ declare module '@tanstack/react-router' {
     }
     '/ads/google/builder/$id': {
       id: '/ads/google/builder/$id'
-      path: '/$id'
+      path: '/builder/$id'
       fullPath: '/ads/google/builder/$id'
       preLoaderRoute: typeof AdsGoogleBuilderIdRouteImport
-      parentRoute: typeof AdsGoogleBuilderRoute
+      parentRoute: typeof AdsGoogleRoute
     }
   }
 }
 
-interface AdsGoogleBuilderRouteChildren {
-  AdsGoogleBuilderIdRoute: typeof AdsGoogleBuilderIdRoute
-}
-
-const AdsGoogleBuilderRouteChildren: AdsGoogleBuilderRouteChildren = {
-  AdsGoogleBuilderIdRoute: AdsGoogleBuilderIdRoute,
-}
-
-const AdsGoogleBuilderRouteWithChildren =
-  AdsGoogleBuilderRoute._addFileChildren(AdsGoogleBuilderRouteChildren)
-
 interface AdsGoogleRouteChildren {
   AdsGoogleCampaignIdRoute: typeof AdsGoogleCampaignIdRoute
   AdsGoogleAdviceRoute: typeof AdsGoogleAdviceRoute
-  AdsGoogleBuilderRoute: typeof AdsGoogleBuilderRouteWithChildren
   AdsGoogleConversionsRoute: typeof AdsGoogleConversionsRoute
   AdsGoogleNewRoute: typeof AdsGoogleNewRoute
   AdsGoogleStatsRoute: typeof AdsGoogleStatsRoute
   AdsGoogleIndexRoute: typeof AdsGoogleIndexRoute
+  AdsGoogleBuilderIdRoute: typeof AdsGoogleBuilderIdRoute
+  AdsGoogleBuilderIndexRoute: typeof AdsGoogleBuilderIndexRoute
 }
 
 const AdsGoogleRouteChildren: AdsGoogleRouteChildren = {
   AdsGoogleCampaignIdRoute: AdsGoogleCampaignIdRoute,
   AdsGoogleAdviceRoute: AdsGoogleAdviceRoute,
-  AdsGoogleBuilderRoute: AdsGoogleBuilderRouteWithChildren,
   AdsGoogleConversionsRoute: AdsGoogleConversionsRoute,
   AdsGoogleNewRoute: AdsGoogleNewRoute,
   AdsGoogleStatsRoute: AdsGoogleStatsRoute,
   AdsGoogleIndexRoute: AdsGoogleIndexRoute,
+  AdsGoogleBuilderIdRoute: AdsGoogleBuilderIdRoute,
+  AdsGoogleBuilderIndexRoute: AdsGoogleBuilderIndexRoute,
 }
 
 const AdsGoogleRouteWithChildren = AdsGoogleRoute._addFileChildren(
