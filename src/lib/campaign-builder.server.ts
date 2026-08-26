@@ -446,7 +446,164 @@ export function toProposal(
   };
 }
 
+/* ------------------------------------------------- final URL / guardrails */
+
+/** Corpus van landingspagina-copy (incl. FAQ) voor negative-safety checks. */
+export function landingCopyCorpus(landing: any): string {
+  if (!landing) return "";
+  const parts = [
+    landing.seoTitle,
+    landing.seoDescription,
+    ...(landing.sections ?? []).map((s: any) => s.content),
+    landing.form?.title,
+    landing.form?.submitLabel,
+    ...(landing.form?.fields ?? []).map((f: any) => f.label),
+    ...(landing.products ?? []).map((p: any) => `${p.name} ${p.personalization ?? ""}`),
+  ];
+  return parts.filter(Boolean).join(" ").toLowerCase();
+}
+
+/** Controleert de final URL echt: absolute HTTPS, HTTP 200 en geen noindex. */
+export async function checkFinalUrl(url: string | null): Promise<{
+  httpStatus: number | null;
+  noindex: boolean | null;
+}> {
+  if (!url || !/^https:\/\//i.test(url)) return { httpStatus: null, noindex: null };
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    let noindex: boolean | null = null;
+    const header = res.headers.get("x-robots-tag") ?? "";
+    if (/noindex/i.test(header)) noindex = true;
+    if (res.ok) {
+      const html = await res.text();
+      const meta = /<meta[^>]+name=["']robots["'][^>]*>/i.exec(html)?.[0] ?? "";
+      noindex = noindex === true ? true : /noindex/i.test(meta);
+    }
+    return { httpStatus: res.status, noindex };
+  } catch {
+    return { httpStatus: null, noindex: null };
+  }
+}
+
+/**
+ * Bepaalt of een concept ooit uitvoerbaar mag heten. Draft, preview of een
+ * relatieve URL leidt altijd tot BLOCKED_FOR_CREATION.
+ */
+export async function evaluateDraftExecution(opts: {
+  ctx: Ctx;
+  workspaceId: string;
+  landingPageId: string | null;
+  landingStatus: string | null;
+  url: string | null;
+}): Promise<{ eligibility: string; blockers: string[]; checkedAt: string }> {
+  const { httpStatus, noindex } = await checkFinalUrl(opts.url);
+
+  let trackingValidated = false;
+  if (opts.landingPageId) {
+    const { count } = await opts.ctx.supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", opts.workspaceId)
+      .eq("landing_page_id", opts.landingPageId)
+      .eq("is_test", false);
+    trackingValidated = Number(count ?? 0) > 0;
+  }
+
+  const facts: FinalUrlFacts = {
+    landingStatus: opts.landingStatus,
+    url: opts.url,
+    httpStatus,
+    noindex,
+    trackingValidated,
+  };
+  const res = evaluateExecutionEligibility(facts);
+  return { ...res, checkedAt: new Date().toISOString() };
+}
+
+/**
+ * V1.1: hervalideert een bestaand concept volledig deterministisch — zonder
+ * nieuwe AI-run en zonder ook maar iets naar Google Ads te schrijven.
+ */
+export async function revalidateDraftForWorkspace(opts: {
+  ctx: Ctx;
+  workspaceId: string;
+  draftId: string;
+}) {
+  const { ctx, workspaceId } = opts;
+  const { data: row } = await ctx.supabase
+    .from("search_campaign_drafts")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("id", opts.draftId)
+    .maybeSingle();
+  if (!row) return { ok: false as const, error: "Concept niet gevonden." };
+
+  const { data: page } = await ctx.supabase
+    .from("landing_pages")
+    .select("id, name, slug, status, base_url, canonical_url")
+    .eq("id", row.landing_page_id)
+    .maybeSingle();
+
+  const { dataset, sources, missing } = await buildBuilderDataset({
+    ctx,
+    workspaceId,
+    funnel: row.funnel,
+    landingPageId: row.landing_page_id,
+    industryName: row.industry_name,
+    locations: row.locations ?? [],
+    language: row.language,
+    targetDailyBudget: row.target_daily_budget,
+  });
+
+  const { proposal, report } = applyGuardrails(row.proposal as BuilderProposal, {
+    industryName: row.industry_name,
+    isIndustryCampaign: Boolean(row.industry_name),
+    landingCopy: landingCopyCorpus(dataset.landing),
+  });
+
+  const confidence = scoreDataConfidence(dataset, row.funnel);
+  const execution = await evaluateDraftExecution({
+    ctx,
+    workspaceId,
+    landingPageId: row.landing_page_id,
+    landingStatus: page?.status ?? null,
+    url: row.landing_page_url,
+  });
+
+  const finalProposal = {
+    ...proposal,
+    guardrails: report as unknown as Record<string, unknown>,
+    execution,
+    dataConfidenceBand: confidence.band,
+  };
+
+  const { error } = await ctx.supabase
+    .from("search_campaign_drafts")
+    .update({
+      proposal: finalProposal,
+      data_confidence: confidence.score,
+      data_confidence_reasons: confidence.reasons,
+      data_sources: sources,
+      missing_data: [...new Set([...(row.missing_data ?? []), ...missing])],
+      status: execution.eligibility === "ALLOWED" ? row.status : row.status === "APPROVED_FOR_CREATION" ? "REVIEWED" : row.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("workspace_id", workspaceId)
+    .eq("id", opts.draftId);
+  if (error) return { ok: false as const, error: error.message };
+
+  return {
+    ok: true as const,
+    error: null as string | null,
+    report,
+    execution,
+    dataConfidence: confidence.score,
+    dataConfidenceBand: confidence.band,
+  };
+}
+
 /* -------------------------------------------------------------------- run */
+
 
 export async function runSearchConceptForWorkspace(opts: {
   ctx: Ctx;
