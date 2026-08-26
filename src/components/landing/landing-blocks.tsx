@@ -300,6 +300,22 @@ export function LandingBlock({
   const visual = c.visual;
   const slotVisible = Boolean(c.image_url) || (showVisualPlaceholders && visualIsMissing(visual));
 
+  /* Cadeauplatform-composities (V2.3) hebben hun eigen designtaal en renderen
+     via een aparte blokkenset. */
+  const rawComposition = (c.design as { composition?: string } | undefined)?.composition;
+  if (isPlatformComposition(rawComposition)) {
+    return (
+      <PlatformBlock
+        section={section}
+        page={page}
+        composition={rawComposition}
+        formSlot={formSlot}
+        onCtaClick={onCtaClick}
+      />
+    );
+  }
+
+
   /* Generieke leeg-regel (geldt voor alle huidige en toekomstige pagina's):
      content-afhankelijke secties zonder data renderen helemaal niet — geen
      titel, achtergrond of whitespace. Alleen componenten met een expliciet
