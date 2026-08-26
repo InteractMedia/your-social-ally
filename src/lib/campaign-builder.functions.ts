@@ -164,6 +164,40 @@ export const setSearchDraftStatus = createServerFn({ method: "POST" })
     const { requireUserWorkspace } = await import("./workspaces.server");
     const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
 
+    // V1.1 final URL guardrail: goedkeuren mag alleen met een gepubliceerde,
+    // absolute en bereikbare landingspagina.
+    if (data.status === "APPROVED_FOR_CREATION") {
+      const { evaluateDraftExecution } = await import("./campaign-builder.server");
+      const { data: row } = await ctx.supabase
+        .from("search_campaign_drafts")
+        .select("landing_page_id, landing_page_url")
+        .eq("workspace_id", workspaceId)
+        .eq("id", data.id)
+        .maybeSingle();
+      if (!row) return { ok: false as const, error: "Concept niet gevonden.", executed: false as const };
+
+      const { data: page } = await ctx.supabase
+        .from("landing_pages")
+        .select("status")
+        .eq("id", row.landing_page_id)
+        .maybeSingle();
+
+      const execution = await evaluateDraftExecution({
+        ctx,
+        workspaceId,
+        landingPageId: row.landing_page_id,
+        landingStatus: page?.status ?? null,
+        url: row.landing_page_url,
+      });
+      if (execution.eligibility !== "ALLOWED") {
+        return {
+          ok: false as const,
+          error: `Goedkeuren geblokkeerd: ${execution.blockers.join(" ")}`,
+          executed: false as const,
+        };
+      }
+    }
+
     const now = new Date().toISOString();
     const { error } = await ctx.supabase
       .from("search_campaign_drafts")
@@ -175,8 +209,27 @@ export const setSearchDraftStatus = createServerFn({ method: "POST" })
       })
       .eq("workspace_id", workspaceId)
       .eq("id", data.id);
-    if (error) return { ok: false as const, error: error.message };
+    if (error) return { ok: false as const, error: error.message, executed: false as const };
     return { ok: true as const, error: null as string | null, executed: false as const };
+  });
+
+/**
+ * V1.1: hervalideer een bestaand concept deterministisch (guardrails,
+ * data-confidence, final URL). Geen AI-run, geen schrijfactie naar Google Ads.
+ */
+export const revalidateSearchDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => z.object({ id: z.string().uuid() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    const ctx = context as any;
+    const { requireUserWorkspace } = await import("./workspaces.server");
+    const { revalidateDraftForWorkspace } = await import("./campaign-builder.server");
+    const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
+    try {
+      return await revalidateDraftForWorkspace({ ctx, workspaceId, draftId: data.id });
+    } catch (err) {
+      return { ok: false as const, error: (err as Error).message };
+    }
   });
 
 export const deleteSearchDraft = createServerFn({ method: "POST" })

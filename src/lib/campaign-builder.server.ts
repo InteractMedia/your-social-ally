@@ -14,6 +14,13 @@ import {
   type BuilderProposal,
 } from "./campaign-builder-shared";
 import {
+  applyGuardrails,
+  evaluateExecutionEligibility,
+  scoreDataUsability,
+  type DataUsability,
+  type FinalUrlFacts,
+} from "./campaign-builder-guardrails";
+import {
   extractJsonObject,
   resolveProvider,
   runAiCompletionWithFallback,
@@ -33,8 +40,13 @@ Harde regels:
 - Is de gekozen funnel zakelijk (offerte of zakelijk cadeauplatform), dan prioriteer je B2B-zoekintentie. Voeg geen brede consumentenkeywords toe; die horen bij negativeKeywords als ze vervuiling kunnen veroorzaken.
 - Elke belangrijke keuze (budget, biedstrategie, conversiedoel, elk keyword) krijgt een evidence-object met source uit: OWN_DATA (onze eigen leads/omzet), GOOGLE_ADS_HISTORY (historische keywords/zoektermen/PMax-inzichten), LANDING_PAGE (copy/CTA/formulier), EXTERNAL_KNOWLEDGE (algemene vakkennis), HYPOTHESIS (aanname). Kies HYPOTHESIS wanneer eigen data ontbreekt; noem dat eerlijk.
 - PMax-zoekcategorieën zijn clusters, geen exacte zoektermen: gebruik ze als richting, niet als bewijs voor exacte match.
-- Advertentietekst: headlines maximaal 30 tekens, descriptions maximaal 90 tekens, sitelinktekst maximaal 25 tekens, callouts maximaal 25 tekens. Nederlands, geen uitroeptekens-spam, geen beloftes die de landingspagina niet doet.
+- Advertentietekst: headlines maximaal 30 tekens, descriptions maximaal 90 tekens, sitelinktekst maximaal 25 tekens, sitelinkomschrijving maximaal 35 tekens, callouts maximaal 25 tekens. Schrijf binnen de limiet; NOOIT een tekst afkappen of midden in een woord laten eindigen. Past iets niet, herschrijf het korter. Nederlands, geen uitroeptekens-spam.
+- Claims moeten letterlijk door de landingspagina worden gedekt. Gebruik nooit twee varianten van dezelfde belofte naast elkaar (bijvoorbeeld "binnen 24 uur" én "reactie binnen 1 werkdag"): kies de variant die op de pagina staat.
 - 2 tot 4 advertentiegroepen, per groep 5-12 keywords, 8-15 headlines en 3-4 descriptions.
+- Advertentiegroepen zijn strikt gescheiden intentieclusters. Eén keyword hoort in precies één groep; keywords die meerdere groepen kunnen triggeren laat je weg of zet je in de best passende groep.
+- Bij een branchecampagne (er is een branche opgegeven) moet elk keyword expliciete branchecontext bevatten. Sector-neutrale keywords zoals "relatiegeschenk met logo" of "chocolade met eigen wikkel" horen bij een generieke campagne met generieke landingspagina, niet hier.
+- Een product plus personalisatie (logo, bedrukken, personaliseren, eigen wikkel) is GEEN bewijs van B2B: die woorden komen ook in consumentzoekopdrachten voor. Classificeer intent alleen als B2B bij een echte zakelijke of branche-aanwijzing, anders MIXED of B2C.
+- Negatieve keywords mogen nooit een commercieel woord generiek uitsluiten (bijvoorbeeld "kopen", "prijs", "bestellen", "offerte"): dat blokkeert geldige B2B-zoekopdrachten. Sluit alleen uit wat aantoonbaar irrelevant is, en nooit iets wat in de landingspagina of FAQ als aanbod staat.
 - aiConfidence = hoe zeker je bent van je eigen redenering. Dat is iets anders dan datakwaliteit; die beoordeelt het systeem zelf.
 
 Antwoord met UITSLUITEND één JSON-object in dit schema:
@@ -316,41 +328,47 @@ export async function buildBuilderDataset(opts: {
 
 /* ------------------------------------------------------ data confidence */
 
-/** Deterministisch, los van AI-confidence: hoe hard is de onderliggende data? */
-export function scoreDataConfidence(dataset: any): { score: number; reasons: string[] } {
-  const reasons: string[] = [];
-  let score = 20;
-  if (dataset.landing) {
-    score += 20;
-    reasons.push("Landingspagina-copy, CTA en formuliervelden beschikbaar (+20).");
-  } else reasons.push("Geen landingspagina-inhoud beschikbaar (0).");
+/** Zet de dataset om naar bruikbaarheidssignalen (V1.1). */
+export function datasetUsability(dataset: any, funnel: string): DataUsability {
+  const q = dataset.googleAds?.dataQuality ?? {};
+  const b2b = dataset.googleAds?.b2b?.total ?? {};
+  const keywordRows: any[] = dataset.googleAds?.keywords ?? [];
+  const industry = dataset.industrySummary;
+  const funnelPrefix = funnel === "quote" ? "quote" : "platform";
 
-  const q = dataset.googleAds?.dataQuality;
-  if (q?.keywordRowsAvailable) {
-    score += 20;
-    reasons.push(`Historische Search-zoekwoorden beschikbaar (${q.keywordRowsAvailable} rijen, +20).`);
-  } else reasons.push("Geen historische Search-zoekwoorden (0).");
-  if (q?.searchTermRowsAvailable) {
-    score += 10;
-    reasons.push(`Historische zoektermen beschikbaar (${q.searchTermRowsAvailable} rijen, +10).`);
-  }
-  if (q?.pmaxSearchInsightRowsAvailable) {
-    score += 10;
-    reasons.push(`PMax-zoekcategorieën beschikbaar (${q.pmaxSearchInsightRowsAvailable}, +10).`);
-  }
-  if (q?.leadsInPeriod) {
-    score += 15;
-    reasons.push(`${q.leadsInPeriod} eigen leads in de periode (+15).`);
-  } else reasons.push("Geen eigen leads in de periode: budget/CPA zonder eigen basis (0).");
-  if (dataset.industrySummary?.leads) {
-    score += 5;
-    reasons.push(`${dataset.industrySummary.leads} leads binnen de gekozen branche (+5).`);
-  }
-  if (dataset.conversionMappings?.length) {
-    score += 5;
-    reasons.push("Conversiekoppeling aanwezig (+5).");
-  }
-  return { score: Math.max(0, Math.min(100, score)), reasons };
+  return {
+    ownLeads: Number(industry?.leads ?? q.leadsInPeriod ?? 0),
+    qualifiedLeads: Number(b2b.qualifiedLeads ?? 0),
+    customers: Number(industry?.customers ?? b2b.customers ?? 0),
+    revenue: Number(industry?.revenue ?? b2b.revenue ?? 0),
+    keywordConversions: keywordRows.reduce(
+      (sum, r) => sum + Number(r.conversions ?? r?.metrics?.conversions ?? 0),
+      0,
+    ),
+    searchTermRows: Number(q.searchTermRowsAvailable ?? 0),
+    cpcDataRows: keywordRows.filter((r) => Number(r.averageCpc ?? r.avgCpc ?? 0) > 0).length,
+    cpaKnown: Number(b2b.cpql ?? 0) > 0,
+    landingContent: Boolean(dataset.landing),
+    conversionMappingForFunnel: (dataset.conversionMappings ?? []).some((m: any) =>
+      String(m.internal_event_name ?? "").startsWith(funnelPrefix),
+    ),
+    pmaxCategories: Number(q.pmaxSearchInsightRowsAvailable ?? 0),
+    historicKeywordRows: Number(q.keywordRowsAvailable ?? 0),
+  };
+}
+
+/**
+ * Deterministisch, los van AI-confidence. V1.1 weegt BRUIKBAARHEID, niet de
+ * aanwezigheid van datasets: PMax-categorieën, een paar historische keywords of
+ * alleen een conversieconfiguratie leiden nooit tot een hoge score.
+ */
+export function scoreDataConfidence(
+  dataset: any,
+  funnel = "quote",
+): { score: number; band: string; reasons: string[]; usability: DataUsability } {
+  const usability = datasetUsability(dataset, funnel);
+  const scored = scoreDataUsability(usability);
+  return { ...scored, usability };
 }
 
 /* --------------------------------------------------------------- normalize */
@@ -405,8 +423,10 @@ export function toProposal(
         evidence: normEvidence(k.evidence),
         enabled: true,
       })),
-      headlines: g.headlines.map((text) => ({ text: text.slice(0, 30), enabled: true })),
-      descriptions: g.descriptions.map((text) => ({ text: text.slice(0, 90), enabled: true })),
+      // V1.1: NOOIT afkappen. Te lange teksten worden door de guardrails
+      // herschreven of uitgezet, nooit geknipt.
+      headlines: g.headlines.map((text) => ({ text: text.trim(), enabled: true })),
+      descriptions: g.descriptions.map((text) => ({ text: text.trim(), enabled: true })),
     })),
     negativeKeywords: parsed.negativeKeywords.map((n) => ({
       text: n.text,
@@ -415,18 +435,175 @@ export function toProposal(
       enabled: true,
     })),
     sitelinks: parsed.sitelinks.map((s) => ({
-      text: s.text.slice(0, 25),
-      description: s.description.slice(0, 35),
+      text: s.text.trim(),
+      description: (s.description ?? "").trim(),
       enabled: true,
     })),
-    callouts: parsed.callouts.map((text) => ({ text: text.slice(0, 25), enabled: true })),
+    callouts: parsed.callouts.map((text) => ({ text: text.trim(), enabled: true })),
     expectedIntent: parsed.expectedIntent,
     risks: parsed.risks,
     summary: parsed.summary,
   };
 }
 
+/* ------------------------------------------------- final URL / guardrails */
+
+/** Corpus van landingspagina-copy (incl. FAQ) voor negative-safety checks. */
+export function landingCopyCorpus(landing: any): string {
+  if (!landing) return "";
+  const parts = [
+    landing.seoTitle,
+    landing.seoDescription,
+    ...(landing.sections ?? []).map((s: any) => s.content),
+    landing.form?.title,
+    landing.form?.submitLabel,
+    ...(landing.form?.fields ?? []).map((f: any) => f.label),
+    ...(landing.products ?? []).map((p: any) => `${p.name} ${p.personalization ?? ""}`),
+  ];
+  return parts.filter(Boolean).join(" ").toLowerCase();
+}
+
+/** Controleert de final URL echt: absolute HTTPS, HTTP 200 en geen noindex. */
+export async function checkFinalUrl(url: string | null): Promise<{
+  httpStatus: number | null;
+  noindex: boolean | null;
+}> {
+  if (!url || !/^https:\/\//i.test(url)) return { httpStatus: null, noindex: null };
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    let noindex: boolean | null = null;
+    const header = res.headers.get("x-robots-tag") ?? "";
+    if (/noindex/i.test(header)) noindex = true;
+    if (res.ok) {
+      const html = await res.text();
+      const meta = /<meta[^>]+name=["']robots["'][^>]*>/i.exec(html)?.[0] ?? "";
+      noindex = noindex === true ? true : /noindex/i.test(meta);
+    }
+    return { httpStatus: res.status, noindex };
+  } catch {
+    return { httpStatus: null, noindex: null };
+  }
+}
+
+/**
+ * Bepaalt of een concept ooit uitvoerbaar mag heten. Draft, preview of een
+ * relatieve URL leidt altijd tot BLOCKED_FOR_CREATION.
+ */
+export async function evaluateDraftExecution(opts: {
+  ctx: Ctx;
+  workspaceId: string;
+  landingPageId: string | null;
+  landingStatus: string | null;
+  url: string | null;
+}): Promise<{ eligibility: string; blockers: string[]; checkedAt: string }> {
+  const { httpStatus, noindex } = await checkFinalUrl(opts.url);
+
+  let trackingValidated = false;
+  if (opts.landingPageId) {
+    const { count } = await opts.ctx.supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", opts.workspaceId)
+      .eq("landing_page_id", opts.landingPageId)
+      .eq("is_test", false);
+    trackingValidated = Number(count ?? 0) > 0;
+  }
+
+  const facts: FinalUrlFacts = {
+    landingStatus: opts.landingStatus,
+    url: opts.url,
+    httpStatus,
+    noindex,
+    trackingValidated,
+  };
+  const res = evaluateExecutionEligibility(facts);
+  return { ...res, checkedAt: new Date().toISOString() };
+}
+
+/**
+ * V1.1: hervalideert een bestaand concept volledig deterministisch — zonder
+ * nieuwe AI-run en zonder ook maar iets naar Google Ads te schrijven.
+ */
+export async function revalidateDraftForWorkspace(opts: {
+  ctx: Ctx;
+  workspaceId: string;
+  draftId: string;
+}) {
+  const { ctx, workspaceId } = opts;
+  const { data: row } = await ctx.supabase
+    .from("search_campaign_drafts")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("id", opts.draftId)
+    .maybeSingle();
+  if (!row) return { ok: false as const, error: "Concept niet gevonden." };
+
+  const { data: page } = await ctx.supabase
+    .from("landing_pages")
+    .select("id, name, slug, status, base_url, canonical_url")
+    .eq("id", row.landing_page_id)
+    .maybeSingle();
+
+  const { dataset, sources, missing } = await buildBuilderDataset({
+    ctx,
+    workspaceId,
+    funnel: row.funnel,
+    landingPageId: row.landing_page_id,
+    industryName: row.industry_name,
+    locations: row.locations ?? [],
+    language: row.language,
+    targetDailyBudget: row.target_daily_budget,
+  });
+
+  const { proposal, report } = applyGuardrails(row.proposal as BuilderProposal, {
+    industryName: row.industry_name,
+    isIndustryCampaign: Boolean(row.industry_name),
+    landingCopy: landingCopyCorpus(dataset.landing),
+  });
+
+  const confidence = scoreDataConfidence(dataset, row.funnel);
+  const execution = await evaluateDraftExecution({
+    ctx,
+    workspaceId,
+    landingPageId: row.landing_page_id,
+    landingStatus: page?.status ?? null,
+    url: row.landing_page_url,
+  });
+
+  const finalProposal = {
+    ...proposal,
+    guardrails: report as unknown as Record<string, unknown>,
+    execution,
+    dataConfidenceBand: confidence.band,
+  };
+
+  const { error } = await ctx.supabase
+    .from("search_campaign_drafts")
+    .update({
+      proposal: finalProposal,
+      data_confidence: confidence.score,
+      data_confidence_reasons: confidence.reasons,
+      data_sources: sources,
+      missing_data: [...new Set([...(row.missing_data ?? []), ...missing])],
+      status: execution.eligibility === "ALLOWED" ? row.status : row.status === "APPROVED_FOR_CREATION" ? "REVIEWED" : row.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("workspace_id", workspaceId)
+    .eq("id", opts.draftId);
+  if (error) return { ok: false as const, error: error.message };
+
+  return {
+    ok: true as const,
+    error: null as string | null,
+    report,
+    execution,
+    dataConfidence: confidence.score,
+    dataConfidenceBand: confidence.band,
+  };
+}
+
 /* -------------------------------------------------------------------- run */
+
 
 export async function runSearchConceptForWorkspace(opts: {
   ctx: Ctx;
@@ -444,7 +621,7 @@ export async function runSearchConceptForWorkspace(opts: {
 
   const { data: page } = await ctx.supabase
     .from("landing_pages")
-    .select("id, name, slug, funnel_type, base_url, canonical_url, industry_id")
+    .select("id, name, slug, status, funnel_type, base_url, canonical_url, industry_id")
     .eq("id", opts.landingPageId)
     .maybeSingle();
   if (!page) return { ok: false as const, draftId: null, error: "Landingspagina niet gevonden." };
@@ -513,14 +690,34 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     };
   }
 
-  const proposal = toProposal(parsed, {
+  const rawProposal = toProposal(parsed, {
     funnel: opts.funnel,
     landingUrl,
     locations: opts.locations,
     language: opts.language,
   });
-  const dataConfidence = scoreDataConfidence(dataset);
-  const missingData = [...new Set([...missing, ...parsed.missingData])];
+
+  // V1.1: deterministische guardrails over het AI-voorstel.
+  const { proposal: guarded, report } = applyGuardrails(rawProposal, {
+    industryName,
+    isIndustryCampaign: Boolean(industryName),
+    landingCopy: landingCopyCorpus(dataset.landing),
+  });
+  const execution = await evaluateDraftExecution({
+    ctx,
+    workspaceId,
+    landingPageId: page.id,
+    landingStatus: (page as any).status ?? null,
+    url: landingUrl,
+  });
+  const dataConfidence = scoreDataConfidence(dataset, opts.funnel);
+  const proposal: BuilderProposal = {
+    ...guarded,
+    guardrails: report as unknown as Record<string, unknown>,
+    execution,
+    dataConfidenceBand: dataConfidence.band,
+  };
+  const missingData = [...new Set([...missing, ...parsed.missingData, ...report.claimFindings])];
 
   const { data: inserted, error } = await ctx.supabase
     .from("search_campaign_drafts")

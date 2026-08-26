@@ -39,6 +39,7 @@ import {
 import {
   deleteSearchDraft,
   getSearchDraft,
+  revalidateSearchDraft,
   saveSearchDraft,
   setSearchDraftStatus,
 } from "@/lib/campaign-builder.functions";
@@ -89,6 +90,7 @@ function DraftPage() {
   const saveFn = useServerFn(saveSearchDraft);
   const statusFn = useServerFn(setSearchDraftStatus);
   const deleteFn = useServerFn(deleteSearchDraft);
+  const revalidateFn = useServerFn(revalidateSearchDraft);
 
   const draftQuery = useQuery({
     queryKey: ["builder-draft", id],
@@ -132,6 +134,23 @@ function DraftPage() {
     onSuccess: (res) => {
       if (!res.ok) return toast.error(res.error ?? "Status wijzigen mislukt");
       toast.success(APPROVED_NOTICE);
+      qc.invalidateQueries({ queryKey: ["builder-draft", id] });
+      qc.invalidateQueries({ queryKey: ["builder-drafts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // V1.1: deterministische hervalidatie (guardrails, data-confidence, final URL).
+  const revalidate = useMutation({
+    mutationFn: () => revalidateFn({ data: { id } }),
+    onSuccess: (res: any) => {
+      if (!res.ok) return toast.error(res.error ?? "Hervalidatie mislukt");
+      setDirty(false);
+      toast.success(
+        `Guardrails toegepast · data-confidence ${res.dataConfidence}% (${res.dataConfidenceBand}) · ${
+          res.execution?.eligibility === "ALLOWED" ? "uitvoerbaar" : "geblokkeerd voor creatie"
+        }`,
+      );
       qc.invalidateQueries({ queryKey: ["builder-draft", id] });
       qc.invalidateQueries({ queryKey: ["builder-drafts"] });
     },
@@ -207,10 +226,24 @@ function DraftPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{DRAFT_STATUS_LABELS[draft.status] ?? draft.status}</Badge>
               <Badge variant="outline">AI-confidence {draft.ai_confidence}%</Badge>
-              <Badge variant="outline">Data-confidence {draft.data_confidence}%</Badge>
+              <Badge variant="outline">
+                Data-confidence {draft.data_confidence}%
+                {(proposal as any)?.dataConfidenceBand ? ` · ${(proposal as any).dataConfidenceBand}` : ""}
+              </Badge>
               <Badge variant="outline">
                 {draft.provider} · {draft.model}
               </Badge>
+              {(proposal as any)?.execution ? (
+                <Badge
+                  variant={
+                    (proposal as any).execution.eligibility === "ALLOWED" ? "default" : "destructive"
+                  }
+                >
+                  {(proposal as any).execution.eligibility === "ALLOWED"
+                    ? "Uitvoerbaar"
+                    : "Geblokkeerd voor creatie"}
+                </Badge>
+              ) : null}
               <span className="text-xs text-muted-foreground">
                 {totals.adGroups} groepen · {totals.keywords} keywords ({totals.b2bKeywords} B2B) ·{" "}
                 {totals.headlines} headlines · {totals.negatives} negatieve
@@ -219,7 +252,53 @@ function DraftPage() {
             {draft.fallback_reason ? (
               <p className="text-xs text-amber-700 dark:text-amber-300">{draft.fallback_reason}</p>
             ) : null}
+            {(proposal as any)?.execution?.blockers?.length ? (
+              <ul className="list-disc space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3 pl-6 text-xs">
+                {(proposal as any).execution.blockers.map((b: string, i: number) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            ) : null}
+            {(proposal as any)?.guardrails ? (
+              <details className="rounded-md border p-3 text-xs">
+                <summary className="cursor-pointer font-medium">
+                  Guardrail-rapport ({(proposal as any).guardrails.version})
+                </summary>
+                <p className="mt-2 text-muted-foreground">
+                  {(proposal as any).guardrails.counts?.keywordsActive} keywords actief ·{" "}
+                  {(proposal as any).guardrails.counts?.keywordsDisabled} uitgezet ·{" "}
+                  {(proposal as any).guardrails.counts?.negativesDisabled} negatieve verwijderd ·{" "}
+                  {(proposal as any).guardrails.counts?.assetsRewritten} teksten herschreven
+                </p>
+                <ul className="mt-2 space-y-1 text-muted-foreground">
+                  {((proposal as any).guardrails.keywordFindings ?? [])
+                    .filter((f: any) => f.flags?.length)
+                    .map((f: any, i: number) => (
+                      <li key={i}>
+                        <span className="font-medium">{f.keyword}</span> — {f.b2bLevel} ·{" "}
+                        {f.flags.join(", ")} {f.note}
+                      </li>
+                    ))}
+                  {((proposal as any).guardrails.assetFindings ?? []).map((f: any, i: number) => (
+                    <li key={`a${i}`}>
+                      {f.scope}: “{f.text}” ({f.length}/{f.limit}) → {f.action}
+                    </li>
+                  ))}
+                  {((proposal as any).guardrails.claimFindings ?? []).map((f: string, i: number) => (
+                    <li key={`c${i}`}>{f}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
             <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => revalidate.mutate()}
+                disabled={revalidate.isPending}
+              >
+                {revalidate.isPending ? "Bezig…" : "Hervalideer (guardrails)"}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"

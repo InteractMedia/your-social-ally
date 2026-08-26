@@ -107,6 +107,10 @@ export type BuilderKeyword = {
   intent: AudienceIntent | string;
   evidence: EvidenceNote;
   enabled: boolean;
+  /** V1.1: fijnmazige B2B-classificatie (CLEAR_B2B … CLEAR_B2C). */
+  b2bLevel?: string;
+  /** V1.1: guardrail-vlaggen, bv. GENERIC_INTENT_REQUIRES_GENERIC_LANDING_PAGE. */
+  flags?: string[];
 };
 
 export type BuilderAsset = { text: string; enabled: boolean };
@@ -126,6 +130,8 @@ export type BuilderNegative = {
   matchType: MatchType | string;
   reason: string;
   enabled: boolean;
+  /** V1.1: guardrail-vlaggen, bv. NEGATIVE_BLOCKS_VALID_QUERY. */
+  flags?: string[];
 };
 
 export type BuilderProposal = {
@@ -145,6 +151,12 @@ export type BuilderProposal = {
   expectedIntent: string;
   risks: string[];
   summary: string;
+  /** V1.1: deterministisch guardrail-rapport (geen AI). */
+  guardrails?: Record<string, unknown>;
+  /** V1.1: ALLOWED of BLOCKED_FOR_CREATION, met redenen. */
+  execution?: { eligibility: string; blockers: string[]; checkedAt: string };
+  /** V1.1: LAAG | MIDDEN | HOOG op basis van databruikbaarheid. */
+  dataConfidenceBand?: string;
 };
 
 export type SearchCampaignDraftRow = {
