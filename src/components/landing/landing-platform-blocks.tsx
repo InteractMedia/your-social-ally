@@ -168,8 +168,8 @@ function ZpPill({ text, tone }: { text?: string; tone: "pink" | "teal" }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.14em] uppercase",
-        tone === "pink" ? "bg-zp-pink text-zp-surface" : "bg-zp-teal/30 text-zp-ink",
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold tracking-widest uppercase",
+        tone === "pink" ? "bg-zp-pink text-zp-surface" : "bg-zp-teal text-zp-ink",
       )}
     >
       <Sparkles className={cn("h-3.5 w-3.5", tone === "pink" ? "text-zp-surface" : "text-zp-pink")} />
@@ -191,17 +191,70 @@ function ZpTitle({
   return <As className={cn("zp-title text-zp-ink text-balance", className)}>{text}</As>;
 }
 
-function ZpBody({ body, className }: { body?: string; className?: string }) {
+function ZpBody({
+  body,
+  className,
+  size = "base",
+}: {
+  body?: string;
+  className?: string;
+  size?: "base" | "lg";
+}) {
   const parts = paragraphs(body);
   if (!parts.length) return null;
   return (
     <div className={cn("space-y-4", className)}>
       {parts.map((p, i) => (
-        <p key={i} className="text-zp-muted text-base leading-relaxed md:text-lg">
+        <p
+          key={i}
+          className={cn("text-zp-muted leading-relaxed", size === "lg" ? "text-lg" : "text-base")}
+        >
           {p}
         </p>
       ))}
     </div>
+  );
+}
+
+/** Zwarte topbalk met logo en acties, exact als op zoetbezorgen.app/cadeaus. */
+export function PlatformTopBar({
+  label = "Cadeauplatform",
+  loginLabel = "Inloggen",
+  ctaLabel = "Account aanvragen",
+  ctaUrl = "#offerte",
+  loginUrl = "#offerte",
+}: {
+  label?: string;
+  loginLabel?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  loginUrl?: string;
+}) {
+  return (
+    <header className="bg-zp-ink">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">
+        <a href="#top" className="flex items-center gap-3">
+          <img src={logoAsset.url} alt="ZoetBezorgen" className="h-12 w-auto md:h-14" />
+          <span className="bg-zp-surface text-zp-ink hidden rounded-[7px] px-3 py-1.5 text-xs font-semibold tracking-widest uppercase sm:inline-block">
+            {label}
+          </span>
+        </a>
+        <nav className="flex items-center gap-2 md:gap-5">
+          <a
+            href={loginUrl}
+            className="text-zp-surface/90 hover:text-zp-surface px-2 text-sm transition-colors md:text-base"
+          >
+            {loginLabel}
+          </a>
+          <a
+            href={ctaUrl}
+            className="bg-zp-pink text-zp-surface hover:bg-zp-pink/90 inline-flex h-11 items-center justify-center rounded-[7px] px-4 text-sm font-medium transition-colors md:h-12 md:px-6 md:text-base"
+          >
+            {ctaLabel}
+          </a>
+        </nav>
+      </div>
+    </header>
   );
 }
 
