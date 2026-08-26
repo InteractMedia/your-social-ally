@@ -87,8 +87,16 @@ export function LandingPageView({
     ...(page.theme?.hazard_color_2 ? { "--zb-hazard-2": page.theme.hazard_color_2 } : {}),
   } as CSSProperties;
 
+  const isPlatform = page.funnel_type === "platform";
+
   return (
     <div className="bg-background text-foreground min-h-screen" style={themeVars}>
+      {isPlatform && (
+        <PlatformTopBar
+          ctaLabel={page.form?.submit_label || "Account aanvragen"}
+          onCtaClick={(label) => send("cta_click", { label })}
+        />
+      )}
       {page.is_preview && (
         <div className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs font-medium">
           Preview — deze pagina is nog niet gepubliceerd en wordt niet meegeteld in de statistieken.
