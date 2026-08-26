@@ -77,7 +77,9 @@ export async function handleLandingSubmit(payload: SubmitPayload, request?: Requ
 
   const { data: pageRow } = await db
     .from("landing_pages")
-    .select("workspace_id,industry_id,notify_channel,notify_target,is_test,base_url")
+    .select(
+      "workspace_id,industry_id,notify_channel,notify_target,notify_email,notify_test_email,is_test,base_url",
+    )
     .eq("id", page.id)
     .single();
   const workspaceId = pageRow?.workspace_id;
