@@ -867,7 +867,6 @@ export function LandingBlock({
           "bg-primary/15",
           "bg-zb-teal/15",
         ];
-        const tipRotations = ["-rotate-3", "rotate-2"];
         const benefits =
           items.length > 0
             ? items
@@ -888,7 +887,14 @@ export function LandingBlock({
               <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
                 {tips.map((p, i) => (
                   <div key={p.id} className="relative text-center">
-                    <div className="relative">
+                    {/* V2.3 — eerst de titel, daarna de foto (recht, niet gekanteld). */}
+                    <ZbHeading text={p.name} className="text-3xl md:text-4xl" />
+                    {p.short_text && (
+                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
+                        {p.short_text}
+                      </p>
+                    )}
+                    <div className="relative mt-8">
                       <div
                         className={cn(
                           "absolute inset-0 -z-0 scale-105 rounded-full blur-3xl",
@@ -900,19 +906,10 @@ export function LandingBlock({
                           src={p.image_url}
                           alt={p.image_alt ?? p.name}
                           loading="lazy"
-                          className={cn(
-                            "relative mx-auto w-56 drop-shadow-2xl transition-transform hover:rotate-0 md:w-80",
-                            tipRotations[i % tipRotations.length],
-                          )}
+                          className="relative mx-auto w-56 drop-shadow-2xl transition-transform hover:scale-[1.03] md:w-80"
                         />
                       )}
                     </div>
-                    <ZbHeading text={p.name} className="mt-8 text-3xl md:text-4xl" />
-                    {p.short_text && (
-                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
-                        {p.short_text}
-                      </p>
-                    )}
                     {p.price_from !== null && (
                       <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
                         vanaf € {Number(p.price_from).toFixed(2).replace(".", ",")}
