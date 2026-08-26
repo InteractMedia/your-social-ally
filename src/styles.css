@@ -282,3 +282,19 @@
   position: absolute;
   pointer-events: none;
 }
+
+/* Logo-slider: doorlopende, speelse marquee (dubbele track van 50%). */
+@keyframes zb-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.zb-marquee-track {
+  animation: zb-marquee 32s linear infinite;
+  width: max-content;
+}
+.zb-marquee:hover .zb-marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zb-marquee-track { animation: none; }
+}
