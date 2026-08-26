@@ -39,6 +39,7 @@ function LeadsPage() {
   const [platform, setPlatform] = useState(ALL);
   const [campaign, setCampaign] = useState(ALL);
   const [search, setSearch] = useState("");
+  const [testMode, setTestMode] = useState<"all" | "live" | "test">("live");
 
   const overviewFn = useServerFn(getLeadsOverview);
   const leadsFn = useServerFn(listLeads);
@@ -47,8 +48,8 @@ function LeadsPage() {
 
   const key = [period.start, period.end];
   const overview = useQuery({
-    queryKey: ["leads", "overview", ...key],
-    queryFn: () => overviewFn({ data: { start: period.start, end: period.end } }),
+    queryKey: ["leads", "overview", ...key, testMode],
+    queryFn: () => overviewFn({ data: { start: period.start, end: period.end, testMode } }),
   });
   const poorReasons = usePoorLeadReasons();
   const industries = useQuery({
@@ -56,7 +57,18 @@ function LeadsPage() {
     queryFn: () => industriesFn({}),
   });
   const leads = useQuery({
-    queryKey: ["leads", "list", ...key, funnel, status, quality, poorReason, industryId, search],
+    queryKey: [
+      "leads",
+      "list",
+      ...key,
+      funnel,
+      status,
+      quality,
+      poorReason,
+      industryId,
+      search,
+      testMode,
+    ],
     queryFn: () =>
       leadsFn({
         data: {
@@ -68,6 +80,7 @@ function LeadsPage() {
           ...(poorReason !== ALL ? { poorReason } : {}),
           ...(industryId !== ALL ? { industryId } : {}),
           ...(search.trim() ? { search: search.trim() } : {}),
+          testMode,
         },
       }),
   });
@@ -156,6 +169,16 @@ function LeadsPage() {
         <Card>
           <CardContent className="flex flex-wrap items-center gap-2 p-4">
             <Filter className="text-muted-foreground h-4 w-4" />
+            <Select value={testMode} onValueChange={(v) => setTestMode(v as typeof testMode)}>
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="live">Live leads</SelectItem>
+                <SelectItem value="test">Testleads</SelectItem>
+                <SelectItem value="all">Alle leads</SelectItem>
+              </SelectContent>
+            </Select>
             <FilterSelect
               value={funnel}
               onChange={setFunnel}
@@ -260,6 +283,11 @@ function LeadsPage() {
                           <Link to="/leads/$id" params={{ id: l.id }} className="hover:underline">
                             {l.company_name}
                           </Link>
+                          {(l as { is_test?: boolean }).is_test ? (
+                            <span className="border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-400 ml-2 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                              Test
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2">{l.contact_name ?? "—"}</td>
                         <td className="px-3 py-2">{LEAD_TYPE_LABELS[l.lead_type] ?? l.lead_type}</td>
