@@ -34,6 +34,8 @@ export const sectionDesignSchema = z.object({
   image_treatment: z.enum(IMAGE_TREATMENTS).optional(),
   cta_style: z.enum(CTA_STYLES).optional(),
   emphasis: z.enum(EMPHASIS_LEVELS).optional(),
+  /** Compositie-sleutel; de renderer valideert tegen zijn eigen allowlist. */
+  composition: z.string().max(80).optional(),
   media_intent: z.string().max(500).optional(),
   mobile_note: z.string().max(500).optional(),
 });
