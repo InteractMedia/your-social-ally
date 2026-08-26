@@ -2780,6 +2780,68 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          category: string
+          created_at: string
+          dedupe_key: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_test: boolean
+          link_path: string | null
+          meta: Json
+          read_at: string | null
+          read_by: string | null
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string | null
+          category: string
+          created_at?: string
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_test?: boolean
+          link_path?: string | null
+          meta?: Json
+          read_at?: string | null
+          read_by?: string | null
+          severity?: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_test?: boolean
+          link_path?: string | null
+          meta?: Json
+          read_at?: string | null
+          read_by?: string | null
+          severity?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poor_lead_reasons: {
         Row: {
           active: boolean
