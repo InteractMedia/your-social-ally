@@ -471,7 +471,7 @@ export function PlatformBlock({
         { url: c.image_url_3, alt: c.image_alt_3 },
       ].filter((p) => p.url);
       return (
-        <ZpSection>
+        <ZpSection bgImage={c.image_url_4}>
           <div className="grid items-center gap-14 md:grid-cols-2">
             <div>
               <ZpPill text={c.badge} tone="pink" />
