@@ -193,11 +193,15 @@ export function assetTooLong(text: string, limit: number): boolean {
   return text.trim().length > limit;
 }
 
+/** Woorden die een advertentietekst nooit mogen afsluiten. */
+const DANGLING_TAIL =
+  /\b(?:in|op|met|van|voor|per|en|of|tot|bij|de|het|een|als|om|aan|naar|vanaf|onze|jullie)$/i;
+
 /**
- * Herschrijf-hulp: verkort op woordgrens. Een afgekapt laatste woord wordt
- * altijd volledig verwijderd — nooit half laten staan. Lukt dat niet met een
- * leesbaar resultaat, dan meldt de functie fits: false en wordt de tekst
- * uitgezet in plaats van geknipt.
+ * Herschrijf-hulp: verkort op woordgrens en verwijdert een half afgekapt of
+ * bungelend laatste woord volledig — nooit half laten staan. Lukt dat niet met
+ * een leesbaar resultaat, dan is fits false en wordt de tekst uitgezet in
+ * plaats van geknipt.
  */
 export function rewriteToLimit(text: string, limit: number): { text: string; fits: boolean } {
   const clean = text.trim().replace(/\s+/g, " ");
@@ -208,37 +212,45 @@ export function rewriteToLimit(text: string, limit: number): { text: string; fit
     if (next.length > limit) break;
     out = next;
   }
-  out = out.replace(/[,.;:·&/-]+$/, "").trim();
+  const tidy = (s: string) => s.replace(/[,.;:·&/-]+$/, "").trim();
+  out = tidy(out);
 
-  // Is het laatste woord in het origineel al half afgekapt (of eindigt de tekst
-  // exact op de limiet zonder afsluitend leesteken), dan gaat dat woord eruit.
-  if (out === clean && looksTruncated(clean, limit)) {
+  // Afgekapt laatste woord (of een bungelend voorzetsel) gaat er helemaal uit.
+  if (looksTruncated(text, limit) && out === clean) {
     const parts = out.split(" ");
     parts.pop();
-    out = parts.join(" ").replace(/[,.;:·&/-]+$/, "").trim();
+    out = tidy(parts.join(" "));
+  }
+  while (out.includes(" ") && DANGLING_TAIL.test(out)) {
+    const parts = out.split(" ");
+    parts.pop();
+    out = tidy(parts.join(" "));
   }
 
   const words2 = out.split(" ").filter(Boolean);
+  const last = words2[words2.length - 1] ?? "";
   const fits =
     out.length > 0 &&
     out.length <= limit &&
     words2.length >= 2 &&
-    // laatste woord moet een echt woord zijn, geen restfragment
-    (words2[words2.length - 1]!.length >= 3 || /^\d+$/.test(words2[words2.length - 1]!)) &&
-    !/\b(?:in|op|met|van|voor|per|en|of|tot|bij|de|het|een)$/i.test(out);
+    (last.length >= 3 || /^\d+$/.test(last));
   return { text: out, fits };
 }
 
 /**
  * Detecteert een op de tekenlimiet afgekapte tekst (V1-erfenis): vol tot aan de
- * limiet, geen afsluitend leesteken en eindigend in een woord of losse spatie.
+ * limiet en eindigend in een losse spatie of een kort restfragment.
  */
 export function looksTruncated(text: string, limit: number): boolean {
-  if (text.length < limit - 1) return false;
   if (/\s$/.test(text)) return true;
-  const t = text.trimEnd();
+  if (text.trim().length < limit - 1) return false;
+  const t = text.trim();
   if (/[.!?)]$/.test(t)) return false;
-  return true;
+  const words = t.split(" ");
+  const last = words[words.length - 1] ?? "";
+  // Eén lang woord dat exact de limiet vult, of een kort staartfragment.
+  if (words.length === 1) return true;
+  return last.length <= 5 && !/^\d+$/.test(last) && !DANGLING_TAIL.test(last);
 }
 
 /* ------------------------------------------------------- claim-consistentie */
