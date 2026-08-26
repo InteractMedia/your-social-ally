@@ -53,6 +53,17 @@ export const sectionVisualSchema = z.object({
   visual_brief: z.string().max(2000).optional(),
 });
 
+const blockItemsSchema = z
+  .array(
+    z.object({
+      title: z.string().max(300).optional(),
+      text: z.string().max(3000).optional(),
+      badge: z.string().max(60).optional(),
+    }),
+  )
+  .max(30)
+  .optional();
+
 export const blockContentSchema = z.object({
   design: sectionDesignSchema.optional(),
   visual: sectionVisualSchema.optional(),
