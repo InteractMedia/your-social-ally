@@ -330,15 +330,8 @@ export function PlatformBlock({
     /* ---------------------------------------------------------------- hero */
     case "platform_hero":
       return (
-        <ZpSection className="relative overflow-hidden">
-          {c.image_url_4 ? (
-            <img
-              src={c.image_url_4}
-              alt=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-110 object-cover opacity-15 blur-sm"
-            />
-          ) : (
+        <ZpSection bgImage={c.image_url_4} bgMode="hero">
+          {!c.image_url_4 && (
             <div
               aria-hidden
               className="from-zp-pink/12 pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br via-transparent to-transparent"
