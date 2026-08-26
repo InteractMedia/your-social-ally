@@ -130,6 +130,8 @@ export type BuilderNegative = {
   matchType: MatchType | string;
   reason: string;
   enabled: boolean;
+  /** V1.1: guardrail-vlaggen, bv. NEGATIVE_BLOCKS_VALID_QUERY. */
+  flags?: string[];
 };
 
 export type BuilderProposal = {
@@ -149,6 +151,12 @@ export type BuilderProposal = {
   expectedIntent: string;
   risks: string[];
   summary: string;
+  /** V1.1: deterministisch guardrail-rapport (geen AI). */
+  guardrails?: Record<string, unknown>;
+  /** V1.1: ALLOWED of BLOCKED_FOR_CREATION, met redenen. */
+  execution?: { eligibility: string; blockers: string[]; checkedAt: string };
+  /** V1.1: LAAG | MIDDEN | HOOG op basis van databruikbaarheid. */
+  dataConfidenceBand?: string;
 };
 
 export type SearchCampaignDraftRow = {
