@@ -321,41 +321,47 @@ export async function buildBuilderDataset(opts: {
 
 /* ------------------------------------------------------ data confidence */
 
-/** Deterministisch, los van AI-confidence: hoe hard is de onderliggende data? */
-export function scoreDataConfidence(dataset: any): { score: number; reasons: string[] } {
-  const reasons: string[] = [];
-  let score = 20;
-  if (dataset.landing) {
-    score += 20;
-    reasons.push("Landingspagina-copy, CTA en formuliervelden beschikbaar (+20).");
-  } else reasons.push("Geen landingspagina-inhoud beschikbaar (0).");
+/** Zet de dataset om naar bruikbaarheidssignalen (V1.1). */
+export function datasetUsability(dataset: any, funnel: string): DataUsability {
+  const q = dataset.googleAds?.dataQuality ?? {};
+  const b2b = dataset.googleAds?.b2b?.total ?? {};
+  const keywordRows: any[] = dataset.googleAds?.keywords ?? [];
+  const industry = dataset.industrySummary;
+  const funnelPrefix = funnel === "quote" ? "quote" : "platform";
 
-  const q = dataset.googleAds?.dataQuality;
-  if (q?.keywordRowsAvailable) {
-    score += 20;
-    reasons.push(`Historische Search-zoekwoorden beschikbaar (${q.keywordRowsAvailable} rijen, +20).`);
-  } else reasons.push("Geen historische Search-zoekwoorden (0).");
-  if (q?.searchTermRowsAvailable) {
-    score += 10;
-    reasons.push(`Historische zoektermen beschikbaar (${q.searchTermRowsAvailable} rijen, +10).`);
-  }
-  if (q?.pmaxSearchInsightRowsAvailable) {
-    score += 10;
-    reasons.push(`PMax-zoekcategorieën beschikbaar (${q.pmaxSearchInsightRowsAvailable}, +10).`);
-  }
-  if (q?.leadsInPeriod) {
-    score += 15;
-    reasons.push(`${q.leadsInPeriod} eigen leads in de periode (+15).`);
-  } else reasons.push("Geen eigen leads in de periode: budget/CPA zonder eigen basis (0).");
-  if (dataset.industrySummary?.leads) {
-    score += 5;
-    reasons.push(`${dataset.industrySummary.leads} leads binnen de gekozen branche (+5).`);
-  }
-  if (dataset.conversionMappings?.length) {
-    score += 5;
-    reasons.push("Conversiekoppeling aanwezig (+5).");
-  }
-  return { score: Math.max(0, Math.min(100, score)), reasons };
+  return {
+    ownLeads: Number(industry?.leads ?? q.leadsInPeriod ?? 0),
+    qualifiedLeads: Number(b2b.qualifiedLeads ?? 0),
+    customers: Number(industry?.customers ?? b2b.customers ?? 0),
+    revenue: Number(industry?.revenue ?? b2b.revenue ?? 0),
+    keywordConversions: keywordRows.reduce(
+      (sum, r) => sum + Number(r.conversions ?? r?.metrics?.conversions ?? 0),
+      0,
+    ),
+    searchTermRows: Number(q.searchTermRowsAvailable ?? 0),
+    cpcDataRows: keywordRows.filter((r) => Number(r.averageCpc ?? r.avgCpc ?? 0) > 0).length,
+    cpaKnown: Number(b2b.cpql ?? 0) > 0,
+    landingContent: Boolean(dataset.landing),
+    conversionMappingForFunnel: (dataset.conversionMappings ?? []).some((m: any) =>
+      String(m.internal_event_name ?? "").startsWith(funnelPrefix),
+    ),
+    pmaxCategories: Number(q.pmaxSearchInsightRowsAvailable ?? 0),
+    historicKeywordRows: Number(q.keywordRowsAvailable ?? 0),
+  };
+}
+
+/**
+ * Deterministisch, los van AI-confidence. V1.1 weegt BRUIKBAARHEID, niet de
+ * aanwezigheid van datasets: PMax-categorieën, een paar historische keywords of
+ * alleen een conversieconfiguratie leiden nooit tot een hoge score.
+ */
+export function scoreDataConfidence(
+  dataset: any,
+  funnel = "quote",
+): { score: number; band: string; reasons: string[]; usability: DataUsability } {
+  const usability = datasetUsability(dataset, funnel);
+  const scored = scoreDataUsability(usability);
+  return { ...scored, usability };
 }
 
 /* --------------------------------------------------------------- normalize */
