@@ -2878,6 +2878,139 @@ export type Database = {
         }
         Relationships: []
       }
+      search_campaign_drafts: {
+        Row: {
+          ai_confidence: number
+          approved_at: string | null
+          created_at: string
+          created_by: string | null
+          data_confidence: number
+          data_confidence_reasons: Json
+          data_sources: Json
+          dataset_meta: Json
+          error: string | null
+          estimated_cost_usd: number | null
+          fallback_reason: string | null
+          funnel: string
+          id: string
+          industry_id: string | null
+          industry_name: string | null
+          input_tokens: number | null
+          landing_page_id: string | null
+          landing_page_name: string | null
+          landing_page_url: string | null
+          language: string
+          locations: string[]
+          missing_data: Json
+          model: string
+          original_proposal: Json
+          output_tokens: number | null
+          prompt_version: string
+          proposal: Json
+          provider: string
+          reviewed_at: string | null
+          runtime_ms: number | null
+          status: string
+          target_daily_budget: number | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_confidence?: number
+          approved_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_confidence?: number
+          data_confidence_reasons?: Json
+          data_sources?: Json
+          dataset_meta?: Json
+          error?: string | null
+          estimated_cost_usd?: number | null
+          fallback_reason?: string | null
+          funnel: string
+          id?: string
+          industry_id?: string | null
+          industry_name?: string | null
+          input_tokens?: number | null
+          landing_page_id?: string | null
+          landing_page_name?: string | null
+          landing_page_url?: string | null
+          language?: string
+          locations?: string[]
+          missing_data?: Json
+          model: string
+          original_proposal?: Json
+          output_tokens?: number | null
+          prompt_version: string
+          proposal?: Json
+          provider: string
+          reviewed_at?: string | null
+          runtime_ms?: number | null
+          status?: string
+          target_daily_budget?: number | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          ai_confidence?: number
+          approved_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_confidence?: number
+          data_confidence_reasons?: Json
+          data_sources?: Json
+          dataset_meta?: Json
+          error?: string | null
+          estimated_cost_usd?: number | null
+          fallback_reason?: string | null
+          funnel?: string
+          id?: string
+          industry_id?: string | null
+          industry_name?: string | null
+          input_tokens?: number | null
+          landing_page_id?: string | null
+          landing_page_name?: string | null
+          landing_page_url?: string | null
+          language?: string
+          locations?: string[]
+          missing_data?: Json
+          model?: string
+          original_proposal?: Json
+          output_tokens?: number | null
+          prompt_version?: string
+          proposal?: Json
+          provider?: string
+          reviewed_at?: string | null
+          runtime_ms?: number | null
+          status?: string
+          target_daily_budget?: number | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_campaign_drafts_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_campaign_drafts_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_campaign_drafts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_ingest_keys: {
         Row: {
           active: boolean

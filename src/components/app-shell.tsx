@@ -5,6 +5,8 @@ import {
   CalendarDays,
   Clock,
   Users,
+  Wand2,
+
   Inbox,
   Settings,
   Sparkles,
@@ -91,6 +93,8 @@ const nav: NavSection[] = [
     children: [
       { to: "/ads/google", label: "Google Ads", icon: BarChart3 },
       { to: "/ads/google/advice", label: "AI Ads Analyst", icon: Brain },
+      { to: "/ads/google/builder", label: "Campaign Builder", icon: Wand2 },
+
       { to: "/ads/google/new", label: "Nieuwe campagne", icon: PlusCircle },
       { to: "/ads/google/conversions", label: "Conversies", icon: Target },
       { to: "/ads/compare", label: "Vergelijk concurrent", icon: GitCompare },
