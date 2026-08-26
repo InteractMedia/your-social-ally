@@ -121,7 +121,11 @@ function LeadDetailPage() {
   return (
     <AppShell>
       <PageHeader
-        title={lead.company_name}
+        title={
+          (lead as { is_test?: boolean }).is_test
+            ? `${lead.company_name} — TEST`
+            : lead.company_name
+        }
         subtitle={`Ontvangen ${formatDateTime(lead.received_at)} · attributie: laatste niet-directe klik (${ATTRIBUTION_MODEL})`}
         actions={
           <>
