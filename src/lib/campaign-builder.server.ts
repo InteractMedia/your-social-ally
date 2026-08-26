@@ -14,6 +14,13 @@ import {
   type BuilderProposal,
 } from "./campaign-builder-shared";
 import {
+  applyGuardrails,
+  evaluateExecutionEligibility,
+  scoreDataUsability,
+  type DataUsability,
+  type FinalUrlFacts,
+} from "./campaign-builder-guardrails";
+import {
   extractJsonObject,
   resolveProvider,
   runAiCompletionWithFallback,
