@@ -227,13 +227,16 @@ export function rewriteToLimit(text: string, limit: number): { text: string; fit
     out = tidy(parts.join(" "));
   }
 
+  // Een tekst mag ook niet op een los getal eindigen ("… in 4").
+  while (out.includes(" ") && /\s\d+$/.test(out)) {
+    const parts = out.split(" ");
+    parts.pop();
+    out = tidy(parts.join(" "));
+  }
+
   const words2 = out.split(" ").filter(Boolean);
   const last = words2[words2.length - 1] ?? "";
-  const fits =
-    out.length > 0 &&
-    out.length <= limit &&
-    words2.length >= 2 &&
-    (last.length >= 3 || /^\d+$/.test(last));
+  const fits = out.length > 0 && out.length <= limit && words2.length >= 2 && last.length >= 3;
   return { text: out, fits };
 }
 
