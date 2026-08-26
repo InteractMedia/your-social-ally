@@ -466,10 +466,10 @@ export function PlatformBlock({
               >
                 <ZpIconTile icon={itemIcon(item, i)} index={i} />
                 {item.title && (
-                  <h3 className="zp-card-title text-zp-ink mt-4 text-xl">{item.title}</h3>
+                  <h3 className="zp-title text-zp-ink mt-4 text-xl leading-snug">{item.title}</h3>
                 )}
                 {item.text && (
-                  <p className="zp-card-body text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
+                  <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
                 )}
               </div>
             ))}
@@ -485,31 +485,56 @@ export function PlatformBlock({
         <ZpSection>
           <ZpSectionHeading title={c.title} subtitle={c.subtitle} />
           <div className="relative">
-            <div
+            <svg
+              className="text-zp-ink pointer-events-none absolute top-12 left-0 hidden h-24 w-full md:block"
+              viewBox="0 0 1000 100"
+              preserveAspectRatio="none"
               aria-hidden
-              className="border-zp-ink/20 absolute top-12 right-[10%] left-[10%] hidden border-t-2 border-dashed md:block"
-            />
-            <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+              opacity="0.2"
+            >
+              <path
+                d="M 0 50 Q 125 0 250 50 T 500 50 T 750 50 T 1000 50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="8 8"
+              />
+            </svg>
+            <div className="relative z-10 grid grid-cols-1 gap-12 md:grid-cols-4 md:gap-8">
               {items.map((item, i) => {
                 const Icon = itemIcon(item, i);
                 const pink = i % 2 === 1;
                 return (
-                  <div key={i} className={cn("text-center", pink ? "md:mt-12" : "md:mt-0")}>
-                    <span className="relative mx-auto inline-block">
-                      <span
+                  <div
+                    key={i}
+                    className={cn(
+                      "group flex flex-col items-center text-center",
+                      pink ? "md:mt-8" : "md:mt-0",
+                    )}
+                  >
+                    <div className="relative mb-6">
+                      <div
                         className={cn(
-                          "grid h-24 w-24 place-items-center rounded-full shadow-lg",
+                          "grid h-24 w-24 place-items-center rounded-full shadow-lg transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110",
                           pink ? "bg-zp-pink" : "bg-zp-teal",
                         )}
                       >
-                        <Icon className="text-zp-surface h-9 w-9" />
-                      </span>
-                      <span className="bg-zp-canvas text-zp-ink border-zp-ink/10 absolute -right-1 -bottom-1 grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold">
-                        {i + 1}
-                      </span>
-                    </span>
-                    <ZpTitle text={item.title} as="h3" className="mt-4 text-base" />
-                    {item.text && <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>}
+                        <Icon className="text-zp-surface h-10 w-10" />
+                      </div>
+                      <div className="bg-zp-canvas border-zp-ink/10 absolute -right-2 -bottom-2 grid h-8 w-8 place-items-center rounded-full border-2 text-sm font-bold shadow-sm">
+                        <span className={pink ? "text-zp-pink" : "text-zp-teal"}>{i + 1}</span>
+                      </div>
+                    </div>
+                    {item.title && (
+                      <h3 className="zp-card-title text-zp-ink mb-3 text-xl leading-tight">
+                        {item.title}
+                      </h3>
+                    )}
+                    {item.text && (
+                      <p className="zp-card-body text-zp-muted max-w-[240px] text-sm leading-relaxed">
+                        {item.text}
+                      </p>
+                    )}
                   </div>
                 );
               })}
