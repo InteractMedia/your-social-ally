@@ -193,10 +193,14 @@ export function assetTooLong(text: string, limit: number): boolean {
   return text.trim().length > limit;
 }
 
-/** Herschrijf-hulp: verkort op woordgrens en meldt of het gelukt is. */
+/**
+ * Herschrijf-hulp: verkort op woordgrens. Een afgekapt laatste woord wordt
+ * altijd volledig verwijderd — nooit half laten staan. Lukt dat niet met een
+ * leesbaar resultaat, dan meldt de functie fits: false en wordt de tekst
+ * uitgezet in plaats van geknipt.
+ */
 export function rewriteToLimit(text: string, limit: number): { text: string; fits: boolean } {
   const clean = text.trim().replace(/\s+/g, " ");
-  if (clean.length <= limit) return { text: clean, fits: true };
   const words = clean.split(" ");
   let out = "";
   for (const w of words) {
@@ -205,15 +209,36 @@ export function rewriteToLimit(text: string, limit: number): { text: string; fit
     out = next;
   }
   out = out.replace(/[,.;:·&/-]+$/, "").trim();
-  return { text: out, fits: out.length > 0 && out.split(" ").length >= 2 };
+
+  // Is het laatste woord in het origineel al half afgekapt (of eindigt de tekst
+  // exact op de limiet zonder afsluitend leesteken), dan gaat dat woord eruit.
+  if (out === clean && looksTruncated(clean, limit)) {
+    const parts = out.split(" ");
+    parts.pop();
+    out = parts.join(" ").replace(/[,.;:·&/-]+$/, "").trim();
+  }
+
+  const words2 = out.split(" ").filter(Boolean);
+  const fits =
+    out.length > 0 &&
+    out.length <= limit &&
+    words2.length >= 2 &&
+    // laatste woord moet een echt woord zijn, geen restfragment
+    (words2[words2.length - 1]!.length >= 3 || /^\d+$/.test(words2[words2.length - 1]!)) &&
+    !/\b(?:in|op|met|van|voor|per|en|of|tot|bij|de|het|een)$/i.test(out);
+  return { text: out, fits };
 }
 
-/** Detecteert een op de tekenlimiet afgekapte tekst (V1-erfenis). */
+/**
+ * Detecteert een op de tekenlimiet afgekapte tekst (V1-erfenis): vol tot aan de
+ * limiet, geen afsluitend leesteken en eindigend in een woord of losse spatie.
+ */
 export function looksTruncated(text: string, limit: number): boolean {
+  if (text.length < limit - 1) return false;
+  if (/\s$/.test(text)) return true;
   const t = text.trimEnd();
-  if (t.length < limit - 1) return false;
   if (/[.!?)]$/.test(t)) return false;
-  return text.length >= limit - 1;
+  return true;
 }
 
 /* ------------------------------------------------------- claim-consistentie */
