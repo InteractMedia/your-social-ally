@@ -77,7 +77,9 @@ export async function handleLandingSubmit(payload: SubmitPayload, request?: Requ
 
   const { data: pageRow } = await db
     .from("landing_pages")
-    .select("workspace_id,industry_id,notify_channel,notify_target,is_test,base_url")
+    .select(
+      "workspace_id,industry_id,notify_channel,notify_target,notify_email,notify_test_email,is_test,base_url",
+    )
     .eq("id", page.id)
     .single();
   const workspaceId = pageRow?.workspace_id;
@@ -309,6 +311,46 @@ export async function handleLandingSubmit(payload: SubmitPayload, request?: Requ
     leadId: lead.id,
     isTest,
   });
+
+  // --- e-mailnotificatie (pagina-adres, met workspace-fallback) ---
+  const pageAny = pageRow as unknown as {
+    notify_email?: string | null;
+    notify_test_email?: boolean | null;
+  } | null;
+  const { data: workspaceRow } = await db
+    .from("workspaces")
+    .select("notify_email")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  const notifyEmail =
+    pageAny?.notify_email?.trim() ||
+    ((workspaceRow as unknown as { notify_email?: string | null } | null)?.notify_email?.trim() ??
+      "");
+  const testNotificationsOn = pageAny?.notify_test_email === true;
+  if (notifyEmail && (!isTest || testNotificationsOn)) {
+    const { sendLeadNotificationEmail } = await import("./landing-notify-email.server");
+    await sendLeadNotificationEmail({
+      to: notifyEmail,
+      isTest,
+      leadId: lead.id,
+      pageName: page.name,
+      slug: page.slug,
+      funnel: payload.funnel,
+      industry: page.industry_name ?? null,
+      company: clean["company_name"] ?? null,
+      contact: clean["contact_name"] ?? null,
+      email: clean["email"] ?? null,
+      phone: clean["phone"] ?? null,
+      quantity: clean["quantity"] ?? null,
+      budget: clean["budget"] ?? null,
+      deliveryDate: clean["delivery_date"] ?? null,
+      interests: clean["interests"] ?? null,
+      personalization: clean["personalization"] ?? null,
+      message: clean["message"] ?? null,
+      utm: { ...attribution.values },
+    });
+  }
+
 
   return { ok: true as const, deduplicated: false, leadId: lead.id };
 }

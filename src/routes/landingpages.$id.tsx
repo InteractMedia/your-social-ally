@@ -1098,6 +1098,8 @@ function SettingsEditor({
     og_image_url: string | null;
     notify_channel: string | null;
     notify_target: string | null;
+    notify_email: string | null;
+    notify_test_email: boolean;
     is_test: boolean;
     theme: { hazard_color_1?: string | null; hazard_color_2?: string | null } | null;
   };
@@ -1127,6 +1129,8 @@ function SettingsEditor({
           og_image_url: state.og_image_url || null,
           notify_channel: (state.notify_channel as "none" | "webhook" | null) || null,
           notify_target: state.notify_target || null,
+          notify_email: state.notify_email || null,
+          notify_test_email: state.notify_test_email,
           is_test: state.is_test,
           theme: {
             hazard_color_1: state.theme?.hazard_color_1 || null,
@@ -1270,6 +1274,19 @@ function SettingsEditor({
               placeholder="https://hooks.slack.com/…"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label>E-mailnotificatie bij nieuwe aanvraag</Label>
+            <Input
+              type="email"
+              value={state.notify_email ?? ""}
+              onChange={(e) => set({ notify_email: e.target.value })}
+              placeholder="offertes@zoetbezorgen.nl"
+            />
+            <p className="text-muted-foreground text-xs">
+              Leeg = standaardadres van de workspace. Testaanvragen sturen alleen mail als je dat
+              hieronder aanzet.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-6">
@@ -1280,6 +1297,13 @@ function SettingsEditor({
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={state.is_test} onCheckedChange={(v) => set({ is_test: v })} />
             Testpagina (leads worden nooit naar Google Ads geüpload)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch
+              checked={state.notify_test_email}
+              onCheckedChange={(v) => set({ notify_test_email: v })}
+            />
+            Ook e-mail bij testaanvragen (duidelijk als TEST gemarkeerd)
           </label>
         </div>
 
