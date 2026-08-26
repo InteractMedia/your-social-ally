@@ -867,7 +867,6 @@ export function LandingBlock({
           "bg-primary/15",
           "bg-zb-teal/15",
         ];
-        const tipRotations = ["-rotate-3", "rotate-2"];
         const benefits =
           items.length > 0
             ? items
@@ -888,7 +887,14 @@ export function LandingBlock({
               <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
                 {tips.map((p, i) => (
                   <div key={p.id} className="relative text-center">
-                    <div className="relative">
+                    {/* V2.3 — eerst de titel, daarna de foto (recht, niet gekanteld). */}
+                    <ZbHeading text={p.name} className="text-3xl md:text-4xl" />
+                    {p.short_text && (
+                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
+                        {p.short_text}
+                      </p>
+                    )}
+                    <div className="relative mt-8">
                       <div
                         className={cn(
                           "absolute inset-0 -z-0 scale-105 rounded-full blur-3xl",
@@ -900,19 +906,10 @@ export function LandingBlock({
                           src={p.image_url}
                           alt={p.image_alt ?? p.name}
                           loading="lazy"
-                          className={cn(
-                            "relative mx-auto w-56 drop-shadow-2xl transition-transform hover:rotate-0 md:w-80",
-                            tipRotations[i % tipRotations.length],
-                          )}
+                          className="relative mx-auto w-56 drop-shadow-2xl transition-transform hover:scale-[1.03] md:w-80"
                         />
                       )}
                     </div>
-                    <ZbHeading text={p.name} className="mt-8 text-3xl md:text-4xl" />
-                    {p.short_text && (
-                      <p className="text-zb-ink/70 mx-auto mt-3 max-w-sm leading-relaxed">
-                        {p.short_text}
-                      </p>
-                    )}
                     {p.price_from !== null && (
                       <p className="text-zb-ink/80 mt-3 text-sm font-semibold">
                         vanaf € {Number(p.price_from).toFixed(2).replace(".", ",")}
@@ -976,19 +973,19 @@ export function LandingBlock({
         "-rotate-3",
         "rotate-1",
       ];
-      /* V2.2 — polaroids vallen speels over elkaar heen: op mobiel twee
-         kolommen met kleine overlap, op desktop een losse fotowand. */
+      /* V2.3 — polaroids: groter en met veel minder overlap, zodat elke foto
+         goed leesbaar blijft maar de wand speels blijft staan. */
       const polaroidWall =
         polaroids.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-y-6">
+          <div className="flex flex-wrap justify-center gap-x-2 gap-y-8 md:gap-x-3">
             {polaroids.map((g, i) => (
               <figure
                 key={i}
                 className={cn(
-                  "bg-card border-zb-ink/10 relative w-32 shrink-0 rounded-md border p-2 pb-3 shadow-xl transition-transform hover:z-30 hover:scale-110 hover:rotate-0 sm:w-40 md:w-44",
+                  "bg-card border-zb-ink/10 relative w-40 shrink-0 rounded-md border p-2 pb-3 shadow-xl transition-transform hover:z-30 hover:scale-105 hover:rotate-0 sm:w-48 md:w-56",
                   polaroidRotations[i % polaroidRotations.length],
-                  i > 0 && "-ml-5 sm:-ml-6 md:-ml-8",
-                  i % 2 === 1 ? "z-10 mt-5 md:mt-8" : "z-20",
+                  i > 0 && "-ml-1 sm:-ml-2 md:-ml-3",
+                  i % 2 === 1 ? "z-10 mt-6 md:mt-10" : "z-20",
                 )}
               >
                 <img
@@ -998,7 +995,7 @@ export function LandingBlock({
                   className="aspect-square w-full rounded-sm object-cover"
                 />
                 {g.caption && (
-                  <figcaption className="text-zb-ink/70 mt-2 line-clamp-1 text-center text-[11px] font-medium">
+                  <figcaption className="text-zb-ink/75 mt-2.5 line-clamp-1 text-center text-sm font-semibold md:text-base">
                     {g.caption}
                   </figcaption>
                 )}
@@ -1981,21 +1978,26 @@ export function LandingBlock({
                 </div>
               )}
               {logos.length > 0 && (
-                /* V2.2 — alle logo's op één regel, full-width, in eigen chips. */
-                <div className="mt-12 flex w-full items-stretch gap-2 md:gap-3">
-                  {logos.map((l, i) => (
-                    <span
-                      key={i}
-                      className="flex min-w-0 flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-2 py-3 transition hover:bg-white/[0.12] md:px-3"
-                    >
-                      <img
-                        src={l.url}
-                        alt={l.alt ?? ""}
-                        loading="lazy"
-                        className="h-4 w-full object-contain opacity-85 transition hover:opacity-100 sm:h-5 md:h-7"
-                      />
-                    </span>
-                  ))}
+                /* V2.3 — logo-slider: doorlopende marquee met grotere logo's;
+                   pauzeert bij hover. Track is verdubbeld voor een naadloze loop. */
+                <div className="zb-marquee relative mt-12 -mx-5 overflow-hidden md:-mx-8">
+                  <div className="from-zb-ink pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent md:w-20" />
+                  <div className="from-zb-ink pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l to-transparent md:w-20" />
+                  <div className="zb-marquee-track flex items-stretch gap-3 md:gap-4">
+                    {[...logos, ...logos].map((l, i) => (
+                      <span
+                        key={i}
+                        className="flex w-36 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-4 py-4 transition hover:bg-white/[0.12] sm:w-44 md:w-52"
+                      >
+                        <img
+                          src={l.url}
+                          alt={l.alt ?? ""}
+                          loading="lazy"
+                          className="h-8 w-full object-contain opacity-90 transition hover:opacity-100 sm:h-10 md:h-12"
+                        />
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
