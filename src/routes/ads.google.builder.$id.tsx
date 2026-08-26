@@ -39,6 +39,7 @@ import {
 import {
   deleteSearchDraft,
   getSearchDraft,
+  revalidateSearchDraft,
   saveSearchDraft,
   setSearchDraftStatus,
 } from "@/lib/campaign-builder.functions";
@@ -89,6 +90,7 @@ function DraftPage() {
   const saveFn = useServerFn(saveSearchDraft);
   const statusFn = useServerFn(setSearchDraftStatus);
   const deleteFn = useServerFn(deleteSearchDraft);
+  const revalidateFn = useServerFn(revalidateSearchDraft);
 
   const draftQuery = useQuery({
     queryKey: ["builder-draft", id],
