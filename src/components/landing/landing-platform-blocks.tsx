@@ -360,7 +360,7 @@ function ZpSectionHeading({
   return (
     <div className={cn("mb-12", align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl")}>
       <ZpTitle text={title} className="text-3xl md:text-4xl" />
-      {subtitle && <p className="text-zp-muted mt-3 text-base md:text-lg">{subtitle}</p>}
+      {subtitle && <p className="text-zp-muted mt-2 text-base">{subtitle}</p>}
     </div>
   );
 }
@@ -400,14 +400,14 @@ export function PlatformBlock({
               <ZpTitle
                 text={c.title}
                 as="h1"
-                className="mt-5 text-4xl leading-[1.06] md:text-6xl"
+                className="mt-4 text-5xl leading-tight md:text-7xl"
               />
               {c.subtitle && (
-                <p className="zp-title text-zp-teal mt-3 text-2xl leading-tight md:text-3xl">
+                <p className="zp-title text-zp-teal mt-2 text-2xl leading-tight md:text-3xl">
                   {c.subtitle}
                 </p>
               )}
-              <ZpBody body={c.body} className="mt-5 max-w-xl" />
+              <ZpBody body={c.body} size="lg" className="mt-5 max-w-xl" />
               {(c.cta_label || c.secondary_cta_label) && (
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <ZpCtaPink label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
