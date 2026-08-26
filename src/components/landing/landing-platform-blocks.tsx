@@ -113,21 +113,47 @@ function ZpSection({
   children,
   tone = "canvas",
   className,
+  bgImage,
+  bgMode = "wash",
 }: {
   id?: string;
   children: React.ReactNode;
   tone?: "canvas" | "surface";
   className?: string;
+  bgImage?: string;
+  bgMode?: "wash" | "hero";
 }) {
   return (
     <section
       id={id}
       className={cn(
-        "zp px-5 py-16 md:px-8 md:py-24",
+        "zp relative isolate overflow-hidden px-5 py-16 md:px-8 md:py-24",
         tone === "surface" && "bg-zp-surface",
         className,
       )}
     >
+      {bgImage && (
+        <>
+          <img
+            src={bgImage}
+            alt=""
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover object-center",
+              bgMode === "hero" ? "opacity-70" : "scale-105 opacity-30 blur-sm",
+            )}
+          />
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 -z-10",
+              bgMode === "hero"
+                ? "bg-gradient-to-r from-[color-mix(in_oklab,var(--zp-canvas)_92%,transparent)] via-[color-mix(in_oklab,var(--zp-canvas)_72%,transparent)] to-[color-mix(in_oklab,var(--zp-canvas)_35%,transparent)]"
+                : "bg-[color-mix(in_oklab,var(--zp-canvas)_70%,transparent)]",
+            )}
+          />
+        </>
+      )}
       <div className="mx-auto w-full max-w-6xl">{children}</div>
     </section>
   );
