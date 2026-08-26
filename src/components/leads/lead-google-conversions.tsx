@@ -23,6 +23,9 @@ export function LeadGoogleConversions({ leadId }: { leadId: string }) {
   });
 
   const events = query.data?.events ?? [];
+  const leadClickType = (query.data as { leadClickType?: string | null } | undefined)
+    ?.leadClickType ?? null;
+
 
   return (
     <Card>
