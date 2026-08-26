@@ -253,6 +253,9 @@ export function looksTruncated(text: string, limit: number): boolean {
   const last = words[words.length - 1] ?? "";
   // Eén lang woord dat exact de limiet vult, of een kort staartfragment.
   if (words.length === 1) return true;
+  // Precies vol tot de limiet zonder afsluitend leesteken: vrijwel altijd het
+  // gevolg van afkappen. Liever één woord inleveren dan een half woord tonen.
+  if (t.length >= limit) return true;
   return last.length <= 5 && !/^\d+$/.test(last) && !DANGLING_TAIL.test(last);
 }
 
