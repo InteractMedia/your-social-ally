@@ -1882,7 +1882,9 @@ export type Database = {
           name: string
           noindex: boolean
           notify_channel: string | null
+          notify_email: string | null
           notify_target: string | null
+          notify_test_email: boolean
           og_description: string | null
           og_image_url: string | null
           og_title: string | null
@@ -1914,7 +1916,9 @@ export type Database = {
           name: string
           noindex?: boolean
           notify_channel?: string | null
+          notify_email?: string | null
           notify_target?: string | null
+          notify_test_email?: boolean
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -1946,7 +1950,9 @@ export type Database = {
           name?: string
           noindex?: boolean
           notify_channel?: string | null
+          notify_email?: string | null
           notify_target?: string | null
+          notify_test_email?: boolean
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -2899,6 +2905,7 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          notify_email: string | null
           offline_conversion_currency: string
           offline_conversion_mode: string
           slug: string
@@ -2910,6 +2917,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          notify_email?: string | null
           offline_conversion_currency?: string
           offline_conversion_mode?: string
           slug: string
@@ -2921,6 +2929,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          notify_email?: string | null
           offline_conversion_currency?: string
           offline_conversion_mode?: string
           slug?: string
