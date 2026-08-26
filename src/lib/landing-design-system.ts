@@ -159,11 +159,11 @@ export const LANDING_DESIGN_TOKENS = {
   },
   buttons: {
     solid:
-      "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
+      "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-sm px-6 text-sm font-semibold transition-colors",
     outline:
-      "border border-border text-foreground hover:bg-accent inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
+      "border border-border text-foreground hover:bg-accent inline-flex h-11 items-center justify-center rounded-sm px-6 text-sm font-semibold transition-colors",
     soft:
-      "bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition-colors",
+      "bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center justify-center rounded-sm px-6 text-sm font-semibold transition-colors",
   },
   grids: {
     stacked: "grid gap-4",

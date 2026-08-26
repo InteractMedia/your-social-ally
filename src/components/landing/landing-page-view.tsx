@@ -3,7 +3,7 @@
  * tracking (page_view, cta_click, form_started, form_submitted, thank_you).
  */
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { LandingBlock } from "@/components/landing/landing-blocks";
 import { LandingForm } from "@/components/landing/landing-form";
@@ -82,8 +82,13 @@ export function LandingPageView({
     />
   );
 
+  const themeVars = {
+    ...(page.theme?.hazard_color_1 ? { "--zb-hazard-1": page.theme.hazard_color_1 } : {}),
+    ...(page.theme?.hazard_color_2 ? { "--zb-hazard-2": page.theme.hazard_color_2 } : {}),
+  } as CSSProperties;
+
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div className="bg-background text-foreground min-h-screen" style={themeVars}>
       {page.is_preview && (
         <div className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs font-medium">
           Preview — deze pagina is nog niet gepubliceerd en wordt niet meegeteld in de statistieken.

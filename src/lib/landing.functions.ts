@@ -23,7 +23,7 @@ import { slugify } from "./landing-shared";
 import { requireUserWorkspace } from "./workspaces.server";
 
 const PAGE_COLUMNS =
-  "id,name,slug,funnel_type,status,industry_id,template_key,base_url,canonical_url,noindex,seo_title,seo_description,og_title,og_description,og_image_url,published_at,version_counter,preview_token,notify_channel,notify_target,is_test,current_version_id,created_at,updated_at";
+  "id,name,slug,funnel_type,status,industry_id,template_key,base_url,canonical_url,noindex,seo_title,seo_description,og_title,og_description,og_image_url,published_at,version_counter,preview_token,notify_channel,notify_target,is_test,theme,current_version_id,created_at,updated_at";
 
 /* ------------------------------------------------------------------ public */
 

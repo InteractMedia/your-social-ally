@@ -132,6 +132,14 @@ export const updatePageInput = z.object({
   notify_channel: z.enum(["none", "webhook"]).optional().nullable(),
   notify_target: z.string().max(500).optional().nullable(),
   is_test: z.boolean().optional(),
+  /** V2.2 — instelbare merk-/lintkleuren per pagina. */
+  theme: z
+    .object({
+      hazard_color_1: z.string().max(40).optional().nullable(),
+      hazard_color_2: z.string().max(40).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const sectionUpdateInput = z.object({

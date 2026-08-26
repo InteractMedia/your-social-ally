@@ -39,6 +39,11 @@ export type PublicTestimonial = {
   image_url: string | null;
 };
 
+export type LandingTheme = {
+  hazard_color_1?: string | null;
+  hazard_color_2?: string | null;
+};
+
 export type PublicPage = {
   id: string;
   name: string;
@@ -46,6 +51,7 @@ export type PublicPage = {
   funnel_type: string;
   status: string;
   template_key: string;
+  theme: LandingTheme;
   industry_id: string | null;
   industry_name: string | null;
   seo_title: string | null;
@@ -220,7 +226,7 @@ export async function resolvePublicPage(args: {
   const { data: page } = await db
     .from("landing_pages")
     .select(
-      "id,name,slug,funnel_type,status,preview_token,current_version_id,version_counter,base_url,canonical_url,noindex,seo_title,seo_description,og_title,og_description,og_image_url,workspace_id,industry_id,template_key",
+      "id,name,slug,funnel_type,status,preview_token,current_version_id,version_counter,base_url,canonical_url,noindex,seo_title,seo_description,og_title,og_description,og_image_url,workspace_id,industry_id,template_key,theme",
     )
     .eq("funnel_type", args.funnel)
     .eq("slug", args.slug)
@@ -260,6 +266,7 @@ export async function resolvePublicPage(args: {
     funnel_type: page.funnel_type,
     status: page.status,
     template_key: snapshot.page.template_key ?? TEMPLATE_KEY,
+    theme: (snapshot.page.theme ?? {}) as LandingTheme,
     industry_id: snapshot.page.industry_id ?? null,
     industry_name: snapshot.page.industry_name ?? null,
     seo_title: snapshot.page.seo_title ?? snapshot.page.name,
