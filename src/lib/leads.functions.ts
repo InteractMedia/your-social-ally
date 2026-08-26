@@ -18,6 +18,7 @@ import {
   idInput,
   industryInput,
   listLeadsInput,
+  overviewInput,
   notesInput,
   periodInput,
   poorReasonInput,
@@ -26,7 +27,7 @@ import {
 } from "./leads-schemas";
 
 const LEAD_COLUMNS =
-  "id,created_at,received_at,updated_at,lead_type,funnel_type,status,lead_quality,poor_reason_id,poor_reason,poor_reason_label,poor_reason_notes,poor_marked_at,company_name,contact_name,email,phone,website,company_domain,company_size,kvk_number,notes,industry_id,industry_name,source,medium,platform,campaign_id,campaign_name,ad_group_id,ad_group_name,ad_id,ad_name,keyword,search_term,match_type,landing_page,landing_page_id,landing_page_variant,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,gbraid,wbraid,li_fat_id,ttclid,fbclid,attribution_model,first_touch,became_customer,customer_date,order_value,revenue,gross_margin,expected_value,lifetime_value,first_order_date,ingest_source";
+  "id,created_at,received_at,updated_at,lead_type,funnel_type,status,lead_quality,poor_reason_id,poor_reason,poor_reason_label,poor_reason_notes,poor_marked_at,company_name,contact_name,email,phone,website,company_domain,company_size,kvk_number,notes,industry_id,industry_name,source,medium,platform,campaign_id,campaign_name,ad_group_id,ad_group_name,ad_id,ad_name,keyword,search_term,match_type,landing_page,landing_page_id,landing_page_variant,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,gbraid,wbraid,li_fat_id,ttclid,fbclid,attribution_model,first_touch,became_customer,customer_date,order_value,revenue,gross_margin,expected_value,lifetime_value,first_order_date,ingest_source,is_test";
 
 /** Configurable "why is this a poor lead" catalogue: global defaults + own additions. */
 export const listPoorLeadReasons = createServerFn({ method: "GET" })
@@ -182,6 +183,8 @@ export const listLeads = createServerFn({ method: "GET" })
     if (data.status) query = query.eq("status", data.status);
     if (data.quality) query = query.eq("lead_quality", data.quality);
     if (data.poorReason) query = query.eq("poor_reason", data.poorReason);
+    if (data.testMode === "test") query = query.eq("is_test", true);
+    else if (data.testMode !== "all") query = query.not("is_test", "is", true);
     if (data.search) {
       const term = `%${data.search.replace(/[%,]/g, "")}%`;
       query = query.or(
@@ -195,14 +198,17 @@ export const listLeads = createServerFn({ method: "GET" })
 
 export const getLeadsOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => periodInput.parse(d))
+  .inputValidator((d: unknown) => overviewInput.parse(d))
   .handler(async ({ context, data }) => {
     const { from, to } = periodBounds(data.start, data.end);
-    const { data: rows, error } = await context.supabase
+    let overviewQuery = context.supabase
       .from("leads")
       .select("id,status,lead_quality,funnel_type,became_customer,revenue,order_value,platform")
       .gte("received_at", from)
       .lt("received_at", to);
+    if (data.testMode === "test") overviewQuery = overviewQuery.eq("is_test", true);
+    else if (data.testMode !== "all") overviewQuery = overviewQuery.not("is_test", "is", true);
+    const { data: rows, error } = await overviewQuery;
     if (error) throw new Error(error.message);
     const list = rows ?? [];
     const qualified = list.filter(

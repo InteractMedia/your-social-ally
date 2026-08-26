@@ -15,6 +15,12 @@ export const listLeadsInput = periodInput.extend({
   quality: z.string().optional(),
   poorReason: z.string().optional(),
   search: z.string().optional(),
+  /** "live" (default in UI) | "test" | "all" — testleads horen niet in commerciële KPI's. */
+  testMode: z.enum(["all", "live", "test"]).optional(),
+});
+
+export const overviewInput = periodInput.extend({
+  testMode: z.enum(["all", "live", "test"]).optional(),
 });
 
 export const createLeadInput = z.object({
