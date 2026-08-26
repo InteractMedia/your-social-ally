@@ -365,6 +365,67 @@ function ZpSectionHeading({
   );
 }
 
+/** Aanklikbare fotogalerij met lightbox (zoals op zoetbezorgen.app/cadeaus). */
+function ZpLightboxGallery({ photos }: { photos: { url?: string; alt?: string }[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  if (!photos.length) return null;
+  const active = open === null ? null : photos[open];
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {photos.map((p, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setOpen(i)}
+            className="group border-zp-ink/10 bg-zp-surface focus:ring-zp-pink relative overflow-hidden rounded-[22px] border shadow-sm transition hover:shadow-md focus:ring-2 focus:outline-none"
+          >
+            <img
+              src={p.url}
+              alt={p.alt ?? ""}
+              loading="lazy"
+              className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+            <div className="from-zp-ink/60 absolute inset-0 flex items-end justify-center bg-gradient-to-t to-transparent p-4 opacity-0 transition duration-300 group-hover:opacity-100">
+              <span className="text-zp-surface inline-flex items-center gap-1 text-xs font-medium">
+                <ZoomIn className="h-3.5 w-3.5" />
+                {p.alt || "Bekijk voorbeeld"}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {active && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpen(null)}
+          className="bg-zp-ink/80 fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            aria-label="Sluiten"
+            onClick={() => setOpen(null)}
+            className="text-zp-surface hover:bg-zp-surface/15 absolute top-5 right-5 grid h-10 w-10 place-items-center rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <figure className="max-h-full w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={active.url}
+              alt={active.alt ?? ""}
+              className="max-h-[75vh] w-full rounded-[22px] object-contain"
+            />
+            {active.alt && (
+              <figcaption className="text-zp-surface mt-3 text-center text-sm">{active.alt}</figcaption>
+            )}
+          </figure>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ------------------------------------------------------------------ blocks */
 
 export function PlatformBlock({
@@ -582,19 +643,7 @@ export function PlatformBlock({
                 </div>
               )}
             </div>
-            {photos.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {photos.map((p, i) => (
-                  <img
-                    key={i}
-                    src={p.url}
-                    alt={p.alt ?? ""}
-                    loading="lazy"
-                    className="border-zp-surface aspect-[3/4] w-full rounded-[16px] border-4 object-cover shadow-lg"
-                  />
-                ))}
-              </div>
-            )}
+            <ZpLightboxGallery photos={photos} />
           </div>
         </ZpSection>
       );
