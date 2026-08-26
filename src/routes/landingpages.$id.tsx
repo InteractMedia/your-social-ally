@@ -515,7 +515,10 @@ function SectionCard({
             </Button>
           </div>
           {items.map((item, i) => (
-            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_2fr_auto]">
+            <div
+              key={i}
+              className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_2fr_150px_auto]"
+            >
               <Input
                 placeholder="Titel"
                 value={item.title ?? ""}
@@ -535,6 +538,15 @@ function SectionCard({
                   set({ items: next });
                 }}
               />
+              <Input
+                placeholder="Icoon, bv. gift"
+                value={item.badge ?? ""}
+                onChange={(e) => {
+                  const next = [...items];
+                  next[i] = { ...item, badge: e.target.value };
+                  set({ items: next });
+                }}
+              />
               <Button
                 variant="ghost"
                 size="icon"
@@ -544,7 +556,74 @@ function SectionCard({
               </Button>
             </div>
           ))}
+          <p className="text-muted-foreground text-xs">
+            Icoon-keywords: gift, party, receipt, store, palette, users, clock, heart, shield, cake,
+            home, award, welcome, snow, handshake, baby, care, truck, calendar, excel, phone, mail,
+            thumbsup, company.
+          </p>
         </div>
+
+        {/* Tweede itemlijst — bv. de agenda-rijen van de verjaardagsservice */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Extra lijst (bv. agenda-rijen)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                set({ secondary_items: [...(content.secondary_items ?? []), { title: "" }] })
+              }
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Rij
+            </Button>
+          </div>
+          {(content.secondary_items ?? []).map((row, i) => (
+            <div
+              key={i}
+              className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_1fr_150px_auto]"
+            >
+              <Input
+                placeholder="Titel"
+                value={row.title ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.secondary_items ?? [])];
+                  next[i] = { ...row, title: e.target.value };
+                  set({ secondary_items: next });
+                }}
+              />
+              <Input
+                placeholder="Bovenregel (bv. datum)"
+                value={row.text ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.secondary_items ?? [])];
+                  next[i] = { ...row, text: e.target.value };
+                  set({ secondary_items: next });
+                }}
+              />
+              <Input
+                placeholder="Label (bv. Gepland)"
+                value={row.badge ?? ""}
+                onChange={(e) => {
+                  const next = [...(content.secondary_items ?? [])];
+                  next[i] = { ...row, badge: e.target.value };
+                  set({ secondary_items: next });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  set({
+                    secondary_items: (content.secondary_items ?? []).filter((_, x) => x !== i),
+                  })
+                }
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
 
         {/* Fotowand / galerij (polaroid-compositie) */}
         <div className="space-y-2">
