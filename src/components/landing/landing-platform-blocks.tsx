@@ -408,8 +408,12 @@ export function PlatformBlock({
                 )}
               >
                 <ZpIconTile icon={itemIcon(item, i)} index={i} />
-                <ZpTitle text={item.title} as="h3" className="mt-4 text-lg leading-snug" />
-                {item.text && <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>}
+                {item.title && (
+                  <h3 className="zp-card-title text-zp-ink mt-4 text-xl">{item.title}</h3>
+                )}
+                {item.text && (
+                  <p className="zp-card-body text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
+                )}
               </div>
             ))}
           </div>
