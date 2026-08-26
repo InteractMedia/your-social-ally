@@ -131,8 +131,6 @@ export const updatePageInput = z.object({
   og_image_url: z.string().max(1000).optional().nullable(),
   notify_channel: z.enum(["none", "webhook"]).optional().nullable(),
   notify_target: z.string().max(500).optional().nullable(),
-  notify_email: z.string().max(320).optional().nullable(),
-  notify_test_email: z.boolean().optional(),
   is_test: z.boolean().optional(),
   /** V2.2 — instelbare merk-/lintkleuren per pagina. */
   theme: z
