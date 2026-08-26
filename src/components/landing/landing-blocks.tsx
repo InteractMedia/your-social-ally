@@ -976,19 +976,19 @@ export function LandingBlock({
         "-rotate-3",
         "rotate-1",
       ];
-      /* V2.2 — polaroids vallen speels over elkaar heen: op mobiel twee
-         kolommen met kleine overlap, op desktop een losse fotowand. */
+      /* V2.3 — polaroids: groter en met veel minder overlap, zodat elke foto
+         goed leesbaar blijft maar de wand speels blijft staan. */
       const polaroidWall =
         polaroids.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-y-6">
+          <div className="flex flex-wrap justify-center gap-x-2 gap-y-8 md:gap-x-3">
             {polaroids.map((g, i) => (
               <figure
                 key={i}
                 className={cn(
-                  "bg-card border-zb-ink/10 relative w-32 shrink-0 rounded-md border p-2 pb-3 shadow-xl transition-transform hover:z-30 hover:scale-110 hover:rotate-0 sm:w-40 md:w-44",
+                  "bg-card border-zb-ink/10 relative w-40 shrink-0 rounded-md border p-2 pb-3 shadow-xl transition-transform hover:z-30 hover:scale-105 hover:rotate-0 sm:w-48 md:w-56",
                   polaroidRotations[i % polaroidRotations.length],
-                  i > 0 && "-ml-5 sm:-ml-6 md:-ml-8",
-                  i % 2 === 1 ? "z-10 mt-5 md:mt-8" : "z-20",
+                  i > 0 && "-ml-1 sm:-ml-2 md:-ml-3",
+                  i % 2 === 1 ? "z-10 mt-6 md:mt-10" : "z-20",
                 )}
               >
                 <img
@@ -998,7 +998,7 @@ export function LandingBlock({
                   className="aspect-square w-full rounded-sm object-cover"
                 />
                 {g.caption && (
-                  <figcaption className="text-zb-ink/70 mt-2 line-clamp-1 text-center text-[11px] font-medium">
+                  <figcaption className="text-zb-ink/75 mt-2.5 line-clamp-1 text-center text-sm font-semibold md:text-base">
                     {g.caption}
                   </figcaption>
                 )}
