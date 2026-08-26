@@ -28,7 +28,7 @@ export type LeadNotificationInput = {
   budget: string | null;
   deliveryDate: string | null;
   interests: string | null;
-  personalization: string | null
+  personalization: string | null;
   message: string | null;
   utm: Record<string, string | null>;
 };
