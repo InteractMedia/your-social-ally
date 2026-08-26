@@ -555,7 +555,7 @@ export function PlatformBlock({
     case "platform_occasion_grid": {
       if (!items.length) return null;
       return (
-        <ZpSection>
+        <ZpSection bgImage={c.image_url_4}>
           <ZpSectionHeading title={c.title} subtitle={c.subtitle} align="left" />
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {items.map((item, i) => (
