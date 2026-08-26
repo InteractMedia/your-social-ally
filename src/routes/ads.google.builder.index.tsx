@@ -28,7 +28,7 @@ import {
 } from "@/lib/campaign-builder-shared";
 import { getBuilderOptions, listSearchDrafts, runSearchConcept } from "@/lib/campaign-builder.functions";
 
-export const Route = createFileRoute("/ads/google/builder")({
+export const Route = createFileRoute("/ads/google/builder/")({
   head: () => ({
     meta: [
       { title: "Campaign Builder — SocialCockpit" },
