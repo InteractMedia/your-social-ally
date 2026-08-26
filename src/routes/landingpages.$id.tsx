@@ -1090,6 +1090,7 @@ function SettingsEditor({
     notify_channel: string | null;
     notify_target: string | null;
     is_test: boolean;
+    theme: { hazard_color_1?: string | null; hazard_color_2?: string | null } | null;
   };
   industries: { id: string; name: string }[];
 }) {
@@ -1118,6 +1119,10 @@ function SettingsEditor({
           notify_channel: (state.notify_channel as "none" | "webhook" | null) || null,
           notify_target: state.notify_target || null,
           is_test: state.is_test,
+          theme: {
+            hazard_color_1: state.theme?.hazard_color_1 || null,
+            hazard_color_2: state.theme?.hazard_color_2 || null,
+          },
         },
       }),
     onSuccess: () => {
@@ -1170,6 +1175,37 @@ function SettingsEditor({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Lintkleuren (streepmotief)</Label>
+            <div className="flex items-center gap-2">
+              {(["hazard_color_1", "hazard_color_2"] as const).map((key) => (
+                <input
+                  key={key}
+                  type="color"
+                  value={
+                    state.theme?.[key] || (key === "hazard_color_1" ? "#f0c060" : "#4a3520")
+                  }
+                  onChange={(e) =>
+                    set({ theme: { ...(state.theme ?? {}), [key]: e.target.value } })
+                  }
+                  className="border-input h-10 w-16 cursor-pointer rounded-md border bg-transparent p-1"
+                />
+              ))}
+              {(state.theme?.hazard_color_1 || state.theme?.hazard_color_2) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set({ theme: {} })}
+                >
+                  Standaard
+                </Button>
+              )}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Bepaalt de twee kleuren van het diagonale streepmotief op deze pagina.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label>SEO-titel</Label>
