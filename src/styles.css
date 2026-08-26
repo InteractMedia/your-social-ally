@@ -305,6 +305,9 @@
    ------------------------------------------------------------------ */
 @theme inline {
   --font-zp-rounded: "Quicksand", ui-rounded, "Trebuchet MS", sans-serif;
+  --font-zp-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-zp-card: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-zp-soft: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --color-zp-pink: var(--zp-pink);
   --color-zp-teal: var(--zp-teal);
   --color-zp-ink: var(--zp-ink);
@@ -316,19 +319,30 @@
 :root {
   --zp-pink: #e84878;
   --zp-teal: #71c1b1;
-  --zp-ink: #2b2118;
-  --zp-muted: #6b5b4c;
-  --zp-canvas: #faebd7;
+  --zp-ink: oklch(18% 0.02 20);
+  --zp-muted: oklch(45% 0.02 40);
+  --zp-canvas: antiquewhite;
   --zp-surface: #ffffff;
 }
 
 .zp {
   background-color: var(--zp-canvas);
   color: var(--zp-ink);
+  font-family: var(--font-zp-body);
 }
 
 .zp-title {
   font-family: var(--font-zp-rounded);
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+.zp-card-title {
+  font-family: var(--font-zp-card);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.zp-card-body {
+  font-family: var(--font-zp-soft);
 }

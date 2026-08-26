@@ -113,21 +113,47 @@ function ZpSection({
   children,
   tone = "canvas",
   className,
+  bgImage,
+  bgMode = "wash",
 }: {
   id?: string;
   children: React.ReactNode;
   tone?: "canvas" | "surface";
   className?: string;
+  bgImage?: string;
+  bgMode?: "wash" | "hero";
 }) {
   return (
     <section
       id={id}
       className={cn(
-        "zp px-5 py-16 md:px-8 md:py-24",
+        "zp relative isolate overflow-hidden px-5 py-16 md:px-8 md:py-24",
         tone === "surface" && "bg-zp-surface",
         className,
       )}
     >
+      {bgImage && (
+        <>
+          <img
+            src={bgImage}
+            alt=""
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover object-center",
+              bgMode === "hero" ? "opacity-70" : "scale-105 opacity-30 blur-sm",
+            )}
+          />
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 -z-10",
+              bgMode === "hero"
+                ? "bg-gradient-to-r from-[color-mix(in_oklab,var(--zp-canvas)_92%,transparent)] via-[color-mix(in_oklab,var(--zp-canvas)_72%,transparent)] to-[color-mix(in_oklab,var(--zp-canvas)_35%,transparent)]"
+                : "bg-[color-mix(in_oklab,var(--zp-canvas)_70%,transparent)]",
+            )}
+          />
+        </>
+      )}
       <div className="mx-auto w-full max-w-6xl">{children}</div>
     </section>
   );
@@ -304,15 +330,8 @@ export function PlatformBlock({
     /* ---------------------------------------------------------------- hero */
     case "platform_hero":
       return (
-        <ZpSection className="relative overflow-hidden">
-          {c.image_url_4 ? (
-            <img
-              src={c.image_url_4}
-              alt=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-110 object-cover opacity-15 blur-sm"
-            />
-          ) : (
+        <ZpSection bgImage={c.image_url_4} bgMode="hero">
+          {!c.image_url_4 && (
             <div
               aria-hidden
               className="from-zp-pink/12 pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br via-transparent to-transparent"
@@ -389,8 +408,12 @@ export function PlatformBlock({
                 )}
               >
                 <ZpIconTile icon={itemIcon(item, i)} index={i} />
-                <ZpTitle text={item.title} as="h3" className="mt-4 text-lg leading-snug" />
-                {item.text && <p className="text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>}
+                {item.title && (
+                  <h3 className="zp-card-title text-zp-ink mt-4 text-xl">{item.title}</h3>
+                )}
+                {item.text && (
+                  <p className="zp-card-body text-zp-muted mt-2 text-sm leading-relaxed">{item.text}</p>
+                )}
               </div>
             ))}
           </div>
@@ -448,7 +471,7 @@ export function PlatformBlock({
         { url: c.image_url_3, alt: c.image_alt_3 },
       ].filter((p) => p.url);
       return (
-        <ZpSection>
+        <ZpSection bgImage={c.image_url_4}>
           <div className="grid items-center gap-14 md:grid-cols-2">
             <div>
               <ZpPill text={c.badge} tone="pink" />
@@ -532,7 +555,7 @@ export function PlatformBlock({
     case "platform_occasion_grid": {
       if (!items.length) return null;
       return (
-        <ZpSection>
+        <ZpSection bgImage={c.image_url_4}>
           <ZpSectionHeading title={c.title} subtitle={c.subtitle} align="left" />
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {items.map((item, i) => (
