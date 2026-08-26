@@ -5,6 +5,8 @@ import {
   CalendarDays,
   Clock,
   Users,
+  Wand2,
+
   Inbox,
   Settings,
   Sparkles,
