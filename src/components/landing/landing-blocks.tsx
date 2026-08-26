@@ -7,6 +7,10 @@
  * brand and can never inject markup or arbitrary styling.
  */
 import {
+  isPlatformComposition,
+  PlatformBlock,
+} from "@/components/landing/landing-platform-blocks";
+import {
   ArrowRight,
   Check,
   Gift,
@@ -299,6 +303,22 @@ export function LandingBlock({
   const design = resolveSectionDesign(c.design);
   const visual = c.visual;
   const slotVisible = Boolean(c.image_url) || (showVisualPlaceholders && visualIsMissing(visual));
+
+  /* Cadeauplatform-composities (V2.3) hebben hun eigen designtaal en renderen
+     via een aparte blokkenset. */
+  const rawComposition = (c.design as { composition?: string } | undefined)?.composition;
+  if (isPlatformComposition(rawComposition)) {
+    return (
+      <PlatformBlock
+        section={section}
+        page={page}
+        composition={rawComposition}
+        formSlot={formSlot}
+        onCtaClick={onCtaClick}
+      />
+    );
+  }
+
 
   /* Generieke leeg-regel (geldt voor alle huidige en toekomstige pagina's):
      content-afhankelijke secties zonder data renderen helemaal niet — geen

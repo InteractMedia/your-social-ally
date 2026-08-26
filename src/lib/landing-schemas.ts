@@ -34,6 +34,8 @@ export const sectionDesignSchema = z.object({
   image_treatment: z.enum(IMAGE_TREATMENTS).optional(),
   cta_style: z.enum(CTA_STYLES).optional(),
   emphasis: z.enum(EMPHASIS_LEVELS).optional(),
+  /** Compositie-sleutel; de renderer valideert tegen zijn eigen allowlist. */
+  composition: z.string().max(80).optional(),
   media_intent: z.string().max(500).optional(),
   mobile_note: z.string().max(500).optional(),
 });
@@ -53,6 +55,17 @@ export const sectionVisualSchema = z.object({
   visual_brief: z.string().max(2000).optional(),
 });
 
+const blockItemsSchema = z
+  .array(
+    z.object({
+      title: z.string().max(300).optional(),
+      text: z.string().max(3000).optional(),
+      badge: z.string().max(60).optional(),
+    }),
+  )
+  .max(30)
+  .optional();
+
 export const blockContentSchema = z.object({
   design: sectionDesignSchema.optional(),
   visual: sectionVisualSchema.optional(),
@@ -62,20 +75,39 @@ export const blockContentSchema = z.object({
   image_url: z.string().max(1000).optional(),
   image_alt: z.string().max(300).optional(),
   mobile_image_url: z.string().max(1000).optional(),
-  cta_label: z.string().max(120).optional(),
-  cta_url: z.string().max(500).optional(),
-  secondary_cta_label: z.string().max(120).optional(),
-  secondary_cta_url: z.string().max(500).optional(),
-  items: z
+  image_url_2: z.string().max(1000).optional(),
+  image_alt_2: z.string().max(300).optional(),
+  image_url_3: z.string().max(1000).optional(),
+  image_alt_3: z.string().max(300).optional(),
+  image_url_4: z.string().max(1000).optional(),
+  image_alt_4: z.string().max(300).optional(),
+  image_badge: z.string().max(120).optional(),
+  badge: z.string().max(120).optional(),
+  footnote: z.string().max(600).optional(),
+  gallery: z
     .array(
       z.object({
-        title: z.string().max(300).optional(),
-        text: z.string().max(3000).optional(),
-        badge: z.string().max(60).optional(),
+        url: z.string().max(1000),
+        alt: z.string().max(300).optional(),
+        caption: z.string().max(300).optional(),
       }),
     )
     .max(30)
     .optional(),
+  logos: z
+    .array(z.object({ url: z.string().max(1000), alt: z.string().max(300).optional() }))
+    .max(40)
+    .optional(),
+  stats: z
+    .array(z.object({ value: z.string().max(60), label: z.string().max(160) }))
+    .max(12)
+    .optional(),
+  cta_label: z.string().max(120).optional(),
+  cta_url: z.string().max(500).optional(),
+  secondary_cta_label: z.string().max(120).optional(),
+  secondary_cta_url: z.string().max(500).optional(),
+  items: blockItemsSchema,
+  secondary_items: blockItemsSchema,
 });
 
 export const fieldConfigSchema = z.object({

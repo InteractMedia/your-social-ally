@@ -113,6 +113,8 @@ export type BlockContent = {
   /** Zwevend label op de hero-afbeelding (V2.0 candy_hero_collage). */
   image_badge?: string;
   items?: BlockItem[];
+  /** Tweede itemlijst, bv. de agenda-rijen van de verjaardagsservice (V2.3). */
+  secondary_items?: BlockItem[];
 };
 
 export type LandingSection = {

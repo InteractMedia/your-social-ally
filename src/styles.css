@@ -298,3 +298,37 @@
 @media (prefers-reduced-motion: reduce) {
   .zb-marquee-track { animation: none; }
 }
+
+/* ------------------------------------------------------------------
+   Cadeauplatform (V2.3) — designtaal van zoetbezorgen.app/cadeaus:
+   antiquewhite canvas, Quicksand-koppen, roze CTA's en teal accenten.
+   ------------------------------------------------------------------ */
+@theme inline {
+  --font-zp-rounded: "Quicksand", ui-rounded, "Trebuchet MS", sans-serif;
+  --color-zp-pink: var(--zp-pink);
+  --color-zp-teal: var(--zp-teal);
+  --color-zp-ink: var(--zp-ink);
+  --color-zp-muted: var(--zp-muted);
+  --color-zp-canvas: var(--zp-canvas);
+  --color-zp-surface: var(--zp-surface);
+}
+
+:root {
+  --zp-pink: #e84878;
+  --zp-teal: #71c1b1;
+  --zp-ink: #2b2118;
+  --zp-muted: #6b5b4c;
+  --zp-canvas: #faebd7;
+  --zp-surface: #ffffff;
+}
+
+.zp {
+  background-color: var(--zp-canvas);
+  color: var(--zp-ink);
+}
+
+.zp-title {
+  font-family: var(--font-zp-rounded);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
