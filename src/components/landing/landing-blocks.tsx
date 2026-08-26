@@ -1981,18 +1981,18 @@ export function LandingBlock({
                 </div>
               )}
               {logos.length > 0 && (
-                /* V2.2 — logo's altijd op één regel, in eigen chips. */
-                <div className="mt-12 -mx-5 flex snap-x items-center justify-start gap-3 overflow-x-auto px-5 pb-2 md:-mx-8 md:justify-center md:px-8 md:gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                /* V2.2 — alle logo's op één regel, full-width, in eigen chips. */
+                <div className="mt-12 flex w-full items-stretch gap-2 md:gap-3">
                   {logos.map((l, i) => (
                     <span
                       key={i}
-                      className="flex shrink-0 snap-start items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-4 py-3 md:px-5"
+                      className="flex min-w-0 flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.07] px-2 py-3 transition hover:bg-white/[0.12] md:px-3"
                     >
                       <img
                         src={l.url}
                         alt={l.alt ?? ""}
                         loading="lazy"
-                        className="h-6 w-auto max-w-[110px] object-contain opacity-85 transition hover:opacity-100 md:h-8"
+                        className="h-4 w-full object-contain opacity-85 transition hover:opacity-100 sm:h-5 md:h-7"
                       />
                     </span>
                   ))}
