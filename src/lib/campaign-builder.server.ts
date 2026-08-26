@@ -690,14 +690,36 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     };
   }
 
-  const proposal = toProposal(parsed, {
+  const rawProposal = toProposal(parsed, {
     funnel: opts.funnel,
     landingUrl,
     locations: opts.locations,
     language: opts.language,
   });
-  const dataConfidence = scoreDataConfidence(dataset);
-  const missingData = [...new Set([...missing, ...parsed.missingData])];
+
+  // V1.1: deterministische guardrails over het AI-voorstel.
+  const { proposal: guarded, report } = applyGuardrails(rawProposal, {
+    industryName,
+    isIndustryCampaign: Boolean(industryName),
+    landingCopy: landingCopyCorpus(dataset.landing),
+  });
+  const execution = await evaluateDraftExecution({
+    ctx,
+    workspaceId,
+    landingPageId: page.id,
+    landingStatus: (page as any).status ?? null,
+    url: landingUrl,
+  });
+  const dataConfidence = scoreDataConfidence(dataset, opts.funnel);
+  const proposal: BuilderProposal = {
+    ...guarded,
+    guardrails: report as unknown as Record<string, unknown>,
+    execution,
+    dataConfidenceBand: dataConfidence.band,
+  };
+  const missingData = [
+    ...new Set([...missing, ...parsed.missingData, ...report.warnings.map((w) => w)]),
+  ];
 
   const { data: inserted, error } = await ctx.supabase
     .from("search_campaign_drafts")
