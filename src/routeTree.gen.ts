@@ -52,6 +52,7 @@ import { Route as AdsGoogleCampaignIdRouteImport } from './routes/ads.google.$ca
 import { Route as ApiPublicLeadIngestQuoteRouteImport } from './routes/api/public/lead-ingest.quote'
 import { Route as ApiPublicLeadIngestPlatformRouteImport } from './routes/api/public/lead-ingest.platform'
 import { Route as ApiPublicLandingAssetIdRouteImport } from './routes/api/public/landing-asset.$id'
+import { Route as AdsGoogleBuilderIdRouteImport } from './routes/ads.google.builder.$id'
 
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
@@ -270,6 +271,11 @@ const ApiPublicLandingAssetIdRoute = ApiPublicLandingAssetIdRouteImport.update({
   path: '/api/public/landing-asset/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdsGoogleBuilderIdRoute = AdsGoogleBuilderIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdsGoogleBuilderRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -305,13 +311,14 @@ export interface FileRoutesByFullPath {
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRoute
+  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/ads/google/builder/$id': typeof AdsGoogleBuilderIdRoute
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
@@ -346,13 +353,14 @@ export interface FileRoutesByTo {
   '/leads': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRoute
+  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google': typeof AdsGoogleIndexRoute
+  '/ads/google/builder/$id': typeof AdsGoogleBuilderIdRoute
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
@@ -392,13 +400,14 @@ export interface FileRoutesById {
   '/leads/': typeof LeadsIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
-  '/ads/google/builder': typeof AdsGoogleBuilderRoute
+  '/ads/google/builder': typeof AdsGoogleBuilderRouteWithChildren
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
   '/ads/google/new': typeof AdsGoogleNewRoute
   '/ads/google/stats': typeof AdsGoogleStatsRoute
   '/api/public/lead-status': typeof ApiPublicLeadStatusRoute
   '/api/public/meta-callback': typeof ApiPublicMetaCallbackRoute
   '/ads/google/': typeof AdsGoogleIndexRoute
+  '/ads/google/builder/$id': typeof AdsGoogleBuilderIdRoute
   '/api/public/landing-asset/$id': typeof ApiPublicLandingAssetIdRoute
   '/api/public/lead-ingest/platform': typeof ApiPublicLeadIngestPlatformRoute
   '/api/public/lead-ingest/quote': typeof ApiPublicLeadIngestQuoteRoute
@@ -446,6 +455,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/ads/google/builder/$id'
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google'
+    | '/ads/google/builder/$id'
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/api/public/lead-status'
     | '/api/public/meta-callback'
     | '/ads/google/'
+    | '/ads/google/builder/$id'
     | '/api/public/landing-asset/$id'
     | '/api/public/lead-ingest/platform'
     | '/api/public/lead-ingest/quote'
@@ -869,13 +881,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLandingAssetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ads/google/builder/$id': {
+      id: '/ads/google/builder/$id'
+      path: '/$id'
+      fullPath: '/ads/google/builder/$id'
+      preLoaderRoute: typeof AdsGoogleBuilderIdRouteImport
+      parentRoute: typeof AdsGoogleBuilderRoute
+    }
   }
 }
+
+interface AdsGoogleBuilderRouteChildren {
+  AdsGoogleBuilderIdRoute: typeof AdsGoogleBuilderIdRoute
+}
+
+const AdsGoogleBuilderRouteChildren: AdsGoogleBuilderRouteChildren = {
+  AdsGoogleBuilderIdRoute: AdsGoogleBuilderIdRoute,
+}
+
+const AdsGoogleBuilderRouteWithChildren =
+  AdsGoogleBuilderRoute._addFileChildren(AdsGoogleBuilderRouteChildren)
 
 interface AdsGoogleRouteChildren {
   AdsGoogleCampaignIdRoute: typeof AdsGoogleCampaignIdRoute
   AdsGoogleAdviceRoute: typeof AdsGoogleAdviceRoute
-  AdsGoogleBuilderRoute: typeof AdsGoogleBuilderRoute
+  AdsGoogleBuilderRoute: typeof AdsGoogleBuilderRouteWithChildren
   AdsGoogleConversionsRoute: typeof AdsGoogleConversionsRoute
   AdsGoogleNewRoute: typeof AdsGoogleNewRoute
   AdsGoogleStatsRoute: typeof AdsGoogleStatsRoute
@@ -885,7 +915,7 @@ interface AdsGoogleRouteChildren {
 const AdsGoogleRouteChildren: AdsGoogleRouteChildren = {
   AdsGoogleCampaignIdRoute: AdsGoogleCampaignIdRoute,
   AdsGoogleAdviceRoute: AdsGoogleAdviceRoute,
-  AdsGoogleBuilderRoute: AdsGoogleBuilderRoute,
+  AdsGoogleBuilderRoute: AdsGoogleBuilderRouteWithChildren,
   AdsGoogleConversionsRoute: AdsGoogleConversionsRoute,
   AdsGoogleNewRoute: AdsGoogleNewRoute,
   AdsGoogleStatsRoute: AdsGoogleStatsRoute,
