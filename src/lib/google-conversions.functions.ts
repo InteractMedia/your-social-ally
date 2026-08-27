@@ -401,25 +401,57 @@ export const getQuoteConversionArchitecture = createServerFn({ method: "GET" })
     }
 
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-    const { data: leadIds } = await ctx.supabase
+    const { data: leadRows } = await ctx.supabase
       .from("leads")
-      .select("id")
+      .select("id,campaign_name")
       .eq("workspace_id", workspaceId)
       .eq("is_test", false);
-    const ids = (leadIds ?? []).map((l: { id: string }) => l.id);
+    const ids = (leadRows ?? []).map((l: { id: string }) => l.id);
+    const campaignByLead = new Map<string, string | null>(
+      (leadRows ?? []).map((l: any) => [l.id, l.campaign_name ?? null]),
+    );
     let counts: Record<string, number> = {};
+    // Extra signalen naast volume: attributiekwaliteit, stabiliteit over tijd en
+    // campagne-specifieke data. Nooit geschat — alleen geteld.
+    let totalEvents = 0;
+    let attributedEvents = 0;
+    const deepWeeks = new Set<string>();
+    const deepPerCampaign: Record<string, number> = {};
     if (ids.length) {
       const { data: events } = await ctx.supabase
         .from("lead_conversion_events")
-        .select("conversion_event,google_upload_status,conversion_timestamp")
+        .select("lead_id,conversion_event,google_upload_status,conversion_timestamp")
         .in("lead_id", ids)
         .gte("conversion_timestamp", since);
-      counts = (events ?? []).reduce((acc: Record<string, number>, e: any) => {
-        if (e.google_upload_status !== "uploaded") return acc;
-        acc[e.conversion_event] = (acc[e.conversion_event] ?? 0) + 1;
-        return acc;
-      }, {});
+      for (const e of (events ?? []) as any[]) {
+        totalEvents += 1;
+        if (e.google_upload_status !== "uploaded") continue;
+        attributedEvents += 1;
+        counts[e.conversion_event] = (counts[e.conversion_event] ?? 0) + 1;
+        if (e.conversion_event === "quote_qualified" || e.conversion_event === "quote_won") {
+          const at = e.conversion_timestamp ? new Date(e.conversion_timestamp) : null;
+          if (at && !Number.isNaN(at.getTime()))
+            deepWeeks.add(String(Math.floor(at.getTime() / (7 * 24 * 3600 * 1000))));
+          const campaign = campaignByLead.get(e.lead_id) ?? "(geen campagne)";
+          deepPerCampaign[campaign] = (deepPerCampaign[campaign] ?? 0) + 1;
+        }
+      }
     }
+    const bestCampaignConversions = Object.values(deepPerCampaign).reduce(
+      (max, n) => (n > max ? n : max),
+      0,
+    );
+
+    const advice = adviseBidShift({
+      currentPrimary: INITIAL_PRIMARY_BID_EVENT,
+      uploadedRequests: counts["quote_request"] ?? 0,
+      uploadedQualified: counts["quote_qualified"] ?? 0,
+      uploadedWon: counts["quote_won"] ?? 0,
+      attributedEvents,
+      totalEvents,
+      weeksWithConversions: deepWeeks.size,
+      campaignConversions: bestCampaignConversions,
+    });
 
     const events = QUOTE_EVENT_BLUEPRINTS.map((b) => {
       const mapping = (mappings ?? []).find((m: any) => m.internal_event_name === b.key) ?? null;
