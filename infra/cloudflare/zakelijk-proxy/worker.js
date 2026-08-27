@@ -118,8 +118,8 @@ export default {
     }
 
     // --- cookies host-only maken -------------------------------------------
-    const cookies = originResponse.headers.getAll
-      ? originResponse.headers.getAll("set-cookie")
+    const cookies = originResponse.headers.getSetCookie
+      ? originResponse.headers.getSetCookie()
       : [];
     if (cookies.length) {
       out.delete("set-cookie");

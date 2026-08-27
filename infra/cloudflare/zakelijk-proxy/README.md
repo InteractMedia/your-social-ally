@@ -16,7 +16,8 @@ Worker gebeurt, blijft de bezoeker in de browser op `zakelijk.zoetbezorgen.nl`.
 
 
 Toegestaan: `/offerte/*`, `/sitemap.xml`, `/robots.txt`, `/favicon.ico`,
-`/assets/*`, `/_build/*`, `/zp/*`, `/_serverFn/*`, `/api/public/*`.
+`/assets/*`, `/_build/*`, `/__l5e/*`, `/zp/*`, `/_serverFn/*`, `/api/public/*`,
+`/~flock.js`, `/~api/*` (deze laatste twee laadt de pagina zelf in).
 Al het overige (dashboard, auth, admin, editor) geeft **404** op dit domein.
 
 Verder: loop-protectie (`x-zb-proxy` + 508), Location-rewrite naar de publieke
