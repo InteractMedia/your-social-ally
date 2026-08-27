@@ -378,6 +378,13 @@ export type FinalUrlFacts = {
   httpStatus: number | null;
   noindex: boolean | null;
   trackingValidated: boolean;
+  /** De final URL mag niet naar een andere host doorverwijzen (canonical-breuk). */
+  finalHostMatches?: boolean | null;
+  /** Actieve, correcte conversieactie voor de funnel (bv. "Offerte - Aanvraag"). */
+  conversionActionName?: string | null;
+  conversionActionId?: string | null;
+  /** Gepubliceerde versie waarop het verkeer daadwerkelijk landt. */
+  productionVersionId?: string | null;
 };
 
 /** Een concept mag alleen uitvoerbaar heten als de final URL echt klaar is. */
@@ -392,13 +399,20 @@ export function evaluateExecutionEligibility(f: FinalUrlFacts): {
     blockers.push("Geen absolute HTTPS production-URL bekend (relatieve of preview-URL).");
   if (f.httpStatus !== 200)
     blockers.push(`Pagina geeft geen HTTP 200 (${f.httpStatus ?? "niet gecontroleerd"}).`);
+  if (f.finalHostMatches === false)
+    blockers.push("Final URL verwijst door naar een andere host: canonical en advertentie-URL wijken af.");
   if (f.noindex !== false) blockers.push("Noindex niet weerlegd: pagina kan op noindex staan.");
   if (!f.trackingValidated) blockers.push("Conversietracking op de pagina is niet live gevalideerd.");
+  if (!f.conversionActionId || !f.conversionActionName)
+    blockers.push("Geen actieve conversieactie gekoppeld voor deze funnel.");
+  if (!f.productionVersionId)
+    blockers.push("Geen gepubliceerde productieversie van de landingspagina bekend.");
   return {
     eligibility: blockers.length ? "BLOCKED_FOR_CREATION" : "ALLOWED",
     blockers,
   };
 }
+
 
 /* ------------------------------------------------------- guardrail report */
 
