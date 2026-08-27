@@ -361,3 +361,112 @@ export const runOfflineValidateOnly = createServerFn({ method: "POST" })
       return { ok: false as const, result: null, error: (err as Error).message };
     }
   });
+
+/**
+ * Offerte Conversion Architecture V1 — read-only rapport.
+ * Vergelijkt de gewenste generieke offerte-structuur met de mappings in
+ * SocialCockpit en de live conversieacties in Google Ads. Schrijft NIETS
+ * naar Google en verschuift nooit automatisch het biedmodel.
+ */
+export const getQuoteConversionArchitecture = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as any;
+    const workspaceId = await workspaceOf(ctx);
+    const { fetchConversionActions } = await import("./google-offline-conversions.server");
+    const { QUOTE_EVENT_BLUEPRINTS, adviseBidShift, INITIAL_PRIMARY_BID_EVENT } = await import(
+      "./quote-conversion-architecture"
+    );
+
+    const [{ data: mappings }, { data: ws }] = await Promise.all([
+      ctx.supabase
+        .from("google_conversion_mappings")
+        .select(
+          "internal_event_name,google_conversion_action_id,google_conversion_action_name,enabled,value_source,fixed_value,currency,primary_signal",
+        )
+        .eq("workspace_id", workspaceId),
+      ctx.supabase
+        .from("workspaces")
+        .select("offline_conversion_mode")
+        .eq("id", workspaceId)
+        .maybeSingle(),
+    ]);
+
+    let actions: any[] = [];
+    let actionsError: string | null = null;
+    try {
+      actions = (await fetchConversionActions(ctx)).actions;
+    } catch (err) {
+      actionsError = (err as Error).message;
+    }
+
+    const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+    const { data: leadIds } = await ctx.supabase
+      .from("leads")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("is_test", false);
+    const ids = (leadIds ?? []).map((l: { id: string }) => l.id);
+    let counts: Record<string, number> = {};
+    if (ids.length) {
+      const { data: events } = await ctx.supabase
+        .from("lead_conversion_events")
+        .select("conversion_event,google_upload_status,conversion_timestamp")
+        .in("lead_id", ids)
+        .gte("conversion_timestamp", since);
+      counts = (events ?? []).reduce((acc: Record<string, number>, e: any) => {
+        if (e.google_upload_status !== "uploaded") return acc;
+        acc[e.conversion_event] = (acc[e.conversion_event] ?? 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    const events = QUOTE_EVENT_BLUEPRINTS.map((b) => {
+      const mapping = (mappings ?? []).find((m: any) => m.internal_event_name === b.key) ?? null;
+      const live =
+        actions.find((a) => a.name === b.googleActionName) ??
+        (mapping?.google_conversion_action_id
+          ? actions.find((a) => a.id === String(mapping.google_conversion_action_id))
+          : undefined) ??
+        null;
+      return {
+        key: b.key,
+        label: b.label,
+        description: b.description,
+        googleActionName: b.googleActionName,
+        createCategory: b.createCategory,
+        countingType: b.countingType,
+        valueSource: b.valueSource,
+        initialBidding: b.initialBidding,
+        mapping,
+        existsInGoogle: Boolean(live),
+        liveAction: live,
+        supportsOfflineUpload: live?.supportsOfflineUpload ?? false,
+        uploadedLast30Days: counts[b.key] ?? 0,
+        blockers: [
+          !live ? "google_action_missing" : null,
+          live && !live.supportsOfflineUpload ? "conversion_action_wrong_type" : null,
+          !mapping ? "mapping_missing" : mapping.enabled ? null : "mapping_disabled",
+        ].filter(Boolean) as string[],
+      };
+    });
+
+    const advice = adviseBidShift({
+      currentPrimary: INITIAL_PRIMARY_BID_EVENT,
+      uploadedRequests: counts["quote_request"] ?? 0,
+      uploadedQualified: counts["quote_qualified"] ?? 0,
+      uploadedWon: counts["quote_won"] ?? 0,
+    });
+
+    return {
+      ok: true as const,
+      uploadMode: (ws?.offline_conversion_mode ?? "manual") as "manual" | "automatic",
+      primaryBidEvent: INITIAL_PRIMARY_BID_EVENT,
+      events,
+      advice,
+      legacyQuoteActions: actions
+        .filter((a) => /offerte/i.test(a.name ?? ""))
+        .map((a) => ({ id: a.id, name: a.name, type: a.type, category: a.category })),
+      actionsError,
+    };
+  });
