@@ -136,6 +136,7 @@ export default {
       url.pathname.startsWith("/_serverFn/") ||
       url.pathname.startsWith("/api/public/")
     ) {
+      out.delete("access-control-allow-origin");
       out.set("access-control-allow-origin", `https://${PUBLIC_HOST}`);
       out.set("access-control-allow-credentials", "true");
       out.append("vary", "Origin");
