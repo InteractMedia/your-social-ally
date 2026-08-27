@@ -483,12 +483,6 @@ export const getQuoteConversionArchitecture = createServerFn({ method: "GET" })
       };
     });
 
-    const advice = adviseBidShift({
-      currentPrimary: INITIAL_PRIMARY_BID_EVENT,
-      uploadedRequests: counts["quote_request"] ?? 0,
-      uploadedQualified: counts["quote_qualified"] ?? 0,
-      uploadedWon: counts["quote_won"] ?? 0,
-    });
 
     return {
       ok: true as const,
