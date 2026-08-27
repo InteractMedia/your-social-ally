@@ -102,9 +102,28 @@ export function QuoteConversionArchitecture() {
             <div className="rounded-lg border border-dashed p-3">
               <p className="text-sm font-medium">Optimalisatiedoel</p>
               <p className="text-muted-foreground mt-1 text-xs">{data.advice.reason}</p>
-              <p className="text-muted-foreground mt-1 text-xs">
+              {data.advice.criteria?.length ? (
+                <ul className="mt-2 space-y-1">
+                  {data.advice.criteria.map((c) => (
+                    <li key={c.key} className="flex items-start gap-1.5 text-xs">
+                      {c.passed ? (
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      ) : (
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                      )}
+                      <span>
+                        <span className="font-medium">{c.label}:</span>{" "}
+                        <span className="text-muted-foreground">{c.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="text-muted-foreground mt-2 text-xs">
                 Advies: blijft <span className="font-medium">{data.advice.recommendedPrimary}</span>.
-                Verschuiven gebeurt nooit automatisch — jij keurt het expliciet goed.
+                Volume alleen is nooit voldoende — attributiekwaliteit, stabiliteit en
+                campagne-specifieke data wegen even zwaar. Verschuiven gebeurt nooit automatisch:
+                jij keurt het expliciet goed.
               </p>
             </div>
 
