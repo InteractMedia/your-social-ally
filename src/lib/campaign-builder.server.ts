@@ -9,6 +9,11 @@
 import { z } from "zod";
 
 import {
+  INITIAL_PRIMARY_BID_EVENT,
+  QUOTE_EVENT_BLUEPRINTS,
+  quoteBlueprint,
+} from "./quote-conversion-architecture";
+import {
   BUILDER_PROMPT_VERSION,
   funnelLabel,
   type BuilderProposal,
@@ -273,7 +278,7 @@ export async function buildBuilderDataset(opts: {
     opts.funnel === "quote"
       ? {
           primaryBidEvent: INITIAL_PRIMARY_BID_EVENT,
-          primaryConversionActionName: quoteBlueprint(INITIAL_PRIMARY_BID_EVENT).googleActionName,
+          primaryConversionActionName: quoteBlueprint(INITIAL_PRIMARY_BID_EVENT)?.googleActionName ?? "Offerte - Aanvraag",
           measuredNotBidding: QUOTE_EVENT_BLUEPRINTS.filter(
             (b) => b.initialBidding !== "primary",
           ).map((b) => b.googleActionName),
@@ -338,6 +343,7 @@ export async function buildBuilderDataset(opts: {
     landing,
     googleAds: ads,
     conversionMappings,
+    quoteArchitecture,
     industrySummary,
     croEvidence,
     missingData: missing,
