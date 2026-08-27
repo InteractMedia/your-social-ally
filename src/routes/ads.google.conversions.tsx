@@ -8,6 +8,7 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { AdsEmpty, AdsError, AdsLoading } from "@/components/ads/ads-states";
 import { OfflineConversionMapping } from "@/components/ads/offline-mapping";
 import { OfflineConversionQueue } from "@/components/ads/offline-queue";
+import { QuoteConversionArchitecture } from "@/components/ads/quote-conversion-architecture";
 
 import { PeriodPicker } from "@/components/ads/period-picker";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,7 @@ function ConversionsPage() {
       />
 
       <div className="space-y-6">
+        <QuoteConversionArchitecture />
         <OfflineConversionMapping />
         <OfflineConversionQueue />
 

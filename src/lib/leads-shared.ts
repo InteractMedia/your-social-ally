@@ -93,8 +93,8 @@ export const QUALIFIED_STATUSES = [
 /** Offline conversion events we prepare for Google Ads uploads (phase V1.3). */
 export const CONVERSION_EVENTS = [
   "quote_request",
-  "qualified_lead",
-  "customer_won",
+  "quote_qualified",
+  "quote_won",
   "platform_application",
   "platform_approved",
   "platform_activated",
@@ -107,11 +107,15 @@ export const CONVERSION_EVENTS = [
  * Interne funnel-statussen (approved, activated, active_customer) staan hier
  * bewust NIET in: die blijven volledig beschikbaar voor Lead Manager,
  * funnelanalyse en AI, maar gaan nooit naar Google Ads.
+ *
+ * De offerte-events zijn generiek: branche, campagne, landingspagina en variant
+ * blijven dimensies van de lead, nooit aparte conversieacties.
  */
 export const CONVERSION_EVENT_FOR_STATUS: Record<string, string> = {
   quote_request: "quote_request",
-  qualified: "qualified_lead",
-  customer_won: "customer_won",
+  qualified: "quote_qualified",
+  hot: "quote_qualified",
+  customer_won: "quote_won",
   application: "platform_application",
   first_order: "platform_first_order",
 };

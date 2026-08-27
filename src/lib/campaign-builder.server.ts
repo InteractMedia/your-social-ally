@@ -9,6 +9,11 @@
 import { z } from "zod";
 
 import {
+  INITIAL_PRIMARY_BID_EVENT,
+  QUOTE_EVENT_BLUEPRINTS,
+  quoteBlueprint,
+} from "./quote-conversion-architecture";
+import {
   BUILDER_PROMPT_VERSION,
   funnelLabel,
   type BuilderProposal,
@@ -263,6 +268,26 @@ export async function buildBuilderDataset(opts: {
   if (!conversionMappings.length)
     missing.push("Geen conversiekoppeling ingesteld — conversiedoel is een aanname.");
 
+  /**
+   * Offerte Conversion Architecture V1: bij de offertefunnel is de primaire
+   * biedconversie generiek vastgezet op "Offerte - Aanvraag". Qualified en Klant
+   * worden volledig gemeten maar bieden in de startfase niet mee; verschuiven
+   * gebeurt alleen na expliciete goedkeuring van de gebruiker.
+   */
+  const quoteArchitecture =
+    opts.funnel === "quote"
+      ? {
+          primaryBidEvent: INITIAL_PRIMARY_BID_EVENT,
+          primaryConversionActionName: quoteBlueprint(INITIAL_PRIMARY_BID_EVENT)?.googleActionName ?? "Offerte - Aanvraag",
+          measuredNotBidding: QUOTE_EVENT_BLUEPRINTS.filter(
+            (b) => b.initialBidding !== "primary",
+          ).map((b) => b.googleActionName),
+          rule:
+            "Gebruik altijd deze generieke offerte-conversies; maak nooit branche-specifieke " +
+            "conversieacties. Branche, campagne, landingspagina en variant zijn dimensies van de lead.",
+        }
+      : null;
+
   /* CRO/evidence-kennis, alleen relevante regels */
   const { data: evidenceRows } = await ctx.supabase
     .from("cro_evidence")
@@ -318,6 +343,7 @@ export async function buildBuilderDataset(opts: {
     landing,
     googleAds: ads,
     conversionMappings,
+    quoteArchitecture,
     industrySummary,
     croEvidence,
     missingData: missing,

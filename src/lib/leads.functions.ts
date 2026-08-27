@@ -556,10 +556,21 @@ export const updateLeadQuality = createServerFn({ method: "POST" })
       },
     });
     if (data.quality === "qualified" || data.quality === "hot") {
-      await context.supabase.from("lead_conversion_events").insert({
-        lead_id: data.id,
-        conversion_event: "qualified_lead",
-      });
+      // Maximaal één quote_qualified-conversie per lead: qualified ⇄ hot ⇄ terug
+      // mag nooit een tweede event opleveren.
+      const { data: existing } = await context.supabase
+        .from("lead_conversion_events")
+        .select("id")
+        .eq("lead_id", data.id)
+        .eq("conversion_event", "quote_qualified")
+        .limit(1)
+        .maybeSingle();
+      if (!existing) {
+        await context.supabase.from("lead_conversion_events").insert({
+          lead_id: data.id,
+          conversion_event: "quote_qualified",
+        });
+      }
     }
     return { ok: true as const };
   });
@@ -606,12 +617,34 @@ export const markLeadAsCustomer = createServerFn({ method: "POST" })
         meta: { revenue: data.revenue, gross_margin: data.gross_margin ?? null },
       },
     ]);
-    await context.supabase.from("lead_conversion_events").insert({
-      lead_id: data.id,
-      conversion_event: "customer_won",
-      value: data.revenue,
-      conversion_timestamp: new Date(`${data.customer_date}T12:00:00.000Z`).toISOString(),
-    });
+    // Generiek per funnel; waarde is de WERKELIJKE omzet (nooit geschat).
+    const wonEvent = lead?.funnel_type === "platform" ? "platform_first_order" : "quote_won";
+    const { data: existingWon } = await context.supabase
+      .from("lead_conversion_events")
+      .select("id")
+      .eq("lead_id", data.id)
+      .eq("conversion_event", wonEvent)
+      .limit(1)
+      .maybeSingle();
+    if (existingWon) {
+      // Eén conversie per lead per type: alleen de werkelijke waarde bijwerken
+      // zolang de conversie nog niet naar Google is verzonden.
+      await context.supabase
+        .from("lead_conversion_events")
+        .update({
+          value: data.revenue > 0 ? data.revenue : null,
+          conversion_timestamp: new Date(`${data.customer_date}T12:00:00.000Z`).toISOString(),
+        })
+        .eq("id", existingWon.id)
+        .in("google_upload_status", ["pending", "not_eligible", "disabled", "failed"]);
+    } else {
+      await context.supabase.from("lead_conversion_events").insert({
+        lead_id: data.id,
+        conversion_event: wonEvent,
+        value: data.revenue > 0 ? data.revenue : null,
+        conversion_timestamp: new Date(`${data.customer_date}T12:00:00.000Z`).toISOString(),
+      });
+    }
     return { ok: true as const };
   });
 
