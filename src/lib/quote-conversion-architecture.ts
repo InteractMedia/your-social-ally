@@ -90,34 +90,73 @@ export const CLICK_ID_PRIORITY = ["gclid", "gbraid", "wbraid"] as const;
 /**
  * Advies-only drempels voor het verschuiven van het biedmodel naar een diepere
  * stap. Nooit automatisch: de gebruiker keurt elke verschuiving expliciet goed.
- * Richtlijn Google: ~30 conversies per 30 dagen voor stabiel biedgedrag.
+ *
+ * Volume is een NUTTIG SIGNAAL, nooit de enige beslisregel. Naast volume gelden
+ * even harde voorwaarden: attributiekwaliteit (hoeveel conversies daadwerkelijk
+ * met een click-ID zijn geüpload en door Google geaccepteerd), stabiliteit over
+ * tijd (spreiding over meerdere weken, niet één uitschieter) en voldoende
+ * campagne-specifieke data (het bieddoel geldt per campagne, dus de campagne
+ * zelf moet die conversies ook echt hebben gezien).
  */
 export const BID_SHIFT_THRESHOLDS = {
   windowDays: 30,
   qualifiedPerWindow: 30,
   wonPerWindow: 15,
+  /** Aandeel events dat met click-ID succesvol geüpload is (attributiekwaliteit). */
+  minAttributionQuality: 0.7,
+  /** Aantal weken binnen het venster met minimaal één diepe conversie. */
+  minActiveWeeks: 3,
+  /** Minimaal aantal diepe conversies in de campagne zelf. */
+  minCampaignConversions: 15,
+  minCampaignConversionsWon: 8,
 } as const;
+
+export type BidShiftCriterion = {
+  key: "volume" | "attribution_quality" | "stability" | "campaign_data";
+  label: string;
+  passed: boolean;
+  detail: string;
+};
 
 export type BidShiftAdvice = {
   currentPrimary: QuoteEventKey;
   recommendedPrimary: QuoteEventKey;
+  /** Alleen true als ELKE voorwaarde is gehaald. */
   shift: boolean;
   requiresApproval: true;
   reason: string;
+  criteria: BidShiftCriterion[];
+  /** Volume alleen gehaald, maar een andere voorwaarde nog niet. */
+  volumeOnly: boolean;
   counts: { request: number; qualified: number; won: number; windowDays: number };
 };
 
-/**
- * Deterministisch advies (geen AI): mag het optimalisatiedoel opschuiven?
- * Voert nooit iets uit — het resultaat is altijd een voorstel.
- */
-export function adviseBidShift(input: {
+export type BidShiftInput = {
   currentPrimary?: QuoteEventKey;
   uploadedRequests: number;
   uploadedQualified: number;
   uploadedWon: number;
   windowDays?: number;
-}): BidShiftAdvice {
+  /** Events met bruikbaar click-ID / geaccepteerd door Google, van totaal aantal events. */
+  attributedEvents?: number;
+  totalEvents?: number;
+  /** Weken binnen het venster met minimaal één diepe conversie. */
+  weeksWithConversions?: number;
+  /** Diepe conversies toegerekend aan de campagne waarvoor het advies geldt. */
+  campaignConversions?: number;
+};
+
+function ratio(a?: number, b?: number): number | null {
+  if (a == null || b == null || b <= 0) return null;
+  return a / b;
+}
+
+/**
+ * Deterministisch advies (geen AI): mag het optimalisatiedoel opschuiven?
+ * Voert nooit iets uit — het resultaat is altijd een voorstel dat de gebruiker
+ * expliciet goedkeurt. Volume alléén is nooit voldoende.
+ */
+export function adviseBidShift(input: BidShiftInput): BidShiftAdvice {
   const windowDays = input.windowDays ?? BID_SHIFT_THRESHOLDS.windowDays;
   const currentPrimary = input.currentPrimary ?? INITIAL_PRIMARY_BID_EVENT;
   const counts = {
@@ -127,32 +166,71 @@ export function adviseBidShift(input: {
     windowDays,
   };
 
-  if (input.uploadedWon >= BID_SHIFT_THRESHOLDS.wonPerWindow)
-    return {
-      currentPrimary,
-      recommendedPrimary: "quote_won",
-      shift: currentPrimary !== "quote_won",
-      requiresApproval: true,
-      counts,
-      reason: `${input.uploadedWon} bevestigde klantconversies in ${windowDays} dagen (drempel ${BID_SHIFT_THRESHOLDS.wonPerWindow}) — bieden op werkelijke omzet is haalbaar.`,
-    };
+  const wonVolume = input.uploadedWon >= BID_SHIFT_THRESHOLDS.wonPerWindow;
+  const qualifiedVolume = input.uploadedQualified >= BID_SHIFT_THRESHOLDS.qualifiedPerWindow;
+  const target: QuoteEventKey | null = wonVolume
+    ? "quote_won"
+    : qualifiedVolume
+      ? "quote_qualified"
+      : null;
 
-  if (input.uploadedQualified >= BID_SHIFT_THRESHOLDS.qualifiedPerWindow)
-    return {
-      currentPrimary,
-      recommendedPrimary: "quote_qualified",
-      shift: currentPrimary !== "quote_qualified",
-      requiresApproval: true,
-      counts,
-      reason: `${input.uploadedQualified} bevestigde qualified-conversies in ${windowDays} dagen (drempel ${BID_SHIFT_THRESHOLDS.qualifiedPerWindow}) — bieden op leadkwaliteit is haalbaar.`,
-    };
+  const attribution = ratio(input.attributedEvents, input.totalEvents);
+  const attributionPassed =
+    attribution !== null && attribution >= BID_SHIFT_THRESHOLDS.minAttributionQuality;
+  const stabilityPassed =
+    (input.weeksWithConversions ?? 0) >= BID_SHIFT_THRESHOLDS.minActiveWeeks;
+  const campaignNeeded = wonVolume
+    ? BID_SHIFT_THRESHOLDS.minCampaignConversionsWon
+    : BID_SHIFT_THRESHOLDS.minCampaignConversions;
+  const campaignPassed = (input.campaignConversions ?? 0) >= campaignNeeded;
+
+  const criteria: BidShiftCriterion[] = [
+    {
+      key: "volume",
+      label: "Conversievolume",
+      passed: target !== null,
+      detail: `Qualified ${input.uploadedQualified}/${BID_SHIFT_THRESHOLDS.qualifiedPerWindow}, klant ${input.uploadedWon}/${BID_SHIFT_THRESHOLDS.wonPerWindow} in ${windowDays} dagen.`,
+    },
+    {
+      key: "attribution_quality",
+      label: "Attributiekwaliteit",
+      passed: attributionPassed,
+      detail:
+        attribution === null
+          ? "Nog onbekend: te weinig geüploade events om de match met Google-clicks te beoordelen."
+          : `${Math.round(attribution * 100)}% van de events is met click-ID geüpload en geaccepteerd (minimaal ${Math.round(BID_SHIFT_THRESHOLDS.minAttributionQuality * 100)}%).`,
+    },
+    {
+      key: "stability",
+      label: "Stabiliteit over tijd",
+      passed: stabilityPassed,
+      detail: `${input.weeksWithConversions ?? 0} van de weken in het venster met diepe conversies (minimaal ${BID_SHIFT_THRESHOLDS.minActiveWeeks}) — één piekweek is geen trend.`,
+    },
+    {
+      key: "campaign_data",
+      label: "Campagne-specifieke data",
+      passed: campaignPassed,
+      detail: `${input.campaignConversions ?? 0} diepe conversies in de campagne zelf (minimaal ${campaignNeeded}).`,
+    },
+  ];
+
+  const allPassed = criteria.every((c) => c.passed);
+  const volumeOnly = target !== null && !allPassed;
+  const recommendedPrimary = allPassed && target ? target : INITIAL_PRIMARY_BID_EVENT;
+  const failed = criteria.filter((c) => !c.passed).map((c) => c.label);
 
   return {
     currentPrimary,
-    recommendedPrimary: INITIAL_PRIMARY_BID_EVENT,
-    shift: false,
+    recommendedPrimary,
+    shift: allPassed && !!target && currentPrimary !== target,
     requiresApproval: true,
     counts,
-    reason: `Te weinig diepe conversies in ${windowDays} dagen (qualified ${input.uploadedQualified}/${BID_SHIFT_THRESHOLDS.qualifiedPerWindow}, klant ${input.uploadedWon}/${BID_SHIFT_THRESHOLDS.wonPerWindow}). Blijf bieden op Offerte - Aanvraag.`,
+    criteria,
+    volumeOnly,
+    reason: allPassed
+      ? `Alle voorwaarden gehaald (volume, attributiekwaliteit, stabiliteit en campagne-specifieke data) — bieden op ${target === "quote_won" ? "werkelijke omzet" : "leadkwaliteit"} is verantwoord. Verschuiven vraagt nog altijd jouw goedkeuring.`
+      : volumeOnly
+        ? `Het volume is er, maar nog niet voldoende onderbouwing op: ${failed.join(", ")}. Blijf bieden op Offerte - Aanvraag.`
+        : `Nog niet genoeg onderbouwing om te verschuiven: ${failed.join(", ")}. Blijf bieden op Offerte - Aanvraag.`,
   };
 }
