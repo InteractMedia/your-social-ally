@@ -22,8 +22,9 @@
 
 const PUBLIC_HOST = "zakelijk.zoetbezorgen.nl";
 
-// Stabiele Lovable-origin (verandert niet bij rename, geen primary redirect).
-const ORIGIN_HOST = "project--c793dcef-5972-4f4d-a44d-d039d3afba47.lovable.app";
+// Origin = het primaire Lovable-domein: het enige hostname dat rechtstreeks 200
+// geeft. De fetch gebeurt server-side, de browser blijft op de publieke host.
+const ORIGIN_HOST = "socialcockpit.nl";
 
 const LOOP_HEADER = "x-zb-proxy";
 

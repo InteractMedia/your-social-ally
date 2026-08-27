@@ -10,7 +10,7 @@ zonder redirect naar `socialcockpit.nl`, terwijl:
 ## Hoe het werkt
 
 De Worker proxyt alleen een strikte allowlist naar de **stabiele project-origin**
-`project--c793dcef-5972-4f4d-a44d-d039d3afba47.lovable.app`. Dat hostname doet
+`socialcockpit.nl` (server-side fetch). Dat hostname doet
 géén primary-domain redirect, waardoor de bezoeker op `zakelijk.zoetbezorgen.nl`
 blijft.
 
@@ -34,7 +34,7 @@ Cloudflare Workers kunnen alleen op een zone die Cloudflare beheert. Kies één:
 2. **CNAME-setup (partial zone)**: alleen op Cloudflare Business/Enterprise.
 
 Daarna in Cloudflare DNS: `zakelijk` als **proxied** record (oranje wolk),
-bijvoorbeeld `CNAME zakelijk -> project--c793dcef-5972-4f4d-a44d-d039d3afba47.lovable.app`.
+bijvoorbeeld `CNAME zakelijk -> socialcockpit.nl`.
 Het bestaande A-record `185.158.133.1` mag blijven; de Worker-route onderschept
 het verzoek vóór de origin-fetch.
 
