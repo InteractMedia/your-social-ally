@@ -33,16 +33,20 @@ const ALLOW_EXACT = new Set([
   "/sitemap.xml",
   "/robots.txt",
   "/favicon.ico",
+  "/~flock.js", // hosting-runtime script dat de pagina zelf inlaadt
 ]);
 
 const ALLOW_PREFIX = [
   "/offerte/", // publieke offerte-landingspagina's
   "/_serverFn/", // TanStack Start server functions (formulier + tracking)
-  "/api/public/", // publieke API-routes (assets, lead-ingest)
+  "/api/public/", // publieke API-routes (o.a. landing-asset beelden)
   "/assets/", // gebouwde JS/CSS bundles
   "/_build/",
+  "/__l5e/", // gehoste statische assets (logo, afbeeldingen)
+  "/~api/", // hosting-analytics endpoint van de pagina
   "/zp/", // statische productbeelden
 ];
+
 
 function isAllowed(pathname) {
   if (ALLOW_EXACT.has(pathname)) return true;
