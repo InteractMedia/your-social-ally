@@ -9,10 +9,11 @@ zonder redirect naar `socialcockpit.nl`, terwijl:
 
 ## Hoe het werkt
 
-De Worker proxyt alleen een strikte allowlist naar de **stabiele project-origin**
-`socialcockpit.nl` (server-side fetch). Dat hostname doet
-géén primary-domain redirect, waardoor de bezoeker op `zakelijk.zoetbezorgen.nl`
-blijft.
+De Worker proxyt alleen een strikte allowlist server-side naar het primaire
+domein `socialcockpit.nl` — het enige hostname dat rechtstreeks HTTP 200 geeft
+(de andere Lovable-hostnames redirecten of geven 403). Omdat die fetch in de
+Worker gebeurt, blijft de bezoeker in de browser op `zakelijk.zoetbezorgen.nl`.
+
 
 Toegestaan: `/offerte/*`, `/sitemap.xml`, `/robots.txt`, `/favicon.ico`,
 `/assets/*`, `/_build/*`, `/zp/*`, `/_serverFn/*`, `/api/public/*`.
