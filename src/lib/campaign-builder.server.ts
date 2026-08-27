@@ -489,12 +489,14 @@ export function landingCopyCorpus(landing: any): string {
   return parts.filter(Boolean).join(" ").toLowerCase();
 }
 
-/** Controleert de final URL echt: absolute HTTPS, HTTP 200 en geen noindex. */
+/** Controleert de final URL echt: absolute HTTPS, HTTP 200, host en noindex. */
 export async function checkFinalUrl(url: string | null): Promise<{
   httpStatus: number | null;
   noindex: boolean | null;
+  finalHostMatches: boolean | null;
 }> {
-  if (!url || !/^https:\/\//i.test(url)) return { httpStatus: null, noindex: null };
+  if (!url || !/^https:\/\//i.test(url))
+    return { httpStatus: null, noindex: null, finalHostMatches: null };
   try {
     const res = await fetch(url, { redirect: "follow" });
     let noindex: boolean | null = null;
@@ -505,15 +507,23 @@ export async function checkFinalUrl(url: string | null): Promise<{
       const meta = /<meta[^>]+name=["']robots["'][^>]*>/i.exec(html)?.[0] ?? "";
       noindex = noindex === true ? true : /noindex/i.test(meta);
     }
-    return { httpStatus: res.status, noindex };
+    let finalHostMatches: boolean | null = null;
+    try {
+      finalHostMatches = new URL(res.url || url).host === new URL(url).host;
+    } catch {
+      finalHostMatches = null;
+    }
+    return { httpStatus: res.status, noindex, finalHostMatches };
   } catch {
-    return { httpStatus: null, noindex: null };
+    return { httpStatus: null, noindex: null, finalHostMatches: null };
   }
 }
 
 /**
  * Bepaalt of een concept ooit uitvoerbaar mag heten. Draft, preview of een
- * relatieve URL leidt altijd tot BLOCKED_FOR_CREATION.
+ * relatieve URL leidt altijd tot BLOCKED_FOR_CREATION. Daarnaast moet de
+ * productieversie bekend zijn, tracking live bewezen zijn en de juiste
+ * conversieactie voor de funnel actief gekoppeld staan.
  */
 export async function evaluateDraftExecution(opts: {
   ctx: Ctx;
@@ -521,19 +531,50 @@ export async function evaluateDraftExecution(opts: {
   landingPageId: string | null;
   landingStatus: string | null;
   url: string | null;
+  funnel?: string | null;
 }): Promise<{ eligibility: string; blockers: string[]; checkedAt: string }> {
-  const { httpStatus, noindex } = await checkFinalUrl(opts.url);
+  const { httpStatus, noindex, finalHostMatches } = await checkFinalUrl(opts.url);
 
   let trackingValidated = false;
+  let productionVersionId: string | null = null;
   if (opts.landingPageId) {
-    const { count } = await opts.ctx.supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("workspace_id", opts.workspaceId)
-      .eq("landing_page_id", opts.landingPageId)
-      .eq("is_test", false);
-    trackingValidated = Number(count ?? 0) > 0;
+    const { data: pageRow } = await opts.ctx.supabase
+      .from("landing_pages")
+      .select("current_version_id")
+      .eq("id", opts.landingPageId)
+      .maybeSingle();
+    productionVersionId = pageRow?.current_version_id ?? null;
+
+    // Tracking is pas bewezen als er op de live (niet-preview) pagina zowel
+    // paginabezoeken als een formulierverzending zijn gemeten. Interne
+    // testaanvragen mogen dat bewijs leveren; ze blijven buiten de KPI's.
+    const [{ count: views }, { count: submits }] = await Promise.all([
+      opts.ctx.supabase
+        .from("landing_page_events")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", opts.workspaceId)
+        .eq("landing_page_id", opts.landingPageId)
+        .eq("is_preview", false)
+        .eq("event_type", "page_view"),
+      opts.ctx.supabase
+        .from("landing_page_events")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", opts.workspaceId)
+        .eq("landing_page_id", opts.landingPageId)
+        .eq("is_preview", false)
+        .in("event_type", ["form_submitted", "thank_you"]),
+    ]);
+    trackingValidated = Number(views ?? 0) > 0 && Number(submits ?? 0) > 0;
   }
+
+  const conversionEvent = opts.funnel === "platform" ? "platform_application" : "quote_request";
+  const { data: mapping } = await opts.ctx.supabase
+    .from("google_conversion_mappings")
+    .select("google_conversion_action_id,google_conversion_action_name,enabled")
+    .eq("workspace_id", opts.workspaceId)
+    .eq("internal_event_name", conversionEvent)
+    .eq("enabled", true)
+    .maybeSingle();
 
   const facts: FinalUrlFacts = {
     landingStatus: opts.landingStatus,
@@ -541,10 +582,15 @@ export async function evaluateDraftExecution(opts: {
     httpStatus,
     noindex,
     trackingValidated,
+    finalHostMatches,
+    conversionActionId: mapping?.google_conversion_action_id ?? null,
+    conversionActionName: mapping?.google_conversion_action_name ?? null,
+    productionVersionId,
   };
   const res = evaluateExecutionEligibility(facts);
   return { ...res, checkedAt: new Date().toISOString() };
 }
+
 
 /**
  * V1.1: hervalideert een bestaand concept volledig deterministisch — zonder
@@ -594,7 +640,9 @@ export async function revalidateDraftForWorkspace(opts: {
     landingPageId: row.landing_page_id,
     landingStatus: page?.status ?? null,
     url: row.landing_page_url,
+    funnel: row.funnel,
   });
+
 
   const finalProposal = {
     ...proposal,
@@ -735,7 +783,9 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     landingPageId: page.id,
     landingStatus: (page as any).status ?? null,
     url: landingUrl,
+    funnel: opts.funnel,
   });
+
   const dataConfidence = scoreDataConfidence(dataset, opts.funnel);
   const proposal: BuilderProposal = {
     ...guarded,
