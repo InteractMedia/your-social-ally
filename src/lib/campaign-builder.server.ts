@@ -583,6 +583,26 @@ export async function evaluateDraftExecution(opts: {
     .eq("enabled", true)
     .maybeSingle();
 
+  const p = opts.proposal ?? null;
+  const truncatedActiveAssets: string[] = [];
+  if (p) {
+    const check = (text: string, limit: number) => {
+      if (assetTooLong(text, limit) || looksTruncated(text, limit)) truncatedActiveAssets.push(text);
+    };
+    for (const g of p.adGroups ?? []) {
+      if (!g.enabled) continue;
+      g.headlines.filter((h) => h.enabled).forEach((h) => check(h.text, ASSET_LIMITS.headline));
+      g.descriptions.filter((d) => d.enabled).forEach((d) => check(d.text, ASSET_LIMITS.description));
+    }
+    (p.callouts ?? []).filter((c) => c.enabled).forEach((c) => check(c.text, ASSET_LIMITS.callout));
+    (p.sitelinks ?? [])
+      .filter((s) => s.enabled)
+      .forEach((s) => {
+        check(s.text, ASSET_LIMITS.sitelinkText);
+        check(s.description ?? "", ASSET_LIMITS.sitelinkDescription);
+      });
+  }
+
   const facts: FinalUrlFacts = {
     landingStatus: opts.landingStatus,
     url: opts.url,
@@ -593,10 +613,15 @@ export async function evaluateDraftExecution(opts: {
     conversionActionId: mapping?.google_conversion_action_id ?? null,
     conversionActionName: mapping?.google_conversion_action_name ?? null,
     productionVersionId,
+    proposalConversionActionId: p?.conversionGoal?.actionId ?? null,
+    network: (p as any)?.network ?? null,
+    locationOption: (p as any)?.locationOption ?? null,
+    truncatedActiveAssets,
   };
   const res = evaluateExecutionEligibility(facts);
   return { ...res, checkedAt: new Date().toISOString() };
 }
+
 
 
 /**
