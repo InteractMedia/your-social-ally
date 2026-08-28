@@ -7,3 +7,4 @@ for (const r of rows ?? []) {
   const res = await evaluateDraftExecution({ ctx: { supabase: supabaseAdmin } as any, workspaceId: ws, landingPageId: r.landing_page_id, landingStatus: page?.status ?? null, url: r.landing_page_url, funnel: r.funnel_type });
   console.log(JSON.stringify({ name: r.name, slug: page?.slug, url: r.landing_page_url, ...res }, null, 1));
 }
+console.log("done");
