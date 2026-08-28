@@ -665,6 +665,28 @@ export async function revalidateDraftForWorkspace(opts: {
     landingCopy: landingCopyCorpus(dataset.landing),
   });
 
+  // Er bestaat maar één authoritative final URL: de gepubliceerde production-URL.
+  if (row.landing_page_url && /^https:\/\//i.test(row.landing_page_url)) {
+    proposal.landingPageUrl = row.landing_page_url;
+  }
+
+  // Het primaire bieddoel volgt de actieve conversiekoppeling van de funnel.
+  const bidEvent = row.funnel === "platform" ? "platform_application" : "quote_request";
+  const { data: bidMapping } = await ctx.supabase
+    .from("google_conversion_mappings")
+    .select("google_conversion_action_id,google_conversion_action_name")
+    .eq("workspace_id", workspaceId)
+    .eq("internal_event_name", bidEvent)
+    .eq("enabled", true)
+    .maybeSingle();
+  if (bidMapping?.google_conversion_action_id) {
+    proposal.conversionGoal = {
+      ...proposal.conversionGoal,
+      name: bidMapping.google_conversion_action_name ?? proposal.conversionGoal.name,
+      actionId: bidMapping.google_conversion_action_id,
+    };
+  }
+
   const confidence = scoreDataConfidence(dataset, row.funnel);
   const execution = await evaluateDraftExecution({
     ctx,
@@ -673,6 +695,7 @@ export async function revalidateDraftForWorkspace(opts: {
     landingStatus: page?.status ?? null,
     url: row.landing_page_url,
     funnel: row.funnel,
+    proposal,
   });
 
 
@@ -682,6 +705,7 @@ export async function revalidateDraftForWorkspace(opts: {
     execution,
     dataConfidenceBand: confidence.band,
   };
+
 
   const { error } = await ctx.supabase
     .from("search_campaign_drafts")
