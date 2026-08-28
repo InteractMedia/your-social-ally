@@ -22,9 +22,13 @@ import {
   applyGuardrails,
   evaluateExecutionEligibility,
   scoreDataUsability,
+  ASSET_LIMITS,
+  looksTruncated,
+  assetTooLong,
   type DataUsability,
   type FinalUrlFacts,
 } from "./campaign-builder-guardrails";
+
 import {
   extractJsonObject,
   resolveProvider,
@@ -532,7 +536,10 @@ export async function evaluateDraftExecution(opts: {
   landingStatus: string | null;
   url: string | null;
   funnel?: string | null;
+  /** Het (guardrailed) voorstel, voor netwerk-, locatie-, bieddoel- en tekstchecks. */
+  proposal?: BuilderProposal | null;
 }): Promise<{ eligibility: string; blockers: string[]; checkedAt: string }> {
+
   const { httpStatus, noindex, finalHostMatches } = await checkFinalUrl(opts.url);
 
   let trackingValidated = false;
@@ -576,6 +583,26 @@ export async function evaluateDraftExecution(opts: {
     .eq("enabled", true)
     .maybeSingle();
 
+  const p = opts.proposal ?? null;
+  const truncatedActiveAssets: string[] = [];
+  if (p) {
+    const check = (text: string, limit: number) => {
+      if (assetTooLong(text, limit) || looksTruncated(text, limit)) truncatedActiveAssets.push(text);
+    };
+    for (const g of p.adGroups ?? []) {
+      if (!g.enabled) continue;
+      g.headlines.filter((h) => h.enabled).forEach((h) => check(h.text, ASSET_LIMITS.headline));
+      g.descriptions.filter((d) => d.enabled).forEach((d) => check(d.text, ASSET_LIMITS.description));
+    }
+    (p.callouts ?? []).filter((c) => c.enabled).forEach((c) => check(c.text, ASSET_LIMITS.callout));
+    (p.sitelinks ?? [])
+      .filter((s) => s.enabled)
+      .forEach((s) => {
+        check(s.text, ASSET_LIMITS.sitelinkText);
+        check(s.description ?? "", ASSET_LIMITS.sitelinkDescription);
+      });
+  }
+
   const facts: FinalUrlFacts = {
     landingStatus: opts.landingStatus,
     url: opts.url,
@@ -586,10 +613,15 @@ export async function evaluateDraftExecution(opts: {
     conversionActionId: mapping?.google_conversion_action_id ?? null,
     conversionActionName: mapping?.google_conversion_action_name ?? null,
     productionVersionId,
+    proposalConversionActionId: p?.conversionGoal?.actionId ?? null,
+    network: (p as any)?.network ?? null,
+    locationOption: (p as any)?.locationOption ?? null,
+    truncatedActiveAssets,
   };
   const res = evaluateExecutionEligibility(facts);
   return { ...res, checkedAt: new Date().toISOString() };
 }
+
 
 
 /**
@@ -633,6 +665,28 @@ export async function revalidateDraftForWorkspace(opts: {
     landingCopy: landingCopyCorpus(dataset.landing),
   });
 
+  // Er bestaat maar één authoritative final URL: de gepubliceerde production-URL.
+  if (row.landing_page_url && /^https:\/\//i.test(row.landing_page_url)) {
+    proposal.landingPageUrl = row.landing_page_url;
+  }
+
+  // Het primaire bieddoel volgt de actieve conversiekoppeling van de funnel.
+  const bidEvent = row.funnel === "platform" ? "platform_application" : "quote_request";
+  const { data: bidMapping } = await ctx.supabase
+    .from("google_conversion_mappings")
+    .select("google_conversion_action_id,google_conversion_action_name")
+    .eq("workspace_id", workspaceId)
+    .eq("internal_event_name", bidEvent)
+    .eq("enabled", true)
+    .maybeSingle();
+  if (bidMapping?.google_conversion_action_id) {
+    proposal.conversionGoal = {
+      ...proposal.conversionGoal,
+      name: bidMapping.google_conversion_action_name ?? proposal.conversionGoal.name,
+      actionId: bidMapping.google_conversion_action_id,
+    };
+  }
+
   const confidence = scoreDataConfidence(dataset, row.funnel);
   const execution = await evaluateDraftExecution({
     ctx,
@@ -641,6 +695,7 @@ export async function revalidateDraftForWorkspace(opts: {
     landingStatus: page?.status ?? null,
     url: row.landing_page_url,
     funnel: row.funnel,
+    proposal,
   });
 
 
@@ -650,6 +705,7 @@ export async function revalidateDraftForWorkspace(opts: {
     execution,
     dataConfidenceBand: confidence.band,
   };
+
 
   const { error } = await ctx.supabase
     .from("search_campaign_drafts")
@@ -784,6 +840,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     landingStatus: (page as any).status ?? null,
     url: landingUrl,
     funnel: opts.funnel,
+    proposal: guarded,
   });
 
   const dataConfidence = scoreDataConfidence(dataset, opts.funnel);

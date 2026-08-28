@@ -188,6 +188,8 @@ export const setSearchDraftStatus = createServerFn({ method: "POST" })
         landingPageId: row.landing_page_id,
         landingStatus: page?.status ?? null,
         url: row.landing_page_url,
+        funnel: row.funnel,
+        proposal: row.proposal as any,
       });
       if (execution.eligibility !== "ALLOWED") {
         return {

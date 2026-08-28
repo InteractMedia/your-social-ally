@@ -188,10 +188,37 @@ export const ASSET_LIMITS = {
   callout: 25,
 } as const;
 
+/**
+ * Deterministische handmatige herschrijvingen van afgebroken V1-teksten.
+ * Nooit afkappen: de volledige frase wordt vervangen door een natuurlijke,
+ * afgeronde variant binnen de Google-limiet.
+ */
+export const MANUAL_ASSET_REWRITES: Record<string, string> = {
+  "Vier de oplevering of beloon veiligheidsprestaties met een persoonlijk geschenk. Vanaf 25":
+    "Vier de oplevering of beloon veiligheidsprestaties met een persoonlijk geschenk.",
+  "Kerstpakketten of jubileumcadeaus volledig in jullie huisstijl. Levering op elk adres":
+    "Kerstpakketten of jubileumcadeaus in jullie huisstijl, geleverd op elk adres.",
+  "Vraag vrijblijvend een offerte aan. Reactie binnen 1 werkdag, levering op elk adres":
+    "Vraag vrijblijvend een offerte aan. Reactie binnen 1 werkdag, levering overal.",
+  "Persoonlijke snoep- en chocoladegeschenken voor de bouw. Vanaf 25 stuks, met logo":
+    "Persoonlijke snoep- en chocoladegeschenken voor de bouw, vanaf 25 stuks met logo.",
+  "Geen chatbot, echte": "Persoonlijk contact",
+};
+
+/** Netwerk- en locatie-instellingen worden structureel vastgelegd, niet geraden. */
+export const REQUIRED_NETWORK_SETTINGS = {
+  searchNetwork: true,
+  searchPartners: false,
+  displayNetwork: false,
+} as const;
+
+export const REQUIRED_LOCATION_OPTION = "PRESENCE" as const;
+
 /** Nooit afkappen: te lange tekst wordt gemarkeerd, niet geknipt. */
 export function assetTooLong(text: string, limit: number): boolean {
   return text.trim().length > limit;
 }
+
 
 /** Woorden die een advertentietekst nooit mogen afsluiten. */
 const DANGLING_TAIL =
@@ -246,8 +273,13 @@ export function rewriteToLimit(text: string, limit: number): { text: string; fit
  */
 export function looksTruncated(text: string, limit: number): boolean {
   if (/\s$/.test(text)) return true;
-  if (text.trim().length < limit - 1) return false;
   const t = text.trim();
+  if (MANUAL_ASSET_REWRITES[t]) return true;
+  // Een tekst die op een los getal of bungelend voorzetsel eindigt is altijd
+  // afgebroken, ook als hij ruim binnen de limiet blijft.
+  if (!/[.!?)]$/.test(t) && /\s\d+$/.test(t)) return true;
+  if (!/[.!?)]$/.test(t) && DANGLING_TAIL.test(t)) return true;
+  if (t.length < limit - 1) return false;
   if (/[.!?)]$/.test(t)) return false;
   const words = t.split(" ");
   const last = words[words.length - 1] ?? "";
@@ -258,6 +290,7 @@ export function looksTruncated(text: string, limit: number): boolean {
   if (t.length >= limit) return true;
   return last.length <= 5 && !/^\d+$/.test(last) && !DANGLING_TAIL.test(last);
 }
+
 
 /* ------------------------------------------------------- claim-consistentie */
 
@@ -385,6 +418,14 @@ export type FinalUrlFacts = {
   conversionActionId?: string | null;
   /** Gepubliceerde versie waarop het verkeer daadwerkelijk landt. */
   productionVersionId?: string | null;
+  /** De conversieactie die in het concept als bieddoel staat. */
+  proposalConversionActionId?: string | null;
+  /** Netwerk-instellingen zoals in het concept vastgelegd. */
+  network?: { searchNetwork?: boolean; searchPartners?: boolean; displayNetwork?: boolean } | null;
+  /** PRESENCE of PRESENCE_OR_INTEREST. */
+  locationOption?: string | null;
+  /** Actieve advertentieteksten die nog afgebroken zijn. */
+  truncatedActiveAssets?: string[];
 };
 
 /** Een concept mag alleen uitvoerbaar heten als de final URL echt klaar is. */
@@ -405,8 +446,30 @@ export function evaluateExecutionEligibility(f: FinalUrlFacts): {
   if (!f.trackingValidated) blockers.push("Conversietracking op de pagina is niet live gevalideerd.");
   if (!f.conversionActionId || !f.conversionActionName)
     blockers.push("Geen actieve conversieactie gekoppeld voor deze funnel.");
+  if (
+    f.conversionActionId &&
+    f.proposalConversionActionId &&
+    f.proposalConversionActionId !== f.conversionActionId
+  )
+    blockers.push(
+      `Bieddoel in het concept (${f.proposalConversionActionId}) wijkt af van de gekoppelde conversieactie (${f.conversionActionId}).`,
+    );
   if (!f.productionVersionId)
     blockers.push("Geen gepubliceerde productieversie van de landingspagina bekend.");
+  if (f.network) {
+    if (f.network.searchNetwork !== true) blockers.push("Google Search Network staat niet aan.");
+    if (f.network.searchPartners !== false) blockers.push("Search Partners staat niet uit.");
+    if (f.network.displayNetwork !== false) blockers.push("Display Network staat niet uit.");
+  } else {
+    blockers.push("Netwerk-instellingen (Search / Partners / Display) zijn niet vastgelegd.");
+  }
+  if ((f.locationOption ?? null) !== REQUIRED_LOCATION_OPTION)
+    blockers.push("Locatie-optie staat niet op Presence (mensen in de getargete locatie).");
+  if (f.truncatedActiveAssets && f.truncatedActiveAssets.length)
+    blockers.push(
+      `${f.truncatedActiveAssets.length} actieve advertentieteksten zijn nog afgebroken: ${f.truncatedActiveAssets.join(" | ")}`,
+    );
+
   return {
     eligibility: blockers.length ? "BLOCKED_FOR_CREATION" : "ALLOWED",
     blockers,
@@ -590,8 +653,21 @@ export function applyGuardrails(
 
   /* 5: nooit afkappen — herschrijven en opnieuw valideren */
   const fixAsset = (text: string, limit: number, scope: string): { text: string; enabled: boolean } => {
+    const manual = MANUAL_ASSET_REWRITES[text.trim()];
+    if (manual && manual.length <= limit) {
+      report.assetFindings.push({
+        scope,
+        text,
+        limit,
+        length: text.length,
+        action: `handmatig herschreven naar "${manual}" (${manual.length})`,
+      });
+      report.counts.assetsRewritten += 1;
+      return { text: manual, enabled: true };
+    }
     if (!assetTooLong(text, limit) && !looksTruncated(text, limit)) return { text, enabled: true };
     const rewritten = rewriteToLimit(text, limit);
+
     if (rewritten.fits && !assetTooLong(rewritten.text, limit)) {
       report.assetFindings.push({
         scope,
@@ -661,6 +737,11 @@ export function applyGuardrails(
     if (!g.keywords.some((k) => k.enabled)) g.enabled = false;
   });
 
+  /* 7: netwerk- en locatie-instellingen structureel vastleggen */
+  (proposal as any).network = { ...REQUIRED_NETWORK_SETTINGS };
+  (proposal as any).locationOption = REQUIRED_LOCATION_OPTION;
+
   (proposal as any).guardrails = report;
   return { proposal, report };
 }
+

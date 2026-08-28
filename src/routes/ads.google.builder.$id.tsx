@@ -412,8 +412,23 @@ function DraftPage() {
                 onChange={(e) => patch((p) => void (p.conversionGoal.name = e.target.value))}
               />
               <p className="text-[11px] text-muted-foreground">{proposal.conversionGoal.reasoning}</p>
+              {proposal.conversionGoal.actionId ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Conversieactie-ID: {proposal.conversionGoal.actionId}
+                </p>
+              ) : null}
               <Evidence evidence={proposal.conversionGoal.evidence} />
             </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <Label>Netwerk en locatie-instelling (vastgelegd)</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Zoeknetwerk: {proposal.network?.searchNetwork === false ? "uit" : "aan"} · zoekpartners:{" "}
+                {proposal.network?.searchPartners ? "aan" : "uit"} · Display:{" "}
+                {proposal.network?.displayNetwork ? "aan" : "uit"} · locatiedoelgroep:{" "}
+                {proposal.locationOption ?? "PRESENCE"} (alleen aanwezigheid)
+              </p>
+            </div>
+
             <div className="space-y-1.5 md:col-span-2">
               <Label>Doel en verwachte intentie</Label>
               <Textarea

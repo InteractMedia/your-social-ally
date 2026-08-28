@@ -143,7 +143,18 @@ export type BuilderProposal = {
   language: string;
   dailyBudget: { amount: number | null; currency: string; reasoning: string; evidence: EvidenceNote };
   bidding: { strategy: BiddingStrategy | string; target: number | null; reasoning: string; evidence: EvidenceNote };
-  conversionGoal: { name: string; reasoning: string; evidence: EvidenceNote };
+  conversionGoal: {
+    name: string;
+    /** Google Ads conversion action ID van het primaire bieddoel. */
+    actionId?: string | null;
+    reasoning: string;
+    evidence: EvidenceNote;
+  };
+  /** Netwerk-instellingen: Search aan, Partners uit, Display uit. */
+  network?: { searchNetwork: boolean; searchPartners: boolean; displayNetwork: boolean };
+  /** PRESENCE (mensen in de locatie) of PRESENCE_OR_INTEREST. */
+  locationOption?: string;
+
   adGroups: BuilderAdGroup[];
   negativeKeywords: BuilderNegative[];
   sitelinks: { text: string; description: string; enabled: boolean }[];
