@@ -188,10 +188,37 @@ export const ASSET_LIMITS = {
   callout: 25,
 } as const;
 
+/**
+ * Deterministische handmatige herschrijvingen van afgebroken V1-teksten.
+ * Nooit afkappen: de volledige frase wordt vervangen door een natuurlijke,
+ * afgeronde variant binnen de Google-limiet.
+ */
+export const MANUAL_ASSET_REWRITES: Record<string, string> = {
+  "Vier de oplevering of beloon veiligheidsprestaties met een persoonlijk geschenk. Vanaf 25":
+    "Vier de oplevering of beloon veiligheidsprestaties met een persoonlijk geschenk.",
+  "Kerstpakketten of jubileumcadeaus volledig in jullie huisstijl. Levering op elk adres":
+    "Kerstpakketten of jubileumcadeaus in jullie huisstijl, geleverd op elk adres.",
+  "Vraag vrijblijvend een offerte aan. Reactie binnen 1 werkdag, levering op elk adres":
+    "Vraag vrijblijvend een offerte aan. Reactie binnen 1 werkdag, levering overal.",
+  "Persoonlijke snoep- en chocoladegeschenken voor de bouw. Vanaf 25 stuks, met logo":
+    "Persoonlijke snoep- en chocoladegeschenken voor de bouw, vanaf 25 stuks met logo.",
+  "Geen chatbot, echte": "Persoonlijk contact",
+};
+
+/** Netwerk- en locatie-instellingen worden structureel vastgelegd, niet geraden. */
+export const REQUIRED_NETWORK_SETTINGS = {
+  searchNetwork: true,
+  searchPartners: false,
+  displayNetwork: false,
+} as const;
+
+export const REQUIRED_LOCATION_OPTION = "PRESENCE" as const;
+
 /** Nooit afkappen: te lange tekst wordt gemarkeerd, niet geknipt. */
 export function assetTooLong(text: string, limit: number): boolean {
   return text.trim().length > limit;
 }
+
 
 /** Woorden die een advertentietekst nooit mogen afsluiten. */
 const DANGLING_TAIL =
