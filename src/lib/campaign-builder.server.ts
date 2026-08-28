@@ -22,9 +22,13 @@ import {
   applyGuardrails,
   evaluateExecutionEligibility,
   scoreDataUsability,
+  ASSET_LIMITS,
+  looksTruncated,
+  assetTooLong,
   type DataUsability,
   type FinalUrlFacts,
 } from "./campaign-builder-guardrails";
+
 import {
   extractJsonObject,
   resolveProvider,
