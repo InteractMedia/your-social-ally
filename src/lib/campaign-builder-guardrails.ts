@@ -623,8 +623,21 @@ export function applyGuardrails(
 
   /* 5: nooit afkappen — herschrijven en opnieuw valideren */
   const fixAsset = (text: string, limit: number, scope: string): { text: string; enabled: boolean } => {
+    const manual = MANUAL_ASSET_REWRITES[text.trim()];
+    if (manual && manual.length <= limit) {
+      report.assetFindings.push({
+        scope,
+        text,
+        limit,
+        length: text.length,
+        action: `handmatig herschreven naar "${manual}" (${manual.length})`,
+      });
+      report.counts.assetsRewritten += 1;
+      return { text: manual, enabled: true };
+    }
     if (!assetTooLong(text, limit) && !looksTruncated(text, limit)) return { text, enabled: true };
     const rewritten = rewriteToLimit(text, limit);
+
     if (rewritten.fits && !assetTooLong(rewritten.text, limit)) {
       report.assetFindings.push({
         scope,
