@@ -28,6 +28,8 @@ const ALLOW: RegExp[] = [
   /^\/assets\//,
   /^\/zp\//,
   /^\/__l5e\//,
+  /^\/~/, // Lovable-injected runtime scripts (e.g. /~flock.js)
+
   /^\/@id\//,
   /^\/@vite\//,
   /^\/@fs\//,
