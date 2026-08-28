@@ -273,8 +273,13 @@ export function rewriteToLimit(text: string, limit: number): { text: string; fit
  */
 export function looksTruncated(text: string, limit: number): boolean {
   if (/\s$/.test(text)) return true;
-  if (text.trim().length < limit - 1) return false;
   const t = text.trim();
+  if (MANUAL_ASSET_REWRITES[t]) return true;
+  // Een tekst die op een los getal of bungelend voorzetsel eindigt is altijd
+  // afgebroken, ook als hij ruim binnen de limiet blijft.
+  if (!/[.!?)]$/.test(t) && /\s\d+$/.test(t)) return true;
+  if (!/[.!?)]$/.test(t) && DANGLING_TAIL.test(t)) return true;
+  if (t.length < limit - 1) return false;
   if (/[.!?)]$/.test(t)) return false;
   const words = t.split(" ");
   const last = words[words.length - 1] ?? "";
@@ -285,6 +290,7 @@ export function looksTruncated(text: string, limit: number): boolean {
   if (t.length >= limit) return true;
   return last.length <= 5 && !/^\d+$/.test(last) && !DANGLING_TAIL.test(last);
 }
+
 
 /* ------------------------------------------------------- claim-consistentie */
 
