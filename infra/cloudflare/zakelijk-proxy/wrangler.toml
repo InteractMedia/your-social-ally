@@ -1,9 +1,0 @@
-name = "zakelijk-proxy"
-main = "worker.js"
-compatibility_date = "2026-08-01"
-
-# Route: alleen dit hostname loopt via de Worker.
-# socialcockpit.nl blijft volledig ongemoeid.
-[[routes]]
-pattern = "zakelijk.zoetbezorgen.nl/*"
-zone_name = "zoetbezorgen.nl"
