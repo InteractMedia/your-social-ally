@@ -418,6 +418,14 @@ export type FinalUrlFacts = {
   conversionActionId?: string | null;
   /** Gepubliceerde versie waarop het verkeer daadwerkelijk landt. */
   productionVersionId?: string | null;
+  /** De conversieactie die in het concept als bieddoel staat. */
+  proposalConversionActionId?: string | null;
+  /** Netwerk-instellingen zoals in het concept vastgelegd. */
+  network?: { searchNetwork?: boolean; searchPartners?: boolean; displayNetwork?: boolean } | null;
+  /** PRESENCE of PRESENCE_OR_INTEREST. */
+  locationOption?: string | null;
+  /** Actieve advertentieteksten die nog afgebroken zijn. */
+  truncatedActiveAssets?: string[];
 };
 
 /** Een concept mag alleen uitvoerbaar heten als de final URL echt klaar is. */
@@ -438,8 +446,30 @@ export function evaluateExecutionEligibility(f: FinalUrlFacts): {
   if (!f.trackingValidated) blockers.push("Conversietracking op de pagina is niet live gevalideerd.");
   if (!f.conversionActionId || !f.conversionActionName)
     blockers.push("Geen actieve conversieactie gekoppeld voor deze funnel.");
+  if (
+    f.conversionActionId &&
+    f.proposalConversionActionId &&
+    f.proposalConversionActionId !== f.conversionActionId
+  )
+    blockers.push(
+      `Bieddoel in het concept (${f.proposalConversionActionId}) wijkt af van de gekoppelde conversieactie (${f.conversionActionId}).`,
+    );
   if (!f.productionVersionId)
     blockers.push("Geen gepubliceerde productieversie van de landingspagina bekend.");
+  if (f.network) {
+    if (f.network.searchNetwork !== true) blockers.push("Google Search Network staat niet aan.");
+    if (f.network.searchPartners !== false) blockers.push("Search Partners staat niet uit.");
+    if (f.network.displayNetwork !== false) blockers.push("Display Network staat niet uit.");
+  } else {
+    blockers.push("Netwerk-instellingen (Search / Partners / Display) zijn niet vastgelegd.");
+  }
+  if ((f.locationOption ?? null) !== REQUIRED_LOCATION_OPTION)
+    blockers.push("Locatie-optie staat niet op Presence (mensen in de getargete locatie).");
+  if (f.truncatedActiveAssets && f.truncatedActiveAssets.length)
+    blockers.push(
+      `${f.truncatedActiveAssets.length} actieve advertentieteksten zijn nog afgebroken: ${f.truncatedActiveAssets.join(" | ")}`,
+    );
+
   return {
     eligibility: blockers.length ? "BLOCKED_FOR_CREATION" : "ALLOWED",
     blockers,
