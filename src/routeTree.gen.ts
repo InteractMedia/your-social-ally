@@ -22,6 +22,7 @@ import { Route as CompetitorsRouteImport } from './routes/competitors'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OfferteIndexRouteImport } from './routes/offerte.index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
 import { Route as LandingpagesIndexRouteImport } from './routes/landingpages.index'
 import { Route as CompetitorsIndexRouteImport } from './routes/competitors.index'
@@ -117,6 +118,11 @@ const AdsRoute = AdsRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfferteIndexRoute = OfferteIndexRouteImport.update({
+  id: '/offerte/',
+  path: '/offerte/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeadsIndexRoute = LeadsIndexRouteImport.update({
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/competitors/': typeof CompetitorsIndexRoute
   '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
+  '/offerte/': typeof OfferteIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/competitors': typeof CompetitorsIndexRoute
   '/landingpages': typeof LandingpagesIndexRoute
   '/leads': typeof LeadsIndexRoute
+  '/offerte': typeof OfferteIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
@@ -398,6 +406,7 @@ export interface FileRoutesById {
   '/competitors/': typeof CompetitorsIndexRoute
   '/landingpages/': typeof LandingpagesIndexRoute
   '/leads/': typeof LeadsIndexRoute
+  '/offerte/': typeof OfferteIndexRoute
   '/ads/google/$campaignId': typeof AdsGoogleCampaignIdRoute
   '/ads/google/advice': typeof AdsGoogleAdviceRoute
   '/ads/google/conversions': typeof AdsGoogleConversionsRoute
@@ -446,6 +455,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/landingpages/'
     | '/leads/'
+    | '/offerte/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
     | '/ads/google/conversions'
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/competitors'
     | '/landingpages'
     | '/leads'
+    | '/offerte'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
     | '/ads/google/conversions'
@@ -534,6 +545,7 @@ export interface FileRouteTypes {
     | '/competitors/'
     | '/landingpages/'
     | '/leads/'
+    | '/offerte/'
     | '/ads/google/$campaignId'
     | '/ads/google/advice'
     | '/ads/google/conversions'
@@ -571,6 +583,7 @@ export interface RootRouteChildren {
   LandingpagesProductenRoute: typeof LandingpagesProductenRoute
   OfferteSlugRoute: typeof OfferteSlugRoute
   LandingpagesIndexRoute: typeof LandingpagesIndexRoute
+  OfferteIndexRoute: typeof OfferteIndexRoute
   ApiPublicLeadStatusRoute: typeof ApiPublicLeadStatusRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
   ApiPublicLandingAssetIdRoute: typeof ApiPublicLandingAssetIdRoute
@@ -669,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offerte/': {
+      id: '/offerte/'
+      path: '/offerte'
+      fullPath: '/offerte/'
+      preLoaderRoute: typeof OfferteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leads/': {
@@ -985,6 +1005,7 @@ const rootRouteChildren: RootRouteChildren = {
   LandingpagesProductenRoute: LandingpagesProductenRoute,
   OfferteSlugRoute: OfferteSlugRoute,
   LandingpagesIndexRoute: LandingpagesIndexRoute,
+  OfferteIndexRoute: OfferteIndexRoute,
   ApiPublicLeadStatusRoute: ApiPublicLeadStatusRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
   ApiPublicLandingAssetIdRoute: ApiPublicLandingAssetIdRoute,
