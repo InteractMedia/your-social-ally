@@ -1,7 +1,23 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { evaluatePublicHostScope, PUBLIC_HOST_SCOPE_MODE } from "./lib/public-host-scope";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+
+/**
+ * Dry-run scoping of the public landing host. Logs only; changes no response.
+ * See src/lib/public-host-scope.ts for the allowlist and the enforce switch.
+ */
+const publicHostScopeMiddleware = createMiddleware().server(async ({ next, request }) => {
+  const { decision, host, pathname } = evaluatePublicHostScope(request);
+  if (decision === "WOULD_BLOCK") {
+    console.warn(
+      `[public-host-scope] ${PUBLIC_HOST_SCOPE_MODE} WOULD_BLOCK host=${host} path=${pathname}`,
+    );
+  }
+  return next();
+});
+
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
