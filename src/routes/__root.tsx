@@ -137,12 +137,15 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 /** Public landing pages are visitor-facing and must never hit the login gate. */
-const PUBLIC_PREFIXES = ["/offerte/", "/cadeauplatform/", "/poc"];
+const PUBLIC_PREFIXES = ["/offerte", "/cadeauplatform", "/poc"];
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isPublic = PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const isPublic = PUBLIC_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`) || pathname.startsWith("/poc"),
+  );
+
 
   if (isPublic) {
     return (
