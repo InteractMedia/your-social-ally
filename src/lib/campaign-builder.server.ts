@@ -840,6 +840,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     landingStatus: (page as any).status ?? null,
     url: landingUrl,
     funnel: opts.funnel,
+    proposal: guarded,
   });
 
   const dataConfidence = scoreDataConfidence(dataset, opts.funnel);
