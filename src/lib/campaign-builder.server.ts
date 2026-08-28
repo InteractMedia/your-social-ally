@@ -532,7 +532,10 @@ export async function evaluateDraftExecution(opts: {
   landingStatus: string | null;
   url: string | null;
   funnel?: string | null;
+  /** Het (guardrailed) voorstel, voor netwerk-, locatie-, bieddoel- en tekstchecks. */
+  proposal?: BuilderProposal | null;
 }): Promise<{ eligibility: string; blockers: string[]; checkedAt: string }> {
+
   const { httpStatus, noindex, finalHostMatches } = await checkFinalUrl(opts.url);
 
   let trackingValidated = false;
