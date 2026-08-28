@@ -737,6 +737,11 @@ export function applyGuardrails(
     if (!g.keywords.some((k) => k.enabled)) g.enabled = false;
   });
 
+  /* 7: netwerk- en locatie-instellingen structureel vastleggen */
+  (proposal as any).network = { ...REQUIRED_NETWORK_SETTINGS };
+  (proposal as any).locationOption = REQUIRED_LOCATION_OPTION;
+
   (proposal as any).guardrails = report;
   return { proposal, report };
 }
+
