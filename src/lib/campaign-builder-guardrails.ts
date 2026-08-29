@@ -52,6 +52,7 @@ export const GUARDRAIL_FLAGS = [
   "REVIEW_ONLY",
   "LIKELY_B2C_INTENT",
   "NEGATIVE_BLOCKS_VALID_QUERY",
+  "NEGATIVE_TOO_GENERIC",
   "TEXT_TOO_LONG_NEEDS_REWRITE",
   "CLAIM_NOT_SUPPORTED",
   "BUSINESS_EXCLUSION_LOCKED",
@@ -66,10 +67,45 @@ export const GUARDRAIL_FLAG_LABELS: Record<GuardrailFlag, string> = {
   REVIEW_ONLY: "Alleen ter review — staat uit",
   LIKELY_B2C_INTENT: "Consumentintentie mogelijk",
   NEGATIVE_BLOCKS_VALID_QUERY: "Kan geldige B2B-zoekopdrachten blokkeren",
+  NEGATIVE_TOO_GENERIC: "Te generiek als uitsluiting — blokkeert commerciële zoekopdrachten",
   TEXT_TOO_LONG_NEEDS_REWRITE: "Te lang — herschrijven, niet afkappen",
   CLAIM_NOT_SUPPORTED: "Claim niet gedekt door landingspagina",
   BUSINESS_EXCLUSION_LOCKED: "Vaste business-exclusion — staat altijd aan",
 };
+
+/**
+ * Losse woorden die je NOOIT als (broad) negative mag gebruiken: ze zitten in
+ * commerciële zoekopdrachten zoals "chocolade laten maken met logo".
+ */
+export const GENERIC_NEGATIVE_WORDS = [
+  "maken",
+  "maakt",
+  "laten",
+  "doen",
+  "geven",
+  "sturen",
+  "versturen",
+  "bezorgen",
+  "leveren",
+  "maat",
+  "maatwerk",
+  "eigen",
+  "samenstellen",
+  "bedrukken",
+];
+
+/** Zoekopdrachten met duidelijke commerciële intentie die niet geblokkeerd mogen worden. */
+export const PROTECTED_COMMERCIAL_QUERIES = [
+  "laten maken",
+  "op maat laten maken",
+  "chocolade laten maken",
+  "snoep laten maken",
+  "geschenk laten maken",
+  "zelf samenstellen",
+  "laten bedrukken",
+  "laten bezorgen",
+];
+
 
 /* -------------------------------------------------------------- lexicons */
 
