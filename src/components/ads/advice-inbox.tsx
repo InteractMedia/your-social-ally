@@ -306,6 +306,17 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
   const reviewFn = useServerFn(reviewAiAdvice);
   const executeFn = useServerFn(executeAiAdvice);
 
+  // Execution V1: pas na expliciete menselijke goedkeuring én deze klik.
+  const execute = useMutation({
+    mutationFn: (adviceId: string) => executeFn({ data: { adviceId } }),
+    onSuccess: (res: any) => {
+      if (!res.ok) return toast.error(res.error ?? "Uitvoeren mislukt");
+      toast.success("Wijziging uitgevoerd in Google Ads en gelogd");
+      qc.invalidateQueries({ queryKey: ["ai-advice"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const query = useQuery({
     queryKey: ["ai-advice", status],
     queryFn: () => listFn({ data: { status, includeTest: false } }),
@@ -377,7 +388,8 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
               <AdviceCard
                 key={a.id}
                 advice={a}
-                busy={review.isPending}
+                busy={review.isPending || execute.isPending}
+                onExecute={() => execute.mutate(a.id)}
                 onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
                 onReject={() => {
                   setRejecting(a);
@@ -397,7 +409,8 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
                   <AdviceCard
                     key={a.id}
                     advice={a}
-                    busy={review.isPending}
+                    busy={review.isPending || execute.isPending}
+                    onExecute={() => execute.mutate(a.id)}
                     onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
                     onReject={() => {
                       setRejecting(a);
