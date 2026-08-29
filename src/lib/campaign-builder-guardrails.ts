@@ -628,6 +628,21 @@ export function applyGuardrails(
     const notes: string[] = [];
     const negToks = tokens(neg.text);
 
+    // Vaste business-exclusion: altijd toegestaan en altijd aan, ook bij
+    // commerciële intentie. De AI mag deze niet weglaten of uitzetten.
+    const exclusion = matchBusinessExclusion(neg.text);
+    if (exclusion) {
+      flags.push("BUSINESS_EXCLUSION_LOCKED");
+      report.counts.negativesActive += 1;
+      report.negativeFindings.push({
+        text: neg.text,
+        flags,
+        enabled: true,
+        note: exclusion.reason,
+      });
+      return { ...neg, enabled: true, flags, reason: neg.reason || exclusion.reason } as any;
+    }
+
     const blocksKeyword = activeKeywords.some((k) => {
       const kt = tokens(k);
       return negToks.every((t) => kt.includes(t));
@@ -656,6 +671,30 @@ export function applyGuardrails(
     report.negativeFindings.push({ text: neg.text, flags, enabled, note: notes.join(" ") });
     return { ...neg, enabled, flags } as any;
   });
+
+  // Vaste business-exclusions deterministisch aanvullen wanneer de AI ze
+  // heeft weggelaten of anders geformuleerd.
+  BUSINESS_EXCLUSIONS.forEach((exclusion) => {
+    const present = proposal.negativeKeywords.some(
+      (neg) => matchBusinessExclusion(neg.text)?.text === exclusion.text,
+    );
+    if (present) return;
+    proposal.negativeKeywords.push({
+      text: exclusion.text,
+      matchType: exclusion.matchType,
+      reason: exclusion.reason,
+      enabled: true,
+      flags: ["BUSINESS_EXCLUSION_LOCKED"],
+    } as any);
+    report.counts.negativesActive += 1;
+    report.negativeFindings.push({
+      text: exclusion.text,
+      flags: ["BUSINESS_EXCLUSION_LOCKED"],
+      enabled: true,
+      note: `Automatisch toegevoegd: ${exclusion.reason}`,
+    });
+  });
+
 
   /* 5: nooit afkappen — herschrijven en opnieuw valideren */
   const fixAsset = (text: string, limit: number, scope: string): { text: string; enabled: boolean } => {
