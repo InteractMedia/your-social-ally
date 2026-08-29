@@ -209,9 +209,20 @@ export type SearchCampaignDraftRow = {
   error: string | null;
   reviewed_at: string | null;
   approved_at: string | null;
+  approved_by?: string | null;
+  google_customer_id?: string | null;
+  google_campaign_id?: string | null;
+  google_campaign_name?: string | null;
+  google_resource_names?: Record<string, unknown>;
+  creation_plan?: Record<string, unknown> | null;
+  creation_result?: Record<string, unknown> | null;
+  creation_error?: string | null;
+  creation_started_at?: string | null;
+  created_in_google_at?: string | null;
   created_at: string;
   updated_at: string;
 };
+
 
 /** Alleen wat aan staat telt mee in de samenvatting van een concept. */
 export function draftTotals(proposal: BuilderProposal | null | undefined) {
