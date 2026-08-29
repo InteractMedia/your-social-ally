@@ -853,7 +853,28 @@ export function applyGuardrails(
   (proposal as any).network = { ...REQUIRED_NETWORK_SETTINGS };
   (proposal as any).locationOption = REQUIRED_LOCATION_OPTION;
 
+  /* 8: geen doel-CPA/ROAS zonder voldoende eigen conversiedata */
+  const bidding = proposal.bidding as any;
+  const strategy = String(bidding?.strategy ?? "");
+  const hasTargetStrategy =
+    strategy === "MAXIMIZE_CONVERSIONS_TARGET_CPA" ||
+    strategy === "MAXIMIZE_CONVERSION_VALUE_TARGET_ROAS";
+  if (bidding && !ctx.conversionDataSufficient && (hasTargetStrategy || bidding.target != null)) {
+    const before = `${strategy}${bidding.target != null ? ` (doel ${bidding.target})` : ""}`;
+    bidding.strategy = "MAXIMIZE_CONVERSIONS";
+    bidding.target = null;
+    bidding.reasoning = `Startadvies: Maximize Conversions zonder doel-CPA wegens onvoldoende eigen conversiedata. ${bidding.reasoning ?? ""}`.trim();
+    bidding.evidence = {
+      source: "OWN_DATA",
+      note: "Te weinig eigen conversies om een betrouwbaar doel-CPA/ROAS te zetten. Eerst leerfase, daarna pas een doel.",
+    };
+    report.biddingFindings.push(
+      `${before} vervangen door Maximize Conversions zonder doel: onvoldoende eigen conversiedata.`,
+    );
+  }
+
   (proposal as any).guardrails = report;
   return { proposal, report };
 }
+
 
