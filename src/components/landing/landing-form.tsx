@@ -151,7 +151,7 @@ export function LandingForm({
       )}
 
       <div className="md:col-span-2">
-        <Button type="submit" size="lg" disabled={busy} className="w-full rounded-full sm:w-auto">
+        <Button type="submit" size="lg" disabled={busy} className="w-full rounded-sm sm:w-auto">
           {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {form.submit_label}
         </Button>
