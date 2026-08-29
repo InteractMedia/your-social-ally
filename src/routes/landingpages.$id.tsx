@@ -416,6 +416,20 @@ function SectionCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {section.block_type === "products" && (
+          <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+            Dit blok toont je gekoppelde cadeauvoorbeelden. Het onderdeel <strong>Twee favorieten</strong> gebruikt
+            de eerste twee producten uit je selectie — beheer de selectie en volgorde op het tabblad{" "}
+            <strong>Producten &amp; cases</strong> (de volgorde van aanvinken bepaalt de weergave).
+          </p>
+        )}
+        {section.block_type === "hero" && (
+          <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+            De grote hero-afbeelding stel je in via <strong>Afbeelding</strong>; de kleine overlappende foto
+            linksonder via <strong>Afbeelding 2</strong>. Laat je Afbeelding 2 leeg, dan valt de hero terug op het
+            eerste gekoppelde product met een foto.
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Titel</Label>
@@ -989,6 +1003,10 @@ function ProductsEditor({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Cadeauvoorbeelden</CardTitle>
+        <p className="text-muted-foreground text-xs">
+          De volgorde van aanvinken bepaalt de weergavevolgorde op de pagina. De nummers{" "}
+          <strong>1 en 2</strong> worden het blok <strong>Twee favorieten</strong>.
+        </p>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -1000,10 +1018,15 @@ function ProductsEditor({
                 onClick={() =>
                   setIds(active ? ids.filter((x) => x !== p.id) : [...ids, p.id])
                 }
-                className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                className={`relative rounded-lg border p-3 text-left text-sm transition-colors ${
                   active ? "border-primary bg-primary/5" : "hover:bg-accent"
                 }`}
               >
+                {active && (
+                  <span className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
+                    {ids.indexOf(p.id) + 1}
+                  </span>
+                )}
                 <p className="font-medium">{p.name}</p>
                 {p.short_text && (
                   <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{p.short_text}</p>

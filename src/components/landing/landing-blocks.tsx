@@ -618,6 +618,13 @@ export function LandingBlock({
          candy-dots en hazard-stripe als merkmotief. Data-driven uit BlockContent. */
       if (heroDesign.composition === "candy_hero_collage" && (c.image_url || layeredMissing)) {
         const heroProduct = page.products.find((p) => p.image_url);
+        /* V2.4 — de overlappende polaroid is overschrijfbaar via
+           content.image_url_2 ("Afbeelding 2" in de editor); valt terug op
+           het eerste gekoppelde product met beeld. */
+        const heroOverlayUrl = c.image_url_2 ?? heroProduct?.image_url;
+        const heroOverlayAlt = c.image_url_2
+          ? (c.image_alt_2 ?? "")
+          : (heroProduct?.image_alt ?? heroProduct?.name ?? "");
         return (
           <section className="bg-zb-cream text-zb-ink relative overflow-hidden">
             <ZbCandyDots />
@@ -671,10 +678,10 @@ export function LandingBlock({
                     )}
                   </div>
                 )}
-                {heroProduct?.image_url && (
+                {heroOverlayUrl && (
                   <img
-                    src={heroProduct.image_url}
-                    alt={heroProduct.image_alt ?? heroProduct.name}
+                    src={heroOverlayUrl}
+                    alt={heroOverlayAlt}
                     loading="eager"
                     className="absolute -bottom-10 -left-6 w-44 -rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:-left-16 md:w-72"
                   />
@@ -731,10 +738,10 @@ export function LandingBlock({
                 </div>
               </div>
             </div>
-            {heroProduct?.image_url && (
+            {(c.image_url_2 ?? heroProduct?.image_url) && (
               <img
-                src={heroProduct.image_url}
-                alt={heroProduct.image_alt ?? heroProduct.name}
+                src={c.image_url_2 ?? heroProduct!.image_url!}
+                alt={c.image_url_2 ? (c.image_alt_2 ?? "") : (heroProduct?.image_alt ?? heroProduct?.name ?? "")}
                 loading="eager"
                 className="absolute right-6 -bottom-8 z-10 w-32 rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:right-24 md:-bottom-10 md:w-52"
               />
