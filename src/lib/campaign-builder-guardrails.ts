@@ -8,6 +8,10 @@
  */
 
 import type { BuilderProposal } from "./campaign-builder-shared";
+import {
+  BUSINESS_EXCLUSIONS,
+  matchBusinessExclusion,
+} from "./campaign-builder-business-context";
 
 /* ------------------------------------------------------------ B2B niveaus */
 
