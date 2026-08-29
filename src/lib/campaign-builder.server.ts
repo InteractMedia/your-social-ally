@@ -57,6 +57,9 @@ Harde regels:
 - Bij een branchecampagne (er is een branche opgegeven) moet elk keyword expliciete branchecontext bevatten. Sector-neutrale keywords zoals "relatiegeschenk met logo" of "chocolade met eigen wikkel" horen bij een generieke campagne met generieke landingspagina, niet hier.
 - Een product plus personalisatie (logo, bedrukken, personaliseren, eigen wikkel) is GEEN bewijs van B2B: die woorden komen ook in consumentzoekopdrachten voor. Classificeer intent alleen als B2B bij een echte zakelijke of branche-aanwijzing, anders MIXED of B2C.
 - Negatieve keywords mogen nooit een commercieel woord generiek uitsluiten (bijvoorbeeld "kopen", "prijs", "bestellen", "offerte"): dat blokkeert geldige B2B-zoekopdrachten. Sluit alleen uit wat aantoonbaar irrelevant is, en nooit iets wat in de landingspagina of FAQ als aanbod staat. Uitzondering: de vaste business/product-exclusions hieronder mogen altijd worden uitgesloten.
+- Gebruik nooit een los, generiek woord als negative (bijvoorbeeld "maken", "laten", "bezorgen", "bedrukken"). Dat blokkeert commerciële zoekopdrachten zoals "chocolade laten maken met logo". Sluit altijd de volledige woordgroep uit die de zoekopdracht ongeschikt maakt, bijvoorbeeld "zelf maken" als PHRASE.
+- Zet alleen een doel-CPA of doel-ROAS wanneer er aantoonbaar voldoende eigen conversiedata is (richtlijn: minimaal 15 conversies met een bekende CPA). Ontbreekt die data, dan is het startadvies altijd MAXIMIZE_CONVERSIONS met target null.
+
 ${businessExclusionPromptBlock()}
 - aiConfidence = hoe zeker je bent van je eigen redenering. Dat is iets anders dan datakwaliteit; die beoordeelt het systeem zelf.
 
