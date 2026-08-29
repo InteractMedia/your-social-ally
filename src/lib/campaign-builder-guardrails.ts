@@ -535,6 +535,9 @@ export type GuardrailReport = {
   negativeFindings: { text: string; flags: GuardrailFlag[]; enabled: boolean; note: string }[];
   assetFindings: { scope: string; text: string; limit: number; length: number; action: string }[];
   claimFindings: string[];
+  /** Correcties op de biedstrategie, bv. doel-CPA verwijderd bij te weinig data. */
+  biddingFindings: string[];
+
   counts: {
     keywordsActive: number;
     keywordsDisabled: number;
