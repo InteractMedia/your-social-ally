@@ -12,21 +12,9 @@ import { euros, matchTypeFor, mutate } from "./google-ads-write.server";
 
 type Ctx = { supabase: any; userId: string };
 
-/** Adviestypes die SocialCockpit daadwerkelijk kan uitvoeren in Google Ads. */
-export const EXECUTABLE_ADVICE_TYPES = [
-  "NEGATIVE_KEYWORD",
-  "PAUSE_KEYWORD",
-  "NEW_KEYWORD",
-  "INCREASE_BUDGET",
-  "DECREASE_BUDGET",
-  "PAUSE_CAMPAIGN",
-] as const;
+import { isExecutableAdviceType as isExecutableType } from "./ai-analyst-shared";
 
-export type ExecutableAdviceType = (typeof EXECUTABLE_ADVICE_TYPES)[number];
-
-export function isExecutableType(type: string): type is ExecutableAdviceType {
-  return (EXECUTABLE_ADVICE_TYPES as readonly string[]).includes(type);
-}
+export { isExecutableType };
 
 type Payload = Record<string, any>;
 
