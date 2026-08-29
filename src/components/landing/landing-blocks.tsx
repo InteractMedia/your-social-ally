@@ -738,10 +738,10 @@ export function LandingBlock({
                 </div>
               </div>
             </div>
-            {heroProduct?.image_url && (
+            {(c.image_url_2 ?? heroProduct?.image_url) && (
               <img
-                src={heroProduct.image_url}
-                alt={heroProduct.image_alt ?? heroProduct.name}
+                src={c.image_url_2 ?? heroProduct!.image_url!}
+                alt={c.image_url_2 ? (c.image_alt_2 ?? "") : (heroProduct?.image_alt ?? heroProduct?.name ?? "")}
                 loading="eager"
                 className="absolute right-6 -bottom-8 z-10 w-32 rotate-6 rounded-2xl border-4 border-white object-cover shadow-2xl md:right-24 md:-bottom-10 md:w-52"
               />

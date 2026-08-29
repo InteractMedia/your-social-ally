@@ -416,6 +416,20 @@ function SectionCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {section.block_type === "products" && (
+          <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+            Dit blok toont je gekoppelde cadeauvoorbeelden. Het onderdeel <strong>Twee favorieten</strong> gebruikt
+            de eerste twee producten uit je selectie — beheer de selectie en volgorde op het tabblad{" "}
+            <strong>Producten &amp; cases</strong> (de volgorde van aanvinken bepaalt de weergave).
+          </p>
+        )}
+        {section.block_type === "hero" && (
+          <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+            De grote hero-afbeelding stel je in via <strong>Afbeelding</strong>; de kleine overlappende foto
+            linksonder via <strong>Afbeelding 2</strong>. Laat je Afbeelding 2 leeg, dan valt de hero terug op het
+            eerste gekoppelde product met een foto.
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Titel</Label>
