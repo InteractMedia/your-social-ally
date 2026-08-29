@@ -68,6 +68,7 @@ export const GUARDRAIL_FLAG_LABELS: Record<GuardrailFlag, string> = {
   NEGATIVE_BLOCKS_VALID_QUERY: "Kan geldige B2B-zoekopdrachten blokkeren",
   TEXT_TOO_LONG_NEEDS_REWRITE: "Te lang — herschrijven, niet afkappen",
   CLAIM_NOT_SUPPORTED: "Claim niet gedekt door landingspagina",
+  BUSINESS_EXCLUSION_LOCKED: "Vaste business-exclusion — staat altijd aan",
 };
 
 /* -------------------------------------------------------------- lexicons */
