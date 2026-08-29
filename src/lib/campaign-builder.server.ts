@@ -676,6 +676,7 @@ export async function revalidateDraftForWorkspace(opts: {
     industryName: row.industry_name,
     isIndustryCampaign: Boolean(row.industry_name),
     landingCopy: landingCopyCorpus(dataset.landing),
+    conversionDataSufficient: hasSufficientConversionData(dataset, row.funnel),
   });
 
   // Er bestaat maar één authoritative final URL: de gepubliceerde production-URL.
@@ -845,6 +846,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     industryName,
     isIndustryCampaign: Boolean(industryName),
     landingCopy: landingCopyCorpus(dataset.landing),
+    conversionDataSufficient: hasSufficientConversionData(dataset, opts.funnel),
   });
   const execution = await evaluateDraftExecution({
     ctx,
