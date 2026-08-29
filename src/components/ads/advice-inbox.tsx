@@ -46,7 +46,8 @@ import {
   isWriteAction,
   type ExecutionEligibility,
 } from "@/lib/ai-execution-guardrails";
-import { listAiAdvice, reviewAiAdvice } from "@/lib/ai-ads.functions";
+import { executeAiAdvice, listAiAdvice, reviewAiAdvice } from "@/lib/ai-ads.functions";
+import { isExecutableAdviceType } from "@/lib/ai-analyst-shared";
 
 type StatusFilter = "new" | "approved" | "rejected" | "all";
 
@@ -136,11 +137,13 @@ function AdviceCard({
   advice,
   onApprove,
   onReject,
+  onExecute,
   busy,
 }: {
   advice: AdviceRow;
   onApprove: () => void;
   onReject: () => void;
+  onExecute?: () => void;
   busy: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -208,12 +211,30 @@ function AdviceCard({
                 {write
                   ? blocked
                     ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
-                    : "Legt je intentie vast voor een latere uitvoerfase. In V1.4A voert dit niets uit."
+                    : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
                   : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
               </span>
             </div>
           )}
         </div>
+
+        {advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
+            <span>
+              {(advice.execution_eligibility ?? "REVIEW_ONLY") === "ALLOWED"
+                ? "Goedgekeurd. Je kunt deze wijziging nu in Google Ads uitvoeren; alles wordt gelogd."
+                : "Goedgekeurd, maar server-side niet uitvoerbaar. Deze wijziging blijft advies."}
+            </span>
+            <Button
+              size="sm"
+              onClick={onExecute}
+              disabled={busy || (advice.execution_eligibility ?? "REVIEW_ONLY") !== "ALLOWED"}
+            >
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+              Uitvoeren in Google Ads
+            </Button>
+          </div>
+        ) : null}
 
         <GuardrailPanel advice={advice} />
 
@@ -283,6 +304,7 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
 
   const listFn = useServerFn(listAiAdvice);
   const reviewFn = useServerFn(reviewAiAdvice);
+  const executeFn = useServerFn(executeAiAdvice);
 
   const query = useQuery({
     queryKey: ["ai-advice", status],
