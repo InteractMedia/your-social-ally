@@ -355,6 +355,11 @@ function DraftPage() {
           </CardContent>
         </Card>
 
+        {/* Gecontroleerde uitvoering richting Google Ads */}
+        <CampaignCreationPanel draft={draft} />
+
+
+
         {/* Campagne-instellingen */}
         <Card>
           <CardHeader className="pb-3">
