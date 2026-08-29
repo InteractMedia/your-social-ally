@@ -1003,6 +1003,10 @@ function ProductsEditor({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Cadeauvoorbeelden</CardTitle>
+        <p className="text-muted-foreground text-xs">
+          De volgorde van aanvinken bepaalt de weergavevolgorde op de pagina. De nummers{" "}
+          <strong>1 en 2</strong> worden het blok <strong>Twee favorieten</strong>.
+        </p>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
