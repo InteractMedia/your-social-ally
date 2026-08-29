@@ -705,6 +705,26 @@ export function applyGuardrails(
       notes.push("Commercieel woord: sluit geldige B2B-zoekopdrachten uit.");
     }
 
+    // Te generiek: losse werkwoorden/woorden als "maken" blokkeren commerciële
+    // zoekopdrachten zoals "chocolade laten maken met logo".
+    if (negToks.length === 1 && GENERIC_NEGATIVE_WORDS.includes(negToks[0]!)) {
+      flags.push("NEGATIVE_TOO_GENERIC");
+      notes.push(
+        `"${neg.text}" is te generiek als uitsluiting: gebruik de volledige woordgroep die de zoekopdracht ongeschikt maakt (bv. "zelf maken").`,
+      );
+    }
+
+    // Een negative mag nooit een beschermde commerciële zoekopdracht dekken.
+    const blocksProtected = PROTECTED_COMMERCIAL_QUERIES.filter((q) => {
+      const qt = tokens(q);
+      return negToks.length > 0 && negToks.every((t) => qt.includes(t));
+    });
+    if (blocksProtected.length > 0) {
+      flags.push("NEGATIVE_TOO_GENERIC");
+      notes.push(`Blokkeert commerciële zoekopdracht(en): ${blocksProtected.join(", ")}.`);
+    }
+
+
     const inCopy = negToks.length > 0 && negToks.every((t) => copy.includes(t));
     if (inCopy && String(neg.matchType).toUpperCase() === "BROAD") {
       flags.push("NEGATIVE_BLOCKS_VALID_QUERY");
