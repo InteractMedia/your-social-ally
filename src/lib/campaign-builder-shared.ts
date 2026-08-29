@@ -17,17 +17,26 @@ export function funnelLabel(key: string): string {
   return BUILDER_FUNNELS.find((f) => f.key === key)?.label ?? key;
 }
 
-export const DRAFT_STATUSES = ["AI_CONCEPT", "REVIEWED", "APPROVED_FOR_CREATION"] as const;
+export const DRAFT_STATUSES = [
+  "AI_CONCEPT",
+  "REVIEWED",
+  "APPROVED_FOR_CREATION",
+  "CREATE_IN_GOOGLE",
+  "CREATED",
+] as const;
 export type DraftStatus = (typeof DRAFT_STATUSES)[number];
 
 export const DRAFT_STATUS_LABELS: Record<DraftStatus, string> = {
   AI_CONCEPT: "AI concept",
   REVIEWED: "Nagekeken",
   APPROVED_FOR_CREATION: "Goedgekeurd voor aanmaak",
+  CREATE_IN_GOOGLE: "Aanmaken in Google Ads",
+  CREATED: "Aangemaakt in Google Ads",
 };
 
 export const APPROVED_NOTICE =
-  "Goedgekeurd concept — Google Ads-aanmaak nog niet actief in V1.";
+  "Goedgekeurd concept. Er wordt niets in Google Ads aangemaakt totdat je zelf op de definitieve aanmaakknop drukt.";
+
 
 /** Waar een keuze op berust. Nooit door elkaar halen met AI-confidence. */
 export const EVIDENCE_SOURCES = [
