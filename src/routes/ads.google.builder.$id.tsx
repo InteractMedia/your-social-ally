@@ -17,6 +17,8 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CampaignCreationPanel } from "@/components/ads/campaign-creation-panel";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -354,6 +356,11 @@ function DraftPage() {
             ) : null}
           </CardContent>
         </Card>
+
+        {/* Gecontroleerde uitvoering richting Google Ads */}
+        <CampaignCreationPanel draft={draft} />
+
+
 
         {/* Campagne-instellingen */}
         <Card>

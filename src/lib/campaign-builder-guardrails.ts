@@ -52,6 +52,7 @@ export const GUARDRAIL_FLAGS = [
   "REVIEW_ONLY",
   "LIKELY_B2C_INTENT",
   "NEGATIVE_BLOCKS_VALID_QUERY",
+  "NEGATIVE_TOO_GENERIC",
   "TEXT_TOO_LONG_NEEDS_REWRITE",
   "CLAIM_NOT_SUPPORTED",
   "BUSINESS_EXCLUSION_LOCKED",
@@ -66,10 +67,45 @@ export const GUARDRAIL_FLAG_LABELS: Record<GuardrailFlag, string> = {
   REVIEW_ONLY: "Alleen ter review — staat uit",
   LIKELY_B2C_INTENT: "Consumentintentie mogelijk",
   NEGATIVE_BLOCKS_VALID_QUERY: "Kan geldige B2B-zoekopdrachten blokkeren",
+  NEGATIVE_TOO_GENERIC: "Te generiek als uitsluiting — blokkeert commerciële zoekopdrachten",
   TEXT_TOO_LONG_NEEDS_REWRITE: "Te lang — herschrijven, niet afkappen",
   CLAIM_NOT_SUPPORTED: "Claim niet gedekt door landingspagina",
   BUSINESS_EXCLUSION_LOCKED: "Vaste business-exclusion — staat altijd aan",
 };
+
+/**
+ * Losse woorden die je NOOIT als (broad) negative mag gebruiken: ze zitten in
+ * commerciële zoekopdrachten zoals "chocolade laten maken met logo".
+ */
+export const GENERIC_NEGATIVE_WORDS = [
+  "maken",
+  "maakt",
+  "laten",
+  "doen",
+  "geven",
+  "sturen",
+  "versturen",
+  "bezorgen",
+  "leveren",
+  "maat",
+  "maatwerk",
+  "eigen",
+  "samenstellen",
+  "bedrukken",
+];
+
+/** Zoekopdrachten met duidelijke commerciële intentie die niet geblokkeerd mogen worden. */
+export const PROTECTED_COMMERCIAL_QUERIES = [
+  "laten maken",
+  "op maat laten maken",
+  "chocolade laten maken",
+  "snoep laten maken",
+  "geschenk laten maken",
+  "zelf samenstellen",
+  "laten bedrukken",
+  "laten bezorgen",
+];
+
 
 /* -------------------------------------------------------------- lexicons */
 
@@ -499,6 +535,9 @@ export type GuardrailReport = {
   negativeFindings: { text: string; flags: GuardrailFlag[]; enabled: boolean; note: string }[];
   assetFindings: { scope: string; text: string; limit: number; length: number; action: string }[];
   claimFindings: string[];
+  /** Correcties op de biedstrategie, bv. doel-CPA verwijderd bij te weinig data. */
+  biddingFindings: string[];
+
   counts: {
     keywordsActive: number;
     keywordsDisabled: number;
@@ -514,6 +553,12 @@ export type GuardrailContext = {
   industryName: string | null;
   isIndustryCampaign: boolean;
   landingCopy: string;
+  /**
+   * Alleen bij aantoonbaar voldoende eigen conversiedata mag een doel-CPA of
+   * doel-ROAS blijven staan. Standaard false: dan is Maximize Conversions
+   * zonder doel de startstrategie.
+   */
+  conversionDataSufficient?: boolean;
 };
 
 /**
@@ -532,6 +577,8 @@ export function applyGuardrails(
     negativeFindings: [],
     assetFindings: [],
     claimFindings: [],
+    biddingFindings: [],
+
     counts: {
       keywordsActive: 0,
       keywordsDisabled: 0,
@@ -657,6 +704,26 @@ export function applyGuardrails(
       flags.push("NEGATIVE_BLOCKS_VALID_QUERY");
       notes.push("Commercieel woord: sluit geldige B2B-zoekopdrachten uit.");
     }
+
+    // Te generiek: losse werkwoorden/woorden als "maken" blokkeren commerciële
+    // zoekopdrachten zoals "chocolade laten maken met logo".
+    if (negToks.length === 1 && GENERIC_NEGATIVE_WORDS.includes(negToks[0]!)) {
+      flags.push("NEGATIVE_TOO_GENERIC");
+      notes.push(
+        `"${neg.text}" is te generiek als uitsluiting: gebruik de volledige woordgroep die de zoekopdracht ongeschikt maakt (bv. "zelf maken").`,
+      );
+    }
+
+    // Een negative mag nooit een beschermde commerciële zoekopdracht dekken.
+    const blocksProtected = PROTECTED_COMMERCIAL_QUERIES.filter((q) => {
+      const qt = tokens(q);
+      return negToks.length > 0 && negToks.every((t) => qt.includes(t));
+    });
+    if (blocksProtected.length > 0) {
+      flags.push("NEGATIVE_TOO_GENERIC");
+      notes.push(`Blokkeert commerciële zoekopdracht(en): ${blocksProtected.join(", ")}.`);
+    }
+
 
     const inCopy = negToks.length > 0 && negToks.every((t) => copy.includes(t));
     if (inCopy && String(neg.matchType).toUpperCase() === "BROAD") {
@@ -786,7 +853,28 @@ export function applyGuardrails(
   (proposal as any).network = { ...REQUIRED_NETWORK_SETTINGS };
   (proposal as any).locationOption = REQUIRED_LOCATION_OPTION;
 
+  /* 8: geen doel-CPA/ROAS zonder voldoende eigen conversiedata */
+  const bidding = proposal.bidding as any;
+  const strategy = String(bidding?.strategy ?? "");
+  const hasTargetStrategy =
+    strategy === "MAXIMIZE_CONVERSIONS_TARGET_CPA" ||
+    strategy === "MAXIMIZE_CONVERSION_VALUE_TARGET_ROAS";
+  if (bidding && !ctx.conversionDataSufficient && (hasTargetStrategy || bidding.target != null)) {
+    const before = `${strategy}${bidding.target != null ? ` (doel ${bidding.target})` : ""}`;
+    bidding.strategy = "MAXIMIZE_CONVERSIONS";
+    bidding.target = null;
+    bidding.reasoning = `Startadvies: Maximize Conversions zonder doel-CPA wegens onvoldoende eigen conversiedata. ${bidding.reasoning ?? ""}`.trim();
+    bidding.evidence = {
+      source: "OWN_DATA",
+      note: "Te weinig eigen conversies om een betrouwbaar doel-CPA/ROAS te zetten. Eerst leerfase, daarna pas een doel.",
+    };
+    report.biddingFindings.push(
+      `${before} vervangen door Maximize Conversions zonder doel: onvoldoende eigen conversiedata.`,
+    );
+  }
+
   (proposal as any).guardrails = report;
   return { proposal, report };
 }
+
 

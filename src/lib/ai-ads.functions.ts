@@ -255,6 +255,43 @@ export const reviewAiAdvice = createServerFn({ method: "POST" })
     return { ok: true as const, error: null as string | null };
   });
 
+/**
+ * Execution V1: voert één goedgekeurd advies uit in Google Ads. Alleen na deze
+ * expliciete menselijke actie; Claude voert nooit zelf uit. Alles wordt gelogd.
+ */
+export const executeAiAdvice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) =>
+    z.object({ adviceId: z.string().uuid(), customerId: z.string().optional() }).parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const ctx = context as any;
+    const { requireUserWorkspace } = await import("./workspaces.server");
+    const { resolveCustomerId } = await import("./google-ads-accounts.server");
+    const { runApprovedAdvice } = await import("./ai-advice-execution.server");
+    const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
+
+    let customerId = "";
+    try {
+      customerId = await resolveCustomerId(ctx, data.customerId ?? null);
+    } catch (err) {
+      return { ok: false as const, error: (err as Error).message };
+    }
+
+    const res = await runApprovedAdvice({ ctx, workspaceId, adviceId: data.adviceId, customerId });
+    if (res.ok) {
+      await ctx.supabase.from("ai_advice_audit").insert({
+        workspace_id: workspaceId,
+        advice_id: data.adviceId,
+        action: "advice_executed",
+        actor_id: ctx.userId,
+        detail: { customer_id: customerId, change_log_id: res.logId ?? null },
+      });
+    }
+    return { ok: res.ok as boolean, error: res.error };
+  });
+
+
 /** Audit trail for one advice (or the workspace when no id is given). */
 export const listAiAdviceAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -57,6 +57,9 @@ Harde regels:
 - Bij een branchecampagne (er is een branche opgegeven) moet elk keyword expliciete branchecontext bevatten. Sector-neutrale keywords zoals "relatiegeschenk met logo" of "chocolade met eigen wikkel" horen bij een generieke campagne met generieke landingspagina, niet hier.
 - Een product plus personalisatie (logo, bedrukken, personaliseren, eigen wikkel) is GEEN bewijs van B2B: die woorden komen ook in consumentzoekopdrachten voor. Classificeer intent alleen als B2B bij een echte zakelijke of branche-aanwijzing, anders MIXED of B2C.
 - Negatieve keywords mogen nooit een commercieel woord generiek uitsluiten (bijvoorbeeld "kopen", "prijs", "bestellen", "offerte"): dat blokkeert geldige B2B-zoekopdrachten. Sluit alleen uit wat aantoonbaar irrelevant is, en nooit iets wat in de landingspagina of FAQ als aanbod staat. Uitzondering: de vaste business/product-exclusions hieronder mogen altijd worden uitgesloten.
+- Gebruik nooit een los, generiek woord als negative (bijvoorbeeld "maken", "laten", "bezorgen", "bedrukken"). Dat blokkeert commerciële zoekopdrachten zoals "chocolade laten maken met logo". Sluit altijd de volledige woordgroep uit die de zoekopdracht ongeschikt maakt, bijvoorbeeld "zelf maken" als PHRASE.
+- Zet alleen een doel-CPA of doel-ROAS wanneer er aantoonbaar voldoende eigen conversiedata is (richtlijn: minimaal 15 conversies met een bekende CPA). Ontbreekt die data, dan is het startadvies altijd MAXIMIZE_CONVERSIONS met target null.
+
 ${businessExclusionPromptBlock()}
 - aiConfidence = hoe zeker je bent van je eigen redenering. Dat is iets anders dan datakwaliteit; die beoordeelt het systeem zelf.
 
@@ -390,6 +393,17 @@ export function datasetUsability(dataset: any, funnel: string): DataUsability {
 }
 
 /**
+ * Voldoende eigen conversiedata voor een doel-CPA/ROAS? Google-richtlijn: pas
+ * een doel zetten na ~15-30 conversies met bekende CPA. Anders start je met
+ * Maximize Conversions zonder doel.
+ */
+export function hasSufficientConversionData(dataset: any, funnel: string): boolean {
+  const u = datasetUsability(dataset, funnel);
+  return u.keywordConversions >= 15 && u.cpaKnown && u.ownLeads >= 10;
+}
+
+
+/**
  * Deterministisch, los van AI-confidence. V1.1 weegt BRUIKBAARHEID, niet de
  * aanwezigheid van datasets: PMax-categorieën, een paar historische keywords of
  * alleen een conversieconfiguratie leiden nooit tot een hoge score.
@@ -665,6 +679,7 @@ export async function revalidateDraftForWorkspace(opts: {
     industryName: row.industry_name,
     isIndustryCampaign: Boolean(row.industry_name),
     landingCopy: landingCopyCorpus(dataset.landing),
+    conversionDataSufficient: hasSufficientConversionData(dataset, row.funnel),
   });
 
   // Er bestaat maar één authoritative final URL: de gepubliceerde production-URL.
@@ -834,6 +849,7 @@ Antwoord met uitsluitend het JSON-object volgens het schema.`;
     industryName,
     isIndustryCampaign: Boolean(industryName),
     landingCopy: landingCopyCorpus(dataset.landing),
+    conversionDataSufficient: hasSufficientConversionData(dataset, opts.funnel),
   });
   const execution = await evaluateDraftExecution({
     ctx,

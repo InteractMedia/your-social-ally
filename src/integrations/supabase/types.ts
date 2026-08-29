@@ -645,6 +645,103 @@ export type Database = {
         }
         Relationships: []
       }
+      google_ads_change_log: {
+        Row: {
+          advice_id: string | null
+          ai_reasoning: string | null
+          approved_at: string | null
+          approved_by: string | null
+          change_type: string
+          created_at: string
+          customer_id: string | null
+          data_used: Json
+          draft_id: string | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          executed_at: string | null
+          google_error: string | null
+          google_result: Json | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          proposal: Json
+          source: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          advice_id?: string | null
+          ai_reasoning?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          change_type: string
+          created_at?: string
+          customer_id?: string | null
+          data_used?: Json
+          draft_id?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          executed_at?: string | null
+          google_error?: string | null
+          google_result?: Json | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          proposal?: Json
+          source: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          advice_id?: string | null
+          ai_reasoning?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          change_type?: string
+          created_at?: string
+          customer_id?: string | null
+          data_used?: Json
+          draft_id?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          executed_at?: string | null
+          google_error?: string | null
+          google_result?: Json | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          proposal?: Json
+          source?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_ads_change_log_advice_id_fkey"
+            columns: ["advice_id"]
+            isOneToOne: false
+            referencedRelation: "ai_advice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_ads_change_log_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "search_campaign_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_ads_change_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_conversion_mappings: {
         Row: {
           created_at: string
@@ -2882,8 +2979,14 @@ export type Database = {
         Row: {
           ai_confidence: number
           approved_at: string | null
+          approved_by: string | null
           created_at: string
           created_by: string | null
+          created_in_google_at: string | null
+          creation_error: string | null
+          creation_plan: Json | null
+          creation_result: Json | null
+          creation_started_at: string | null
           data_confidence: number
           data_confidence_reasons: Json
           data_sources: Json
@@ -2892,6 +2995,10 @@ export type Database = {
           estimated_cost_usd: number | null
           fallback_reason: string | null
           funnel: string
+          google_campaign_id: string | null
+          google_campaign_name: string | null
+          google_customer_id: string | null
+          google_resource_names: Json
           id: string
           industry_id: string | null
           industry_name: string | null
@@ -2918,8 +3025,14 @@ export type Database = {
         Insert: {
           ai_confidence?: number
           approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          created_in_google_at?: string | null
+          creation_error?: string | null
+          creation_plan?: Json | null
+          creation_result?: Json | null
+          creation_started_at?: string | null
           data_confidence?: number
           data_confidence_reasons?: Json
           data_sources?: Json
@@ -2928,6 +3041,10 @@ export type Database = {
           estimated_cost_usd?: number | null
           fallback_reason?: string | null
           funnel: string
+          google_campaign_id?: string | null
+          google_campaign_name?: string | null
+          google_customer_id?: string | null
+          google_resource_names?: Json
           id?: string
           industry_id?: string | null
           industry_name?: string | null
@@ -2954,8 +3071,14 @@ export type Database = {
         Update: {
           ai_confidence?: number
           approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          created_in_google_at?: string | null
+          creation_error?: string | null
+          creation_plan?: Json | null
+          creation_result?: Json | null
+          creation_started_at?: string | null
           data_confidence?: number
           data_confidence_reasons?: Json
           data_sources?: Json
@@ -2964,6 +3087,10 @@ export type Database = {
           estimated_cost_usd?: number | null
           fallback_reason?: string | null
           funnel?: string
+          google_campaign_id?: string | null
+          google_campaign_name?: string | null
+          google_customer_id?: string | null
+          google_resource_names?: Json
           id?: string
           industry_id?: string | null
           industry_name?: string | null
