@@ -553,6 +553,12 @@ export type GuardrailContext = {
   industryName: string | null;
   isIndustryCampaign: boolean;
   landingCopy: string;
+  /**
+   * Alleen bij aantoonbaar voldoende eigen conversiedata mag een doel-CPA of
+   * doel-ROAS blijven staan. Standaard false: dan is Maximize Conversions
+   * zonder doel de startstrategie.
+   */
+  conversionDataSufficient?: boolean;
 };
 
 /**
@@ -571,6 +577,8 @@ export function applyGuardrails(
     negativeFindings: [],
     assetFindings: [],
     claimFindings: [],
+    biddingFindings: [],
+
     counts: {
       keywordsActive: 0,
       keywordsDisabled: 0,
