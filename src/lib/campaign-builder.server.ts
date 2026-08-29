@@ -390,6 +390,17 @@ export function datasetUsability(dataset: any, funnel: string): DataUsability {
 }
 
 /**
+ * Voldoende eigen conversiedata voor een doel-CPA/ROAS? Google-richtlijn: pas
+ * een doel zetten na ~15-30 conversies met bekende CPA. Anders start je met
+ * Maximize Conversions zonder doel.
+ */
+export function hasSufficientConversionData(dataset: any, funnel: string): boolean {
+  const u = datasetUsability(dataset, funnel);
+  return u.keywordConversions >= 15 && u.cpaKnown && u.ownLeads >= 10;
+}
+
+
+/**
  * Deterministisch, los van AI-confidence. V1.1 weegt BRUIKBAARHEID, niet de
  * aanwezigheid van datasets: PMax-categorieën, een paar historische keywords of
  * alleen een conversieconfiguratie leiden nooit tot een hoge score.
