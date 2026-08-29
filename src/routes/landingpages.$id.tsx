@@ -1014,10 +1014,15 @@ function ProductsEditor({
                 onClick={() =>
                   setIds(active ? ids.filter((x) => x !== p.id) : [...ids, p.id])
                 }
-                className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                className={`relative rounded-lg border p-3 text-left text-sm transition-colors ${
                   active ? "border-primary bg-primary/5" : "hover:bg-accent"
                 }`}
               >
+                {active && (
+                  <span className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
+                    {ids.indexOf(p.id) + 1}
+                  </span>
+                )}
                 <p className="font-medium">{p.name}</p>
                 {p.short_text && (
                   <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{p.short_text}</p>
