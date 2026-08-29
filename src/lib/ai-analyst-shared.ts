@@ -47,7 +47,25 @@ export const ADVICE_TYPE_LABELS: Record<AdviceType, string> = {
   NO_ACTION: "Geen actie nodig",
 };
 
+/**
+ * Execution V1: de adviestypes die SocialCockpit na menselijke goedkeuring zelf
+ * in Google Ads kan uitvoeren. Al het andere blijft advies.
+ */
+export const EXECUTABLE_ADVICE_TYPES: AdviceType[] = [
+  "NEGATIVE_KEYWORD",
+  "PAUSE_KEYWORD",
+  "NEW_KEYWORD",
+  "INCREASE_BUDGET",
+  "DECREASE_BUDGET",
+  "PAUSE_CAMPAIGN",
+];
+
+export function isExecutableAdviceType(type: string): boolean {
+  return (EXECUTABLE_ADVICE_TYPES as string[]).includes(type);
+}
+
 /** Advice types that never propose a Google Ads change, only insight. */
+
 export const INSIGHT_ONLY_TYPES: AdviceType[] = [
   "TRACKING_ISSUE",
   "DATA_QUALITY_ISSUE",
