@@ -232,13 +232,13 @@ export async function createCampaignInGoogle(opts: {
       positiveGeoTargetType: plan.locationOption === "PRESENCE" ? "PRESENCE" : "PRESENCE_OR_INTEREST",
       negativeGeoTargetType: "PRESENCE",
     },
+    // Verplicht veld sinds de EU-regels voor politieke advertenties. Wij adverteren
+    // nooit politiek, dus dit staat vast op "bevat geen politieke advertenties".
+    containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
     ...biddingPayload(plan.biddingStrategy, plan.biddingTarget),
   };
-  if (plan.conversionActionId) {
-    campaign.selectiveOptimization = {
-      conversionActions: [`customers/${cid}/conversionActions/${plan.conversionActionId}`],
-    };
-  }
+  // selectiveOptimization geldt niet voor Search-campagnes; het bieddoel wordt na
+  // aanmaak vastgelegd via het campagne-conversiedoel (stap 2b).
   const campaignRes = await mutate(cid, "campaigns", [{ create: campaign }], { ...opts, label: "Search-campagne" });
   const campaignResource = campaignRes.resourceNames[0]!;
   const campaignId = campaignResource.split("/").pop()!;
