@@ -15,7 +15,7 @@ export async function mutate(
   customerId: string,
   resource: string,
   operations: unknown[],
-  opts?: { loginCustomerId?: string | null },
+  opts?: { loginCustomerId?: string | null; label?: string },
 ): Promise<MutateResult> {
   const cid = customerId.replace(/[^0-9]/g, "");
   if (!cid) throw new GoogleAdsApiError("Geen Google Ads klantaccount geselecteerd.", 412);
@@ -27,7 +27,10 @@ export async function mutate(
     validateOnly: false,
   }, opts);
 
-  if (!res.ok) throw new GoogleAdsApiError(apiMessage(res.raw, res.status), res.status);
+  if (!res.ok) {
+    const where = opts?.label ? `${opts.label} (${resource})` : resource;
+    throw new GoogleAdsApiError(`Stap "${where}" mislukte — ${apiMessage(res.raw, res.status)}`, res.status);
+  }
   const results = (res.json as any)?.results ?? [];
   return { resourceNames: results.map((r: any) => r?.resourceName).filter(Boolean), raw: res.json };
 }
