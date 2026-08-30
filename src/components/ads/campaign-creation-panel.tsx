@@ -167,11 +167,28 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
                     <p className="font-medium">
                       Typ de campagnenaam om te bevestigen: {plan.campaignName}
                     </p>
-                    <Input
-                      value={confirmName}
-                      onChange={(e) => setConfirmName(e.target.value)}
-                      placeholder={plan.campaignName}
-                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        className="max-w-md"
+                        value={confirmName}
+                        onChange={(e) => setConfirmName(e.target.value)}
+                        placeholder={plan.campaignName}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => setConfirmName(plan.campaignName)}
+                      >
+                        Naam invullen
+                      </Button>
+                    </div>
+                    {!nameMatches ? (
+                      <p className="text-muted-foreground">
+                        De knop wordt actief zodra de naam exact overeenkomt (hoofdletters maken niet
+                        uit).
+                      </p>
+                    ) : null}
                     <Button size="sm" onClick={() => create.mutate()} disabled={!canCreate}>
                       {create.isPending ? (
                         <Loader2 className="mr-1 h-4 w-4 animate-spin" />
