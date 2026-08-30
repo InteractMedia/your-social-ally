@@ -5,7 +5,7 @@
  */
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_ads";
-const API_VERSION = "v24";
+const API_VERSION = "v25";
 
 export class GoogleAdsApiError extends Error {
   status: number;
@@ -129,10 +129,21 @@ function extractApiMessage(body: string, status: number): string {
   try {
     const parsed = JSON.parse(body);
     const err = Array.isArray(parsed) ? parsed[0]?.error : parsed?.error;
-    const detail =
-      err?.details?.[0]?.errors?.[0]?.message ??
-      err?.message ??
-      (typeof parsed === "string" ? parsed : null);
+    const errors: any[] = err?.details?.[0]?.errors ?? [];
+    const parts = errors
+      .map((e) => {
+        const code = e?.errorCode ? Object.entries(e.errorCode)[0] : null;
+        const field = (e?.location?.fieldPathElements ?? [])
+          .map((f: any) => f?.fieldName)
+          .filter(Boolean)
+          .join(".");
+        const bits = [e?.message, code ? `${code[0]}=${code[1]}` : null, field ? `veld: ${field}` : null]
+          .filter(Boolean)
+          .join(" | ");
+        return bits;
+      })
+      .filter(Boolean);
+    const detail = parts.length ? parts.join(" // ") : err?.message ?? (typeof parsed === "string" ? parsed : null);
     if (detail) return `Google Ads API [${status}]: ${detail}`;
   } catch {
     /* fall through */

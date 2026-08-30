@@ -210,7 +210,7 @@ export async function createCampaignInGoogle(opts: {
         },
       },
     ],
-    opts,
+    { ...opts, label: "Campagnebudget" },
   );
   const budgetResource = budgetRes.resourceNames[0]!;
   resources.campaignBudget = budgetResource;
@@ -239,7 +239,7 @@ export async function createCampaignInGoogle(opts: {
       conversionActions: [`customers/${cid}/conversionActions/${plan.conversionActionId}`],
     };
   }
-  const campaignRes = await mutate(cid, "campaigns", [{ create: campaign }], opts);
+  const campaignRes = await mutate(cid, "campaigns", [{ create: campaign }], { ...opts, label: "Search-campagne" });
   const campaignResource = campaignRes.resourceNames[0]!;
   const campaignId = campaignResource.split("/").pop()!;
   resources.campaign = campaignResource;
@@ -268,7 +268,7 @@ export async function createCampaignInGoogle(opts: {
       },
     });
   }
-  const critRes = await mutate(cid, "campaignCriteria", criteria, opts);
+  const critRes = await mutate(cid, "campaignCriteria", criteria, { ...opts, label: "Locaties, taal en uitsluitingen" });
   resources.campaignCriteria = critRes.resourceNames;
   log.push({
     step: "Locaties, taal en uitsluitingen",
@@ -291,7 +291,7 @@ export async function createCampaignInGoogle(opts: {
           },
         },
       ],
-      opts,
+      { ...opts, label: `Advertentiegroep ${g.name}` },
     );
     const adGroup = agRes.resourceNames[0]!;
     adGroupResources.push(adGroup);
@@ -302,7 +302,7 @@ export async function createCampaignInGoogle(opts: {
       g.keywords.map((k) => ({
         create: { adGroup, status: "ENABLED", keyword: { text: k.text, matchType: k.matchType } },
       })),
-      opts,
+      { ...opts, label: "Keywords" },
     );
 
     await mutate(
@@ -323,7 +323,7 @@ export async function createCampaignInGoogle(opts: {
           },
         },
       ],
-      opts,
+      { ...opts, label: "Zoekadvertentie" },
     );
     log.push({
       step: `Advertentiegroep ${g.name}`,
@@ -343,7 +343,7 @@ export async function createCampaignInGoogle(opts: {
     ...plan.callouts.map((c) => ({ create: { calloutAsset: { calloutText: c.slice(0, 25) } } })),
   ];
   if (assetOps.length > 0) {
-    const assetRes = await mutate(cid, "assets", assetOps, opts);
+    const assetRes = await mutate(cid, "assets", assetOps, { ...opts, label: "Sitelinks/callouts aanmaken" });
     const names = assetRes.resourceNames;
     const links = names.slice(0, plan.sitelinks.length);
     const calls = names.slice(plan.sitelinks.length);
@@ -354,7 +354,7 @@ export async function createCampaignInGoogle(opts: {
         ...links.map((asset) => ({ create: { campaign: campaignResource, asset, fieldType: "SITELINK" } })),
         ...calls.map((asset) => ({ create: { campaign: campaignResource, asset, fieldType: "CALLOUT" } })),
       ],
-      opts,
+      { ...opts, label: "Sitelinks/callouts koppelen" },
     );
     resources.assets = names;
     log.push({ step: "Sitelinks en callouts", result: `${names.length} assets gekoppeld` });
