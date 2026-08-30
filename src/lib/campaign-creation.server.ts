@@ -368,9 +368,11 @@ export async function createCampaignInGoogle(opts: {
   resources.adGroups = adGroupResources;
 
   /* 5. sitelinks en callouts */
-  const splitDescription = (raw: string): { description1: string; description2: string } | null => {
+  const splitDescription = (raw: string): { description1: string; description2: string } => {
     const text = (raw || "").trim().replace(/\s+/g, " ");
-    if (!text) return null;
+    const fallback1 = "Bekijk alle mogelijkheden";
+    const fallback2 = "Vraag vrijblijvend informatie";
+    if (!text) return { description1: fallback1, description2: fallback2 };
     const words = text.split(" ");
     let line1 = "";
     let i = 0;
@@ -380,11 +382,7 @@ export async function createCampaignInGoogle(opts: {
       line1 = next;
     }
     if (!line1) line1 = text.slice(0, 35);
-    let line2 = words.slice(i).join(" ").slice(0, 35).trim();
-    if (!line2) {
-      // Google vereist beide regels: laat de tweede weg door beide te droppen
-      return null;
-    }
+    const line2 = words.slice(i).join(" ").slice(0, 35).trim() || fallback2;
     return { description1: line1, description2: line2 };
   };
 
@@ -394,7 +392,7 @@ export async function createCampaignInGoogle(opts: {
       return {
         create: {
           finalUrls: [plan.finalUrl],
-          sitelinkAsset: { linkText: s.text.slice(0, 25), ...(desc ?? {}) },
+          sitelinkAsset: { linkText: s.text.slice(0, 25), ...desc },
         },
       };
     }),
