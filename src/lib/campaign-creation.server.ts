@@ -8,7 +8,7 @@
 
 import type { BuilderProposal, SearchCampaignDraftRow } from "./campaign-builder-shared";
 import type { CreationPlan, CreationPlanStep } from "./campaign-creation-shared";
-import { GoogleAdsApiError } from "./google-ads.server";
+import { gaql, GoogleAdsApiError } from "./google-ads.server";
 import {
   biddingPayload,
   euros,
@@ -232,18 +232,53 @@ export async function createCampaignInGoogle(opts: {
       positiveGeoTargetType: plan.locationOption === "PRESENCE" ? "PRESENCE" : "PRESENCE_OR_INTEREST",
       negativeGeoTargetType: "PRESENCE",
     },
+    // Verplicht veld sinds de EU-regels voor politieke advertenties. Wij adverteren
+    // nooit politiek, dus dit staat vast op "bevat geen politieke advertenties".
+    containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
     ...biddingPayload(plan.biddingStrategy, plan.biddingTarget),
   };
-  if (plan.conversionActionId) {
-    campaign.selectiveOptimization = {
-      conversionActions: [`customers/${cid}/conversionActions/${plan.conversionActionId}`],
-    };
-  }
+  // selectiveOptimization geldt niet voor Search-campagnes; het bieddoel wordt na
+  // aanmaak vastgelegd via het campagne-conversiedoel (stap 2b).
   const campaignRes = await mutate(cid, "campaigns", [{ create: campaign }], { ...opts, label: "Search-campagne" });
   const campaignResource = campaignRes.resourceNames[0]!;
   const campaignId = campaignResource.split("/").pop()!;
   resources.campaign = campaignResource;
   log.push({ step: "Search-campagne", result: campaignResource });
+
+  /* 2b. bieddoel: zet de gekozen conversieactie biedbaar (niet fataal) */
+  if (plan.conversionActionId) {
+    try {
+      const rows = await gaql(
+        cid,
+        `SELECT conversion_action.category, conversion_action.origin
+         FROM conversion_action
+         WHERE conversion_action.id = ${Number(plan.conversionActionId)}`,
+      );
+      const ca = (rows[0] as any)?.conversionAction;
+      if (ca?.category && ca?.origin) {
+        await mutate(
+          cid,
+          "campaignConversionGoals",
+          [
+            {
+              update: {
+                resourceName: `customers/${cid}/campaignConversionGoals/${campaignId}~${ca.category}~${ca.origin}`,
+                biddable: true,
+              },
+              updateMask: "biddable",
+            },
+          ],
+          { ...opts, label: "Campagne-conversiedoel" },
+        );
+        log.push({ step: "Conversiedoel", result: `${plan.conversionGoalName} biedbaar gemaakt` });
+      }
+    } catch (err) {
+      log.push({
+        step: "Conversiedoel",
+        result: `niet automatisch gezet (${(err as Error).message}); campagne volgt de accountdoelen`,
+      });
+    }
+  }
 
   /* 3. locaties, taal en campagne-uitsluitingen */
   const criteria: unknown[] = [];
