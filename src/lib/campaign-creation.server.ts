@@ -210,7 +210,7 @@ export async function createCampaignInGoogle(opts: {
         },
       },
     ],
-    opts,
+    { ...opts, label: "Campagnebudget" },
   );
   const budgetResource = budgetRes.resourceNames[0]!;
   resources.campaignBudget = budgetResource;
@@ -291,7 +291,7 @@ export async function createCampaignInGoogle(opts: {
           },
         },
       ],
-      opts,
+      { ...{ ...{ ...opts, label: "Advertentiegroep" }, label: "Locaties, taal en uitsluitingen" }, label: "Search-campagne" },
     );
     const adGroup = agRes.resourceNames[0]!;
     adGroupResources.push(adGroup);
@@ -302,7 +302,7 @@ export async function createCampaignInGoogle(opts: {
       g.keywords.map((k) => ({
         create: { adGroup, status: "ENABLED", keyword: { text: k.text, matchType: k.matchType } },
       })),
-      opts,
+      { ...opts, label: "Keywords" },
     );
 
     await mutate(
@@ -323,7 +323,7 @@ export async function createCampaignInGoogle(opts: {
           },
         },
       ],
-      opts,
+      { ...opts, label: "Zoekadvertentie" },
     );
     log.push({
       step: `Advertentiegroep ${g.name}`,
@@ -354,7 +354,7 @@ export async function createCampaignInGoogle(opts: {
         ...links.map((asset) => ({ create: { campaign: campaignResource, asset, fieldType: "SITELINK" } })),
         ...calls.map((asset) => ({ create: { campaign: campaignResource, asset, fieldType: "CALLOUT" } })),
       ],
-      opts,
+      { ...{ ...opts, label: "Sitelinks/callouts koppelen" }, label: "Sitelinks/callouts aanmaken" },
     );
     resources.assets = names;
     log.push({ step: "Sitelinks en callouts", result: `${names.length} assets gekoppeld` });
