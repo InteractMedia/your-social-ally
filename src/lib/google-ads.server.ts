@@ -5,7 +5,7 @@
  */
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_ads";
-const API_VERSION = "v24";
+const API_VERSION = "v25";
 
 export class GoogleAdsApiError extends Error {
   status: number;
