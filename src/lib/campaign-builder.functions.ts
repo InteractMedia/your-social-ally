@@ -165,36 +165,20 @@ export const setSearchDraftStatus = createServerFn({ method: "POST" })
     const workspaceId = await requireUserWorkspace(ctx.supabase, ctx.userId, ctx.claims?.email);
 
     // V1.1 final URL guardrail: goedkeuren mag alleen met een gepubliceerde,
-    // absolute en bereikbare landingspagina.
+    // absolute en bereikbare landingspagina. Eerst deterministisch
+    // hervalideren (guardrails toepassen op de huidige, mogelijk handmatig
+    // bewerkte versie), daarna beoordelen — nooit op een verouderd oordeel.
     if (data.status === "APPROVED_FOR_CREATION") {
-      const { evaluateDraftExecution } = await import("./campaign-builder.server");
-      const { data: row } = await ctx.supabase
-        .from("search_campaign_drafts")
-        .select("landing_page_id, landing_page_url")
-        .eq("workspace_id", workspaceId)
-        .eq("id", data.id)
-        .maybeSingle();
-      if (!row) return { ok: false as const, error: "Concept niet gevonden.", executed: false as const };
-
-      const { data: page } = await ctx.supabase
-        .from("landing_pages")
-        .select("status")
-        .eq("id", row.landing_page_id)
-        .maybeSingle();
-
-      const execution = await evaluateDraftExecution({
-        ctx,
-        workspaceId,
-        landingPageId: row.landing_page_id,
-        landingStatus: page?.status ?? null,
-        url: row.landing_page_url,
-        funnel: row.funnel,
-        proposal: row.proposal as any,
-      });
-      if (execution.eligibility !== "ALLOWED") {
+      const { revalidateDraftForWorkspace } = await import("./campaign-builder.server");
+      const revalidated = await revalidateDraftForWorkspace({ ctx, workspaceId, draftId: data.id });
+      if (!revalidated.ok) {
+        return { ok: false as const, error: revalidated.error, executed: false as const };
+      }
+      const execution = revalidated.execution;
+      if (!execution || execution.eligibility !== "ALLOWED") {
         return {
           ok: false as const,
-          error: `Goedkeuren geblokkeerd: ${execution.blockers.join(" ")}`,
+          error: `Goedkeuren geblokkeerd: ${(execution?.blockers ?? ["onbekende reden"]).join(" ")}`,
           executed: false as const,
         };
       }
