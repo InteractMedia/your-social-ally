@@ -46,7 +46,10 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
   });
 
   const create = useMutation({
-    mutationFn: () => createFn({ data: { id: draft.id, confirmCampaignName: confirmName.trim() } }),
+    mutationFn: () =>
+      createFn({
+        data: { id: draft.id, confirmCampaignName: (plan?.campaignName ?? confirmName).trim() },
+      }),
     onSuccess: (res: any) => {
       if (!res.ok) return toast.error(res.error ?? "Aanmaken mislukt");
       toast.success("Campagne aangemaakt in Google Ads — gepauzeerd gestart");
