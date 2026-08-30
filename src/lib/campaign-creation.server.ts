@@ -368,15 +368,39 @@ export async function createCampaignInGoogle(opts: {
   resources.adGroups = adGroupResources;
 
   /* 5. sitelinks en callouts */
+  const splitDescription = (raw: string): { description1: string; description2: string } | null => {
+    const text = (raw || "").trim().replace(/\s+/g, " ");
+    if (!text) return null;
+    const words = text.split(" ");
+    let line1 = "";
+    let i = 0;
+    for (; i < words.length; i++) {
+      const next = line1 ? `${line1} ${words[i]}` : words[i];
+      if (next.length > 35) break;
+      line1 = next;
+    }
+    if (!line1) line1 = text.slice(0, 35);
+    let line2 = words.slice(i).join(" ").slice(0, 35).trim();
+    if (!line2) {
+      // Google vereist beide regels: laat de tweede weg door beide te droppen
+      return null;
+    }
+    return { description1: line1, description2: line2 };
+  };
+
   const assetOps: unknown[] = [
-    ...plan.sitelinks.map((s) => ({
-      create: {
-        finalUrls: [plan.finalUrl],
-        sitelinkAsset: { linkText: s.text.slice(0, 25), description1: s.description.slice(0, 35) },
-      },
-    })),
+    ...plan.sitelinks.map((s) => {
+      const desc = splitDescription(s.description);
+      return {
+        create: {
+          finalUrls: [plan.finalUrl],
+          sitelinkAsset: { linkText: s.text.slice(0, 25), ...(desc ?? {}) },
+        },
+      };
+    }),
     ...plan.callouts.map((c) => ({ create: { calloutAsset: { calloutText: c.slice(0, 25) } } })),
   ];
+
   if (assetOps.length > 0) {
     const assetRes = await mutate(cid, "assets", assetOps, { ...opts, label: "Sitelinks/callouts aanmaken" });
     const names = assetRes.resourceNames;
