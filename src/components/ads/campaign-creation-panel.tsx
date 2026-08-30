@@ -64,7 +64,7 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
   const canCreate = Boolean(plan && plan.blockers.length === 0 && nameMatches && !create.isPending);
 
   return (
-    <Card>
+    <Card id="campaign-creation" className="scroll-mt-6">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Rocket className="h-4 w-4" /> Aanmaken in Google Ads
