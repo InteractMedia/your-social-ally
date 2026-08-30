@@ -217,8 +217,26 @@ export async function createCampaignInGoogle(opts: {
   log.push({ step: "Campagnebudget", result: budgetResource });
 
   /* 2. campagne */
+  // Google weigert een naam die al bij een actieve/gepauzeerde campagne hoort.
+  // Bij een dubbele naam voegen we een tijdstempel toe zodat de aanmaak doorgaat.
+  let campaignName = plan.campaignName;
+  try {
+    const existing = await gaql(
+      cid,
+      `SELECT campaign.name FROM campaign WHERE campaign.status IN ('ENABLED','PAUSED')`,
+    );
+    const taken = new Set(
+      existing.map((r: any) => String(r?.campaign?.name ?? "").trim().toLowerCase()).filter(Boolean),
+    );
+    if (taken.has(campaignName.trim().toLowerCase())) {
+      campaignName = `${plan.campaignName} ${stamp}`;
+    }
+  } catch {
+    /* niet fataal: bij een leesfout proberen we de originele naam */
+  }
   const campaign: Record<string, unknown> = {
-    name: plan.campaignName,
+    name: campaignName,
+
     status: "PAUSED",
     advertisingChannelType: "SEARCH",
     campaignBudget: budgetResource,
