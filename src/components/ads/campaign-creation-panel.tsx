@@ -46,7 +46,10 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
   });
 
   const create = useMutation({
-    mutationFn: () => createFn({ data: { id: draft.id, confirmCampaignName: confirmName.trim() } }),
+    mutationFn: () =>
+      createFn({
+        data: { id: draft.id, confirmCampaignName: (plan?.campaignName ?? confirmName).trim() },
+      }),
     onSuccess: (res: any) => {
       if (!res.ok) return toast.error(res.error ?? "Aanmaken mislukt");
       toast.success("Campagne aangemaakt in Google Ads — gepauzeerd gestart");
@@ -60,7 +63,9 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
 
   const created = Boolean(draft.google_campaign_id);
   const approved = draft.status === "APPROVED_FOR_CREATION";
-  const nameMatches = plan ? confirmName.trim() === plan.campaignName.trim() : false;
+  const nameMatches = plan
+    ? confirmName.trim().toLowerCase() === plan.campaignName.trim().toLowerCase()
+    : false;
   const canCreate = Boolean(plan && plan.blockers.length === 0 && nameMatches && !create.isPending);
 
   return (
@@ -162,11 +167,28 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
                     <p className="font-medium">
                       Typ de campagnenaam om te bevestigen: {plan.campaignName}
                     </p>
-                    <Input
-                      value={confirmName}
-                      onChange={(e) => setConfirmName(e.target.value)}
-                      placeholder={plan.campaignName}
-                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        className="max-w-md"
+                        value={confirmName}
+                        onChange={(e) => setConfirmName(e.target.value)}
+                        placeholder={plan.campaignName}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => setConfirmName(plan.campaignName)}
+                      >
+                        Naam invullen
+                      </Button>
+                    </div>
+                    {!nameMatches ? (
+                      <p className="text-muted-foreground">
+                        De knop wordt actief zodra de naam exact overeenkomt (hoofdletters maken niet
+                        uit).
+                      </p>
+                    ) : null}
                     <Button size="sm" onClick={() => create.mutate()} disabled={!canCreate}>
                       {create.isPending ? (
                         <Loader2 className="mr-1 h-4 w-4 animate-spin" />
