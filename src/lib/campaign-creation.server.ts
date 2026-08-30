@@ -245,6 +245,41 @@ export async function createCampaignInGoogle(opts: {
   resources.campaign = campaignResource;
   log.push({ step: "Search-campagne", result: campaignResource });
 
+  /* 2b. bieddoel: zet de gekozen conversieactie biedbaar (niet fataal) */
+  if (plan.conversionActionId) {
+    try {
+      const rows = await gaql(
+        cid,
+        `SELECT conversion_action.category, conversion_action.origin
+         FROM conversion_action
+         WHERE conversion_action.id = ${Number(plan.conversionActionId)}`,
+      );
+      const ca = (rows[0] as any)?.conversionAction;
+      if (ca?.category && ca?.origin) {
+        await mutate(
+          cid,
+          "campaignConversionGoals",
+          [
+            {
+              update: {
+                resourceName: `customers/${cid}/campaignConversionGoals/${campaignId}~${ca.category}~${ca.origin}`,
+                biddable: true,
+              },
+              updateMask: "biddable",
+            },
+          ],
+          { ...opts, label: "Campagne-conversiedoel" },
+        );
+        log.push({ step: "Conversiedoel", result: `${plan.conversionGoalName} biedbaar gemaakt` });
+      }
+    } catch (err) {
+      log.push({
+        step: "Conversiedoel",
+        result: `niet automatisch gezet (${(err as Error).message}); campagne volgt de accountdoelen`,
+      });
+    }
+  }
+
   /* 3. locaties, taal en campagne-uitsluitingen */
   const criteria: unknown[] = [];
   for (const loc of plan.locations) {
