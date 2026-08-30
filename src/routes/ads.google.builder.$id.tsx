@@ -133,11 +133,16 @@ function DraftPage() {
   const setStatus = useMutation({
     mutationFn: (status: "AI_CONCEPT" | "REVIEWED" | "APPROVED_FOR_CREATION") =>
       statusFn({ data: { id, status } }),
-    onSuccess: (res) => {
+    onSuccess: async (res, status) => {
       if (!res.ok) return toast.error(res.error ?? "Status wijzigen mislukt");
-      toast.success(APPROVED_NOTICE);
-      qc.invalidateQueries({ queryKey: ["builder-draft", id] });
-      qc.invalidateQueries({ queryKey: ["builder-drafts"] });
+      toast.success(status === "APPROVED_FOR_CREATION" ? "Concept goedgekeurd. Ga verder met de definitieve samenvatting." : "Status bijgewerkt");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["builder-draft", id] }),
+        qc.invalidateQueries({ queryKey: ["builder-drafts"] }),
+      ]);
+      if (status === "APPROVED_FOR_CREATION") {
+        document.getElementById("campaign-creation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -214,10 +219,12 @@ function DraftPage() {
       />
 
       <div className="space-y-6">
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>{APPROVED_NOTICE}</p>
-        </div>
+        {draft.status === "APPROVED_FOR_CREATION" ? (
+          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-900 dark:text-emerald-200">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{APPROVED_NOTICE} Ga hieronder verder met <strong>Toon definitieve samenvatting</strong>.</p>
+          </div>
+        ) : null}
 
         {/* Status + confidence */}
         <Card>
@@ -305,16 +312,17 @@ function DraftPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => setStatus.mutate("REVIEWED")}
-                disabled={setStatus.isPending}
+                disabled={setStatus.isPending || draft.status === "APPROVED_FOR_CREATION"}
               >
                 Markeer als nagekeken
               </Button>
               <Button
                 size="sm"
                 onClick={() => setStatus.mutate("APPROVED_FOR_CREATION")}
-                disabled={setStatus.isPending}
+                disabled={setStatus.isPending || draft.status === "APPROVED_FOR_CREATION"}
               >
-                <CheckCircle2 className="mr-1 h-4 w-4" /> Concept goedkeuren
+                <CheckCircle2 className="mr-1 h-4 w-4" />
+                {draft.status === "APPROVED_FOR_CREATION" ? "Concept is goedgekeurd" : "Concept goedkeuren"}
               </Button>
               <Button
                 size="sm"
