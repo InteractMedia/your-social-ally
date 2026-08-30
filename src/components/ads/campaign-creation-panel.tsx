@@ -60,7 +60,9 @@ export function CampaignCreationPanel({ draft }: { draft: SearchCampaignDraftRow
 
   const created = Boolean(draft.google_campaign_id);
   const approved = draft.status === "APPROVED_FOR_CREATION";
-  const nameMatches = plan ? confirmName.trim() === plan.campaignName.trim() : false;
+  const nameMatches = plan
+    ? confirmName.trim().toLowerCase() === plan.campaignName.trim().toLowerCase()
+    : false;
   const canCreate = Boolean(plan && plan.blockers.length === 0 && nameMatches && !create.isPending);
 
   return (
