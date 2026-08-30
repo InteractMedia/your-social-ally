@@ -121,9 +121,11 @@ function BuilderPage() {
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            V1 maakt uitsluitend concepten. Ook een goedgekeurd concept wordt niet in Google Ads
-            aangemaakt of gewijzigd.
+            Concepten worden nooit automatisch uitgevoerd. Na goedkeuring kun je het concept in het
+            conceptdetail bij <strong>Aanmaken in Google Ads</strong> zelf aanmaken — altijd
+            gepauzeerd, na bevestiging van de campagnenaam.
           </p>
+
         </div>
 
         <Card>
