@@ -8,7 +8,7 @@
 
 import type { BuilderProposal, SearchCampaignDraftRow } from "./campaign-builder-shared";
 import type { CreationPlan, CreationPlanStep } from "./campaign-creation-shared";
-import { GoogleAdsApiError } from "./google-ads.server";
+import { gaql, GoogleAdsApiError } from "./google-ads.server";
 import {
   biddingPayload,
   euros,
