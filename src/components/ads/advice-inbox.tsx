@@ -352,6 +352,7 @@ function AdviceCard({
 
 export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
   const [status, setStatus] = useState<StatusFilter>("new");
+  const [scope, setScope] = useState<ScopeFilter>("ads");
   const [rejecting, setRejecting] = useState<AdviceRow | null>(null);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -360,6 +361,8 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
   const listFn = useServerFn(listAiAdvice);
   const reviewFn = useServerFn(reviewAiAdvice);
   const executeFn = useServerFn(executeAiAdvice);
+  const pagesFn = useServerFn(listLandingPages);
+
 
   // Execution V1: pas na expliciete menselijke goedkeuring én deze klik.
   const execute = useMutation({
