@@ -364,7 +364,7 @@ export async function hasPrimaryConversionAction(customerId: string): Promise<bo
 export async function campaignsMissingPrimaryConversion(
   customerId: string,
   campaignIds?: string[],
-): Promise<Set<string> | null> {
+): Promise<Map<string, string[]> | null> {
   try {
     const primaryRows = await gaql(
       customerId,
@@ -397,10 +397,10 @@ export async function campaignsMissingPrimaryConversion(
       }
     }
 
-    const missing = new Set<string>();
+    const missing = new Map<string, string[]>();
     for (const [id, categories] of biddableByCampaign) {
-      const covered = [...categories].some((c) => primaryCategories.has(c));
-      if (!covered) missing.add(id);
+      const uncovered = [...categories].filter((c) => !primaryCategories.has(c));
+      if (categories.size === 0 || uncovered.length > 0) missing.set(id, uncovered.sort());
     }
     return missing;
   } catch (err) {
@@ -408,3 +408,34 @@ export async function campaignsMissingPrimaryConversion(
     return null;
   }
 }
+
+const GOAL_CATEGORY_LABELS: Record<string, string> = {
+  DEFAULT: "Overig",
+  PAGE_VIEW: "Paginaweergave",
+  SIGNUP: "Aanmelding",
+  SUBMIT_LEAD_FORM: "Leadformulier",
+  CONTACT: "Contact",
+  BOOK_APPOINTMENT: "Afspraak",
+  REQUEST_QUOTE: "Offerteaanvraag",
+  GET_DIRECTIONS: "Routebeschrijving",
+  OUTBOUND_CLICK: "Uitgaande klik",
+  ADD_TO_CART: "Toevoegen aan winkelwagen",
+  BEGIN_CHECKOUT: "Start afrekenen",
+  PURCHASE: "Aankoop",
+  SUBSCRIBE_PAID: "Betaald abonnement",
+  PHONE_CALL_LEAD: "Telefonische lead",
+  DOWNLOAD: "Download",
+  ENGAGEMENT: "Interactie",
+  UNKNOWN: "Onbekend",
+};
+
+/** Waarschuwing met de concrete doelen die nog geen primaire conversieactie hebben. */
+export function missingPrimaryConversionReason(categories: string[]): CampaignHealthReason {
+  if (categories.length === 0) return MISSING_PRIMARY_CONVERSION_REASON;
+  const names = categories.map((c) => GOAL_CATEGORY_LABELS[c] ?? c.replace(/_/g, " ").toLowerCase());
+  return {
+    ...MISSING_PRIMARY_CONVERSION_REASON,
+    hint: `Zonder primaire (biedbare) conversieactie optimaliseert Google niet op dit doel. Deze conversiedoelen van de campagne hebben nog geen actieve primaire conversieactie: ${names.join(", ")}. Zet in Google Ads bij Doelen per doel minimaal één conversieactie op primair, of verwijder het doel uit de campagne.`,
+  };
+}
+

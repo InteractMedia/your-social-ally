@@ -8,6 +8,7 @@ import {
   MISSING_PRIMARY_CONVERSION_REASON,
   campaignHealth,
   campaignsMissingPrimaryConversion,
+  missingPrimaryConversionReason,
   channelLabel,
   dateFilter,
   defaultCustomerId,
@@ -160,10 +161,13 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
       const campaigns = (structure as any[]).map((row) => {
         const c = row.campaign ?? {};
         const b = row.campaignBudget ?? {};
+        const uncovered = missingPerCampaign?.get(String(c.id)) ?? null;
         const missesConversion =
-          missingPerCampaign !== null ? missingPerCampaign.has(String(c.id)) : hasPrimary === false;
+          missingPerCampaign !== null ? uncovered !== null : hasPrimary === false;
         const extra =
-          missesConversion && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
+          missesConversion && c.status !== "REMOVED"
+            ? [uncovered ? missingPrimaryConversionReason(uncovered) : MISSING_PRIMARY_CONVERSION_REASON]
+            : [];
 
         return {
           id: String(c.id),
@@ -227,8 +231,9 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         hasPrimaryConversionAction(cid),
         campaignsMissingPrimaryConversion(cid, [campaignId]),
       ]);
+      const uncoveredGoals = missingPerCampaign?.get(campaignId) ?? null;
       const missesConversion =
-        missingPerCampaign !== null ? missingPerCampaign.has(campaignId) : hasPrimary === false;
+        missingPerCampaign !== null ? uncoveredGoals !== null : hasPrimary === false;
       const rawType = info.advertisingChannelType as string | undefined;
       const campaign = {
         id: String(info.id),
@@ -243,7 +248,9 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         health: campaignHealth(
           info.primaryStatus,
           info.primaryStatusReasons,
-          missesConversion && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
+          missesConversion && info.status !== "REMOVED"
+            ? [uncoveredGoals ? missingPrimaryConversionReason(uncoveredGoals) : MISSING_PRIMARY_CONVERSION_REASON]
+            : [],
         ),
         metrics: mapMetrics((base[0] as any)?.metrics),
       };
