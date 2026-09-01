@@ -5,10 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   METRIC_FIELDS,
   GoogleAdsApiError,
+  MISSING_PRIMARY_CONVERSION_REASON,
+  campaignHealth,
   channelLabel,
   dateFilter,
   defaultCustomerId,
   gaql,
+  hasPrimaryConversionAction,
   mapMetrics,
   micros,
   num,
