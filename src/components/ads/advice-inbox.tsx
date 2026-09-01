@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Brain,
@@ -6,6 +7,7 @@ import {
   ChevronDown,
   Loader2,
   Lock,
+  PencilLine,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 
 import { AdsEmpty, AdsError, AdsLoading } from "@/components/ads/ads-states";
 import { Badge } from "@/components/ui/badge";
@@ -47,9 +50,12 @@ import {
   type ExecutionEligibility,
 } from "@/lib/ai-execution-guardrails";
 import { executeAiAdvice, listAiAdvice, reviewAiAdvice } from "@/lib/ai-ads.functions";
+import { listLandingPages } from "@/lib/landing.functions";
 import { isExecutableAdviceType } from "@/lib/ai-analyst-shared";
 
 type StatusFilter = "new" | "approved" | "rejected" | "all";
+type ScopeFilter = "ads" | "landing";
+
 
 function ConfidenceBadge({ score, level }: { score: number; level: string }) {
   const tone =
@@ -133,23 +139,38 @@ function GuardrailPanel({ advice }: { advice: AdviceRow }) {
   );
 }
 
+const ENTITY_LABELS: Record<string, string> = {
+  campaign: "Campagne",
+  ad_group: "Advertentiegroep",
+  keyword: "Zoekwoord",
+  search_term: "Zoekterm",
+  landing_page: "Landingspagina",
+  industry: "Branche",
+  account: "Account",
+};
+
 function AdviceCard({
   advice,
   onApprove,
   onReject,
   onExecute,
+  landingPageId,
   busy,
 }: {
   advice: AdviceRow;
   onApprove: () => void;
   onReject: () => void;
   onExecute?: () => void;
+  landingPageId?: string | null;
+
   busy: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const isNew = advice.status === "new";
-  const write = isWriteAction(advice.advice_type);
+  const isLanding = advice.entity_type === "landing_page";
+  const write = !isLanding && isWriteAction(advice.advice_type);
   const blocked = (advice.execution_eligibility ?? "REVIEW_ONLY") === "BLOCKED";
+
 
   return (
     <Card className="overflow-hidden">
@@ -172,15 +193,9 @@ function AdviceCard({
               className="ml-auto gap-1 text-[12px] font-semibold"
             >
               <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {advice.entity_type === "campaign"
-                  ? "Campagne"
-                  : advice.entity_type === "ad_group"
-                    ? "Advertentiegroep"
-                    : advice.entity_type === "keyword"
-                      ? "Zoekwoord"
-                      : advice.entity_type ?? "Onderdeel"}
-                :
+                {ENTITY_LABELS[advice.entity_type ?? ""] ?? advice.entity_type ?? "Onderdeel"}:
               </span>
+
               <span className="text-foreground">{advice.entity_name}</span>
             </Badge>
           )}
@@ -229,17 +244,35 @@ function AdviceCard({
                 </Button>
               </div>
               <span className="max-w-[15rem] text-right text-[10px] leading-tight text-muted-foreground">
-                {write
-                  ? blocked
-                    ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
-                    : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
-                  : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
+                {isLanding
+                  ? "Landingspagina-advies: na accepteren pas je de pagina hier zelf aan."
+                  : write
+                    ? blocked
+                      ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
+                      : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
+                    : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
               </span>
             </div>
           )}
         </div>
 
-        {advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
+        {isLanding ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
+            <span>
+              {landingPageId
+                ? "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. Je kunt de pagina direct bewerken."
+                : "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. De bijbehorende pagina kon niet worden gevonden."}
+            </span>
+            {landingPageId && (
+              <Button size="sm" asChild>
+                <Link to="/landingpages/$id" params={{ id: landingPageId }}>
+                  <PencilLine className="mr-1 h-3.5 w-3.5" /> Landingspagina bewerken
+                </Link>
+              </Button>
+            )}
+
+          </div>
+        ) : advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
             <span>
               {(advice.execution_eligibility ?? "REVIEW_ONLY") === "ALLOWED"
@@ -256,6 +289,7 @@ function AdviceCard({
             </Button>
           </div>
         ) : null}
+
 
         <GuardrailPanel advice={advice} />
 
@@ -318,6 +352,7 @@ function AdviceCard({
 
 export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
   const [status, setStatus] = useState<StatusFilter>("new");
+  const [scope, setScope] = useState<ScopeFilter>("ads");
   const [rejecting, setRejecting] = useState<AdviceRow | null>(null);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -326,6 +361,8 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
   const listFn = useServerFn(listAiAdvice);
   const reviewFn = useServerFn(reviewAiAdvice);
   const executeFn = useServerFn(executeAiAdvice);
+  const pagesFn = useServerFn(listLandingPages);
+
 
   // Execution V1: pas na expliciete menselijke goedkeuring én deze klik.
   const execute = useMutation({
@@ -364,34 +401,84 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const allAdvice = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
+  const sorted = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
     (a, b) =>
       new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
   );
+  const landingAdvice = sorted.filter((a) => a.entity_type === "landing_page");
+  const adsAdvice = sorted.filter((a) => a.entity_type !== "landing_page");
+  const allAdvice = scope === "landing" ? landingAdvice : adsAdvice;
   const counts = query.data?.counts;
   const highlighted = allAdvice.filter((a) => a.confidence_score >= minConfidence);
   const rest = allAdvice.filter((a) => a.confidence_score < minConfidence);
 
+  const pagesQuery = useQuery({
+    queryKey: ["landing-pages-advice-lookup"],
+    queryFn: () => pagesFn({}),
+    enabled: landingAdvice.length > 0,
+  });
+  const pageIdByName = new Map<string, string>();
+  for (const p of ((pagesQuery.data as any)?.pages ?? []) as any[]) {
+    if (p?.name) pageIdByName.set(String(p.name).toLowerCase(), p.id);
+    if (p?.slug) pageIdByName.set(String(p.slug).toLowerCase(), p.id);
+  }
+  const landingPageIdFor = (a: AdviceRow) =>
+    a.entity_name ? (pageIdByName.get(a.entity_name.toLowerCase()) ?? null) : null;
+
+  const renderCard = (a: AdviceRow) => (
+    <AdviceCard
+      key={a.id}
+      advice={a}
+      busy={review.isPending || execute.isPending}
+      landingPageId={landingPageIdFor(a)}
+      onExecute={() => execute.mutate(a.id)}
+      onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
+      onReject={() => {
+        setRejecting(a);
+        setReason("");
+        setNotes("");
+      }}
+    />
+  );
+
   return (
     <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-primary" /> Adviesinbox
-          {counts && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {counts.new} nieuw · {counts.approved} goedgekeurd · {counts.rejected} afgewezen
-            </span>
-          )}
-        </CardTitle>
-        <Tabs value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-          <TabsList>
-            <TabsTrigger value="new">Nieuw</TabsTrigger>
-            <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
-            <TabsTrigger value="rejected">Afgewezen</TabsTrigger>
-            <TabsTrigger value="all">Alles</TabsTrigger>
+      <CardHeader className="flex flex-col gap-3">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" /> Adviesinbox
+            {counts && (
+              <span className="text-xs font-normal text-muted-foreground">
+                {counts.new} nieuw · {counts.approved} goedgekeurd · {counts.rejected} afgewezen
+              </span>
+            )}
+          </CardTitle>
+          <Tabs value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
+            <TabsList>
+              <TabsTrigger value="new">Nieuw</TabsTrigger>
+              <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
+              <TabsTrigger value="rejected">Afgewezen</TabsTrigger>
+              <TabsTrigger value="all">Alles</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <Tabs value={scope} onValueChange={(v) => setScope(v as ScopeFilter)}>
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="ads">
+              Advies Google Ads campagnes ({adsAdvice.length})
+            </TabsTrigger>
+            <TabsTrigger value="landing">
+              Advies landingspagina ({landingAdvice.length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
+        <p className="text-xs text-muted-foreground">
+          {scope === "ads"
+            ? "Adviezen over live Google Ads-campagnes. Uitvoerbare wijzigingen kun je hier na goedkeuring direct doorvoeren."
+            : "Adviezen over je eigen landingspagina's — deze zijn niet aan een Google Ads-campagne gekoppeld en pas je in de pagina-editor aan."}
+        </p>
       </CardHeader>
+
 
       <CardContent className="space-y-3">
         {query.isLoading ? (
@@ -403,25 +490,20 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
           />
         ) : allAdvice.length === 0 ? (
           <AdsEmpty
-            title="Nog geen adviezen"
-            description="Start een analyse om voorstellen te laten genereren op basis van je Google Ads- en leaddata."
+            title={
+              scope === "landing"
+                ? "Geen landingspagina-adviezen"
+                : "Geen campagne-adviezen"
+            }
+            description={
+              scope === "landing"
+                ? "Start een analyse om voorstellen te krijgen over je landingspagina's (bezoekers, formulieren, leads)."
+                : "Start een analyse om voorstellen te krijgen over je live Google Ads-campagnes."
+            }
           />
         ) : (
           <>
-            {highlighted.map((a) => (
-              <AdviceCard
-                key={a.id}
-                advice={a}
-                busy={review.isPending || execute.isPending}
-                onExecute={() => execute.mutate(a.id)}
-                onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
-                onReject={() => {
-                  setRejecting(a);
-                  setReason("");
-                  setNotes("");
-                }}
-              />
-            ))}
+            {highlighted.map(renderCard)}
 
             {rest.length > 0 && (
               <div className="space-y-3 pt-2">
@@ -429,23 +511,11 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
                   <Sparkles className="h-3.5 w-3.5" />
                   Lagere betrouwbaarheid dan {minConfidence}% ({rest.length})
                 </div>
-                {rest.map((a) => (
-                  <AdviceCard
-                    key={a.id}
-                    advice={a}
-                    busy={review.isPending || execute.isPending}
-                    onExecute={() => execute.mutate(a.id)}
-                    onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
-                    onReject={() => {
-                      setRejecting(a);
-                      setReason("");
-                      setNotes("");
-                    }}
-                  />
-                ))}
+                {rest.map(renderCard)}
               </div>
             )}
           </>
+
         )}
       </CardContent>
 
