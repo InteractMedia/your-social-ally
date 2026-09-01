@@ -128,16 +128,22 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
     try {
       const cid = await resolveCustomerId(context as any, data.customerId);
       const [structure, perf, hasPrimary] = await Promise.all([
-        gaql(
-          cid,
-          `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
+        (async () => {
+          const fields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
                   campaign.advertising_channel_sub_type, campaign.bidding_strategy_type,
-                  campaign.primary_status, campaign.primary_status_reasons,
                   campaign.start_date_time, campaign.end_date_time,
-                  campaign_budget.amount_micros, campaign_budget.explicitly_shared, campaign_budget.name
-           FROM campaign
-           ORDER BY campaign.name`,
-        ),
+                  campaign_budget.amount_micros, campaign_budget.explicitly_shared, campaign_budget.name`;
+          try {
+            return await gaql(
+              cid,
+              `SELECT ${fields}, campaign.primary_status, campaign.primary_status_reasons
+               FROM campaign ORDER BY campaign.name`,
+            );
+          } catch {
+            return await gaql(cid, `SELECT ${fields} FROM campaign ORDER BY campaign.name`);
+          }
+        })(),
+
         gaql(
           cid,
           `SELECT campaign.id, ${METRIC_FIELDS}
