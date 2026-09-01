@@ -124,11 +124,12 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     try {
       const cid = await resolveCustomerId(context as any, data.customerId);
-      const [structure, perf] = await Promise.all([
+      const [structure, perf, hasPrimary] = await Promise.all([
         gaql(
           cid,
           `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
                   campaign.advertising_channel_sub_type, campaign.bidding_strategy_type,
+                  campaign.primary_status, campaign.primary_status_reasons,
                   campaign.start_date_time, campaign.end_date_time,
                   campaign_budget.amount_micros, campaign_budget.explicitly_shared, campaign_budget.name
            FROM campaign
@@ -139,6 +140,7 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
           `SELECT campaign.id, ${METRIC_FIELDS}
            FROM campaign WHERE ${dateFilter(data.start, data.end)}`,
         ),
+        hasPrimaryConversionAction(cid),
       ]);
 
       const metricsById = new Map<string, any>();
@@ -147,6 +149,8 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
       const campaigns = (structure as any[]).map((row) => {
         const c = row.campaign ?? {};
         const b = row.campaignBudget ?? {};
+        const extra =
+          hasPrimary === false && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
         return {
           id: String(c.id),
           name: c.name ?? String(c.id),
@@ -161,11 +165,13 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
           dailyBudget: micros(b.amountMicros),
           sharedBudget: Boolean(b.explicitlyShared),
           budgetName: b.name ?? null,
+          health: campaignHealth(c.primaryStatus, c.primaryStatusReasons, extra),
           metrics: mapMetrics(metricsById.get(String(c.id))),
         };
       });
 
       return { ok: true as const, customerId: cid, campaigns, error: null as string | null };
+
     } catch (err) {
       console.error("[GoogleAds] campaigns failed", (err as Error).message);
       return { ok: false as const, customerId: null, campaigns: [], error: (err as Error).message };
