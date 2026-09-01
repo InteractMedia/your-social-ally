@@ -133,23 +133,37 @@ function GuardrailPanel({ advice }: { advice: AdviceRow }) {
   );
 }
 
+const ENTITY_LABELS: Record<string, string> = {
+  campaign: "Campagne",
+  ad_group: "Advertentiegroep",
+  keyword: "Zoekwoord",
+  search_term: "Zoekterm",
+  landing_page: "Landingspagina",
+  industry: "Branche",
+  account: "Account",
+};
+
 function AdviceCard({
   advice,
   onApprove,
   onReject,
   onExecute,
+  landingPageHref,
   busy,
 }: {
   advice: AdviceRow;
   onApprove: () => void;
   onReject: () => void;
   onExecute?: () => void;
+  landingPageHref?: string | null;
   busy: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const isNew = advice.status === "new";
-  const write = isWriteAction(advice.advice_type);
+  const isLanding = advice.entity_type === "landing_page";
+  const write = !isLanding && isWriteAction(advice.advice_type);
   const blocked = (advice.execution_eligibility ?? "REVIEW_ONLY") === "BLOCKED";
+
 
   return (
     <Card className="overflow-hidden">
