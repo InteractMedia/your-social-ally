@@ -187,11 +187,6 @@ function AdviceCard({
                   {ADVICE_STATUS_LABELS[advice.status as keyof typeof ADVICE_STATUS_LABELS] ?? advice.status}
                 </Badge>
               )}
-              {advice.is_test && (
-                <Badge variant="outline" className="text-[11px]">
-                  Test
-                </Badge>
-              )}
             </div>
             <div className="font-medium leading-snug">{advice.title}</div>
             {advice.entity_name && (
