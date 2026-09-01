@@ -154,6 +154,19 @@ function AdviceCard({
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-3 p-4">
+        <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Advies van
+          </span>
+          <span className="text-sm font-bold text-foreground">
+            {formatDateTime(advice.created_at)}
+          </span>
+          {advice.is_test && (
+            <Badge variant="outline" className="text-[11px]">
+              Test
+            </Badge>
+          )}
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
