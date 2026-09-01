@@ -127,9 +127,13 @@ function CampaignDetail() {
               {campaign.dailyBudget > 0 ? (
                 <Badge variant="outline">Dagbudget {formatMoney(campaign.dailyBudget, currency)}</Badge>
               ) : null}
+              <CampaignHealthBadge health={(campaign as any).health} />
             </div>
 
+            <CampaignHealthAlert health={(campaign as any).health} />
+
             <MetricCards metrics={campaign.metrics} currency={currency} />
+
 
             {isPmax ? (
               <Card>
