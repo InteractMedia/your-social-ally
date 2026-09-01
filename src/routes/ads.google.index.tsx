@@ -12,6 +12,7 @@ import { OfflineConversionSummary } from "@/components/ads/offline-summary";
 import { PeriodPicker } from "@/components/ads/period-picker";
 
 import { Badge } from "@/components/ui/badge";
+import { CampaignHealthBadge } from "@/components/ads/campaign-health";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
