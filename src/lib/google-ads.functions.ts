@@ -207,13 +207,14 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
                 ${METRIC_FIELDS}
          FROM campaign WHERE campaign.id = ${campaignId} AND ${period}`,
       );
+      const structFields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
+                campaign.bidding_strategy_type, campaign_budget.amount_micros`;
       const structure = await gaql(
         cid,
-        `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
-                campaign.bidding_strategy_type, campaign.primary_status, campaign.primary_status_reasons,
-                campaign_budget.amount_micros
+        `SELECT ${structFields}, campaign.primary_status, campaign.primary_status_reasons
          FROM campaign WHERE campaign.id = ${campaignId}`,
-      );
+      ).catch(() => gaql(cid, `SELECT ${structFields} FROM campaign WHERE campaign.id = ${campaignId}`));
+
       const info: any = (structure[0] as any)?.campaign ?? (base[0] as any)?.campaign;
       if (!info) throw new GoogleAdsApiError("Campagne niet gevonden in Google Ads.", 404);
 
