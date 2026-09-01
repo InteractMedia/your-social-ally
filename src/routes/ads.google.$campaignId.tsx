@@ -9,6 +9,7 @@ import { AdsEmpty, AdsError, AdsLoading } from "@/components/ads/ads-states";
 import { MetricCards } from "@/components/ads/metric-cards";
 import { PeriodPicker } from "@/components/ads/period-picker";
 import { Badge } from "@/components/ui/badge";
+import { CampaignHealthAlert, CampaignHealthBadge } from "@/components/ads/campaign-health";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -127,9 +128,13 @@ function CampaignDetail() {
               {campaign.dailyBudget > 0 ? (
                 <Badge variant="outline">Dagbudget {formatMoney(campaign.dailyBudget, currency)}</Badge>
               ) : null}
+              <CampaignHealthBadge health={(campaign as any).health} />
             </div>
 
+            <CampaignHealthAlert health={(campaign as any).health} />
+
             <MetricCards metrics={campaign.metrics} currency={currency} />
+
 
             {isPmax ? (
               <Card>

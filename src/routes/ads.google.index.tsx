@@ -12,6 +12,7 @@ import { OfflineConversionSummary } from "@/components/ads/offline-summary";
 import { PeriodPicker } from "@/components/ads/period-picker";
 
 import { Badge } from "@/components/ui/badge";
+import { CampaignHealthBadge } from "@/components/ads/campaign-health";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -345,12 +346,18 @@ function GoogleAdsIndex() {
                             </TableCell>
                             <TableCell className="text-muted-foreground text-sm">{c.type}</TableCell>
                             <TableCell>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[c.status] ?? "bg-muted text-muted-foreground"}`}
-                              >
-                                {c.status}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[c.status] ?? "bg-muted text-muted-foreground"}`}
+                                >
+                                  {c.status}
+                                </span>
+                                {(c as any).health && (c as any).health.severity !== "ok" ? (
+                                  <CampaignHealthBadge health={(c as any).health} />
+                                ) : null}
+                              </div>
                             </TableCell>
+
                             <TableCell className="text-right tabular-nums">
                               {c.dailyBudget > 0 ? formatMoney(c.dailyBudget, currency) : "—"}
                             </TableCell>

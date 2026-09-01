@@ -5,10 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   METRIC_FIELDS,
   GoogleAdsApiError,
+  MISSING_PRIMARY_CONVERSION_REASON,
+  campaignHealth,
   channelLabel,
   dateFilter,
   defaultCustomerId,
   gaql,
+  hasPrimaryConversionAction,
   mapMetrics,
   micros,
   num,
@@ -124,21 +127,29 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     try {
       const cid = await resolveCustomerId(context as any, data.customerId);
-      const [structure, perf] = await Promise.all([
-        gaql(
-          cid,
-          `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
+      const [structure, perf, hasPrimary] = await Promise.all([
+        (async () => {
+          const fields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
                   campaign.advertising_channel_sub_type, campaign.bidding_strategy_type,
                   campaign.start_date_time, campaign.end_date_time,
-                  campaign_budget.amount_micros, campaign_budget.explicitly_shared, campaign_budget.name
-           FROM campaign
-           ORDER BY campaign.name`,
-        ),
+                  campaign_budget.amount_micros, campaign_budget.explicitly_shared, campaign_budget.name`;
+          try {
+            return await gaql(
+              cid,
+              `SELECT ${fields}, campaign.primary_status, campaign.primary_status_reasons
+               FROM campaign ORDER BY campaign.name`,
+            );
+          } catch {
+            return await gaql(cid, `SELECT ${fields} FROM campaign ORDER BY campaign.name`);
+          }
+        })(),
+
         gaql(
           cid,
           `SELECT campaign.id, ${METRIC_FIELDS}
            FROM campaign WHERE ${dateFilter(data.start, data.end)}`,
         ),
+        hasPrimaryConversionAction(cid),
       ]);
 
       const metricsById = new Map<string, any>();
@@ -147,6 +158,8 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
       const campaigns = (structure as any[]).map((row) => {
         const c = row.campaign ?? {};
         const b = row.campaignBudget ?? {};
+        const extra =
+          hasPrimary === false && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
         return {
           id: String(c.id),
           name: c.name ?? String(c.id),
@@ -161,11 +174,13 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
           dailyBudget: micros(b.amountMicros),
           sharedBudget: Boolean(b.explicitlyShared),
           budgetName: b.name ?? null,
+          health: campaignHealth(c.primaryStatus, c.primaryStatusReasons, extra),
           metrics: mapMetrics(metricsById.get(String(c.id))),
         };
       });
 
       return { ok: true as const, customerId: cid, campaigns, error: null as string | null };
+
     } catch (err) {
       console.error("[GoogleAds] campaigns failed", (err as Error).message);
       return { ok: false as const, customerId: null, campaigns: [], error: (err as Error).message };
@@ -192,15 +207,18 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
                 ${METRIC_FIELDS}
          FROM campaign WHERE campaign.id = ${campaignId} AND ${period}`,
       );
+      const structFields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
+                campaign.bidding_strategy_type, campaign_budget.amount_micros`;
       const structure = await gaql(
         cid,
-        `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
-                campaign.bidding_strategy_type, campaign_budget.amount_micros
+        `SELECT ${structFields}, campaign.primary_status, campaign.primary_status_reasons
          FROM campaign WHERE campaign.id = ${campaignId}`,
-      );
+      ).catch(() => gaql(cid, `SELECT ${structFields} FROM campaign WHERE campaign.id = ${campaignId}`));
+
       const info: any = (structure[0] as any)?.campaign ?? (base[0] as any)?.campaign;
       if (!info) throw new GoogleAdsApiError("Campagne niet gevonden in Google Ads.", 404);
 
+      const hasPrimary = await hasPrimaryConversionAction(cid);
       const rawType = info.advertisingChannelType as string | undefined;
       const campaign = {
         id: String(info.id),
@@ -212,8 +230,14 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         dailyBudget: micros(
           (structure[0] as any)?.campaignBudget?.amountMicros ?? (base[0] as any)?.campaignBudget?.amountMicros,
         ),
+        health: campaignHealth(
+          info.primaryStatus,
+          info.primaryStatusReasons,
+          hasPrimary === false && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
+        ),
         metrics: mapMetrics((base[0] as any)?.metrics),
       };
+
 
       const isSearchLike = rawType === "SEARCH" || rawType === "SHOPPING" || rawType === "DISPLAY" || rawType === "VIDEO" || rawType === "SMART";
       const isPmax = rawType === "PERFORMANCE_MAX";
