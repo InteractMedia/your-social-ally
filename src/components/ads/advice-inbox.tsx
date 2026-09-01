@@ -351,10 +351,12 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const advice = (query.data?.advice ?? []) as AdviceRow[];
-  const counts = query.data?.counts;
-  const highlighted = advice.filter((a) => a.confidence_score >= minConfidence);
-  const rest = advice.filter((a) => a.confidence_score < minConfidence);
+  const allAdvice = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
+    (a, b) =>
+      new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+  );
+  const highlighted = allAdvice.filter((a) => a.confidence_score >= minConfidence);
+  const rest = allAdvice.filter((a) => a.confidence_score < minConfidence);
 
   return (
     <Card>
