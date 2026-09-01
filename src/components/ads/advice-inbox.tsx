@@ -355,6 +355,7 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
     (a, b) =>
       new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
   );
+  const counts = query.data?.counts;
   const highlighted = allAdvice.filter((a) => a.confidence_score >= minConfidence);
   const rest = allAdvice.filter((a) => a.confidence_score < minConfidence);
 
