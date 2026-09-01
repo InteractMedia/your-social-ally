@@ -490,25 +490,20 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
           />
         ) : allAdvice.length === 0 ? (
           <AdsEmpty
-            title="Nog geen adviezen"
-            description="Start een analyse om voorstellen te laten genereren op basis van je Google Ads- en leaddata."
+            title={
+              scope === "landing"
+                ? "Geen landingspagina-adviezen"
+                : "Geen campagne-adviezen"
+            }
+            description={
+              scope === "landing"
+                ? "Start een analyse om voorstellen te krijgen over je landingspagina's (bezoekers, formulieren, leads)."
+                : "Start een analyse om voorstellen te krijgen over je live Google Ads-campagnes."
+            }
           />
         ) : (
           <>
-            {highlighted.map((a) => (
-              <AdviceCard
-                key={a.id}
-                advice={a}
-                busy={review.isPending || execute.isPending}
-                onExecute={() => execute.mutate(a.id)}
-                onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
-                onReject={() => {
-                  setRejecting(a);
-                  setReason("");
-                  setNotes("");
-                }}
-              />
-            ))}
+            {highlighted.map(renderCard)}
 
             {rest.length > 0 && (
               <div className="space-y-3 pt-2">
@@ -516,23 +511,11 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
                   <Sparkles className="h-3.5 w-3.5" />
                   Lagere betrouwbaarheid dan {minConfidence}% ({rest.length})
                 </div>
-                {rest.map((a) => (
-                  <AdviceCard
-                    key={a.id}
-                    advice={a}
-                    busy={review.isPending || execute.isPending}
-                    onExecute={() => execute.mutate(a.id)}
-                    onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
-                    onReject={() => {
-                      setRejecting(a);
-                      setReason("");
-                      setNotes("");
-                    }}
-                  />
-                ))}
+                {rest.map(renderCard)}
               </div>
             )}
           </>
+
         )}
       </CardContent>
 
