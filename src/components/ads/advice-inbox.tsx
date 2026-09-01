@@ -154,7 +154,7 @@ function AdviceCard({
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-3 p-4">
-        <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-border pb-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Advies van
           </span>
@@ -164,6 +164,24 @@ function AdviceCard({
           {advice.is_test && (
             <Badge variant="outline" className="text-[11px]">
               Test
+            </Badge>
+          )}
+          {advice.entity_name && (
+            <Badge
+              variant="secondary"
+              className="ml-auto gap-1 text-[12px] font-semibold"
+            >
+              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {advice.entity_type === "campaign"
+                  ? "Campagne"
+                  : advice.entity_type === "ad_group"
+                    ? "Advertentiegroep"
+                    : advice.entity_type === "keyword"
+                      ? "Zoekwoord"
+                      : advice.entity_type ?? "Onderdeel"}
+                :
+              </span>
+              <span className="text-foreground">{advice.entity_name}</span>
             </Badge>
           )}
         </div>
@@ -189,11 +207,6 @@ function AdviceCard({
               )}
             </div>
             <div className="font-medium leading-snug">{advice.title}</div>
-            {advice.entity_name && (
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {advice.entity_type ?? "onderdeel"}: {advice.entity_name}
-              </div>
-            )}
             <p className="mt-2 text-sm text-muted-foreground">{advice.summary}</p>
           </div>
 
