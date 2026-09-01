@@ -364,7 +364,7 @@ export async function hasPrimaryConversionAction(customerId: string): Promise<bo
 export async function campaignsMissingPrimaryConversion(
   customerId: string,
   campaignIds?: string[],
-): Promise<Set<string> | null> {
+): Promise<Map<string, string[]> | null> {
   try {
     const primaryRows = await gaql(
       customerId,
