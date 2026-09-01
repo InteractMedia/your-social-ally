@@ -256,17 +256,18 @@ function AdviceCard({
         {isLanding ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
             <span>
-              {landingPageHref
+              {landingPageId
                 ? "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. Je kunt de pagina direct bewerken."
                 : "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. De bijbehorende pagina kon niet worden gevonden."}
             </span>
-            {landingPageHref && (
+            {landingPageId && (
               <Button size="sm" asChild>
-                <Link to={landingPageHref}>
+                <Link to="/landingpages/$id" params={{ id: landingPageId }}>
                   <PencilLine className="mr-1 h-3.5 w-3.5" /> Landingspagina bewerken
                 </Link>
               </Button>
             )}
+
           </div>
         ) : advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
