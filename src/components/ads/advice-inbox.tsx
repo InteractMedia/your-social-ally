@@ -50,9 +50,12 @@ import {
   type ExecutionEligibility,
 } from "@/lib/ai-execution-guardrails";
 import { executeAiAdvice, listAiAdvice, reviewAiAdvice } from "@/lib/ai-ads.functions";
+import { listLandingPages } from "@/lib/landing.functions";
 import { isExecutableAdviceType } from "@/lib/ai-analyst-shared";
 
 type StatusFilter = "new" | "approved" | "rejected" | "all";
+type ScopeFilter = "ads" | "landing";
+
 
 function ConfidenceBadge({ score, level }: { score: number; level: string }) {
   const tone =
