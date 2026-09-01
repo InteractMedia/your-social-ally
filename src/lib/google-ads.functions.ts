@@ -7,6 +7,7 @@ import {
   GoogleAdsApiError,
   MISSING_PRIMARY_CONVERSION_REASON,
   campaignHealth,
+  campaignsMissingPrimaryConversion,
   channelLabel,
   dateFilter,
   defaultCustomerId,
@@ -127,7 +128,7 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     try {
       const cid = await resolveCustomerId(context as any, data.customerId);
-      const [structure, perf, hasPrimary] = await Promise.all([
+      const [structure, perf, hasPrimary, missingPerCampaign] = await Promise.all([
         (async () => {
           const fields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
                   campaign.advertising_channel_sub_type, campaign.bidding_strategy_type,
@@ -150,6 +151,7 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
            FROM campaign WHERE ${dateFilter(data.start, data.end)}`,
         ),
         hasPrimaryConversionAction(cid),
+        campaignsMissingPrimaryConversion(cid),
       ]);
 
       const metricsById = new Map<string, any>();
@@ -158,8 +160,11 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
       const campaigns = (structure as any[]).map((row) => {
         const c = row.campaign ?? {};
         const b = row.campaignBudget ?? {};
+        const missesConversion =
+          missingPerCampaign !== null ? missingPerCampaign.has(String(c.id)) : hasPrimary === false;
         const extra =
-          hasPrimary === false && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
+          missesConversion && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
+
         return {
           id: String(c.id),
           name: c.name ?? String(c.id),
@@ -218,7 +223,12 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
       const info: any = (structure[0] as any)?.campaign ?? (base[0] as any)?.campaign;
       if (!info) throw new GoogleAdsApiError("Campagne niet gevonden in Google Ads.", 404);
 
-      const hasPrimary = await hasPrimaryConversionAction(cid);
+      const [hasPrimary, missingPerCampaign] = await Promise.all([
+        hasPrimaryConversionAction(cid),
+        campaignsMissingPrimaryConversion(cid, [campaignId]),
+      ]);
+      const missesConversion =
+        missingPerCampaign !== null ? missingPerCampaign.has(campaignId) : hasPrimary === false;
       const rawType = info.advertisingChannelType as string | undefined;
       const campaign = {
         id: String(info.id),
@@ -233,7 +243,7 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         health: campaignHealth(
           info.primaryStatus,
           info.primaryStatusReasons,
-          hasPrimary === false && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
+          missesConversion && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
         ),
         metrics: mapMetrics((base[0] as any)?.metrics),
       };

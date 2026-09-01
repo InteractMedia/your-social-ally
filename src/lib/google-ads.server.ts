@@ -353,3 +353,58 @@ export async function hasPrimaryConversionAction(customerId: string): Promise<bo
     return null;
   }
 }
+
+/**
+ * Per campagne: ontbreekt er een primaire (biedbare) conversieactie voor de
+ * conversiedoelen van díe campagne? Dit is de waarschuwing die Google Ads bij
+ * de campagne zelf toont, ook als het account elders wél primaire acties heeft.
+ * Geeft een Set met campagne-id's die de waarschuwing hebben, of null als de
+ * check niet uitgevoerd kon worden.
+ */
+export async function campaignsMissingPrimaryConversion(
+  customerId: string,
+  campaignIds?: string[],
+): Promise<Set<string> | null> {
+  try {
+    const primaryRows = await gaql(
+      customerId,
+      `SELECT conversion_action.category, conversion_action.primary_for_goal, conversion_action.status
+       FROM conversion_action
+       WHERE conversion_action.status = 'ENABLED' AND conversion_action.primary_for_goal = TRUE`,
+    );
+    const primaryCategories = new Set(
+      (primaryRows as any[]).map((r) => String(r.conversionAction?.category ?? "")).filter(Boolean),
+    );
+
+    const filter =
+      campaignIds && campaignIds.length > 0 && campaignIds.length <= 200
+        ? ` WHERE campaign.id IN (${campaignIds.map((id) => id.replace(/[^0-9]/g, "")).filter(Boolean).join(",")})`
+        : "";
+    const goalRows = await gaql(
+      customerId,
+      `SELECT campaign.id, campaign_conversion_goal.category, campaign_conversion_goal.biddable
+       FROM campaign_conversion_goal${filter}`,
+    );
+
+    const biddableByCampaign = new Map<string, Set<string>>();
+    for (const row of goalRows as any[]) {
+      const id = String(row.campaign?.id ?? "");
+      const goal = row.campaignConversionGoal ?? {};
+      if (!id) continue;
+      if (!biddableByCampaign.has(id)) biddableByCampaign.set(id, new Set());
+      if (goal.biddable === true && goal.category) {
+        biddableByCampaign.get(id)!.add(String(goal.category));
+      }
+    }
+
+    const missing = new Set<string>();
+    for (const [id, categories] of biddableByCampaign) {
+      const covered = [...categories].some((c) => primaryCategories.has(c));
+      if (!covered) missing.add(id);
+    }
+    return missing;
+  } catch (err) {
+    console.error("[GoogleAds] campaign conversion goal check failed", (err as Error).message);
+    return null;
+  }
+}
