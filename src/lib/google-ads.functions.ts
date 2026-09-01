@@ -127,7 +127,7 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     try {
       const cid = await resolveCustomerId(context as any, data.customerId);
-      const [structure, perf, hasPrimary] = await Promise.all([
+      const [structure, perf, hasPrimary, missingPerCampaign] = await Promise.all([
         (async () => {
           const fields = `campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
                   campaign.advertising_channel_sub_type, campaign.bidding_strategy_type,
@@ -150,6 +150,7 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
            FROM campaign WHERE ${dateFilter(data.start, data.end)}`,
         ),
         hasPrimaryConversionAction(cid),
+        campaignsMissingPrimaryConversion(cid),
       ]);
 
       const metricsById = new Map<string, any>();
@@ -158,8 +159,11 @@ export const getGoogleAdsCampaigns = createServerFn({ method: "POST" })
       const campaigns = (structure as any[]).map((row) => {
         const c = row.campaign ?? {};
         const b = row.campaignBudget ?? {};
+        const missesConversion =
+          missingPerCampaign !== null ? missingPerCampaign.has(String(c.id)) : hasPrimary === false;
         const extra =
-          hasPrimary === false && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
+          missesConversion && c.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [];
+
         return {
           id: String(c.id),
           name: c.name ?? String(c.id),
