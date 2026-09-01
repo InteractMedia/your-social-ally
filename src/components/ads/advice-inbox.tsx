@@ -395,34 +395,84 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const allAdvice = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
+  const sorted = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
     (a, b) =>
       new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
   );
+  const landingAdvice = sorted.filter((a) => a.entity_type === "landing_page");
+  const adsAdvice = sorted.filter((a) => a.entity_type !== "landing_page");
+  const allAdvice = scope === "landing" ? landingAdvice : adsAdvice;
   const counts = query.data?.counts;
   const highlighted = allAdvice.filter((a) => a.confidence_score >= minConfidence);
   const rest = allAdvice.filter((a) => a.confidence_score < minConfidence);
 
+  const pagesQuery = useQuery({
+    queryKey: ["landing-pages-advice-lookup"],
+    queryFn: () => pagesFn({}),
+    enabled: landingAdvice.length > 0,
+  });
+  const pageIdByName = new Map<string, string>();
+  for (const p of ((pagesQuery.data as any)?.pages ?? []) as any[]) {
+    if (p?.name) pageIdByName.set(String(p.name).toLowerCase(), p.id);
+    if (p?.slug) pageIdByName.set(String(p.slug).toLowerCase(), p.id);
+  }
+  const landingPageIdFor = (a: AdviceRow) =>
+    a.entity_name ? (pageIdByName.get(a.entity_name.toLowerCase()) ?? null) : null;
+
+  const renderCard = (a: AdviceRow) => (
+    <AdviceCard
+      key={a.id}
+      advice={a}
+      busy={review.isPending || execute.isPending}
+      landingPageId={landingPageIdFor(a)}
+      onExecute={() => execute.mutate(a.id)}
+      onApprove={() => review.mutate({ adviceId: a.id, decision: "approved" })}
+      onReject={() => {
+        setRejecting(a);
+        setReason("");
+        setNotes("");
+      }}
+    />
+  );
+
   return (
     <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-primary" /> Adviesinbox
-          {counts && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {counts.new} nieuw · {counts.approved} goedgekeurd · {counts.rejected} afgewezen
-            </span>
-          )}
-        </CardTitle>
-        <Tabs value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-          <TabsList>
-            <TabsTrigger value="new">Nieuw</TabsTrigger>
-            <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
-            <TabsTrigger value="rejected">Afgewezen</TabsTrigger>
-            <TabsTrigger value="all">Alles</TabsTrigger>
+      <CardHeader className="flex flex-col gap-3">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" /> Adviesinbox
+            {counts && (
+              <span className="text-xs font-normal text-muted-foreground">
+                {counts.new} nieuw · {counts.approved} goedgekeurd · {counts.rejected} afgewezen
+              </span>
+            )}
+          </CardTitle>
+          <Tabs value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
+            <TabsList>
+              <TabsTrigger value="new">Nieuw</TabsTrigger>
+              <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
+              <TabsTrigger value="rejected">Afgewezen</TabsTrigger>
+              <TabsTrigger value="all">Alles</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <Tabs value={scope} onValueChange={(v) => setScope(v as ScopeFilter)}>
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="ads">
+              Advies Google Ads campagnes ({adsAdvice.length})
+            </TabsTrigger>
+            <TabsTrigger value="landing">
+              Advies landingspagina ({landingAdvice.length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
+        <p className="text-xs text-muted-foreground">
+          {scope === "ads"
+            ? "Adviezen over live Google Ads-campagnes. Uitvoerbare wijzigingen kun je hier na goedkeuring direct doorvoeren."
+            : "Adviezen over je eigen landingspagina's — deze zijn niet aan een Google Ads-campagne gekoppeld en pas je in de pagina-editor aan."}
+        </p>
       </CardHeader>
+
 
       <CardContent className="space-y-3">
         {query.isLoading ? (
