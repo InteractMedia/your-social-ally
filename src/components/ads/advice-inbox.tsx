@@ -154,6 +154,19 @@ function AdviceCard({
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-3 p-4">
+        <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Advies van
+          </span>
+          <span className="text-sm font-bold text-foreground">
+            {formatDateTime(advice.created_at)}
+          </span>
+          {advice.is_test && (
+            <Badge variant="outline" className="text-[11px]">
+              Test
+            </Badge>
+          )}
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -172,11 +185,6 @@ function AdviceCard({
               {!isNew && (
                 <Badge variant="secondary" className="text-[11px]">
                   {ADVICE_STATUS_LABELS[advice.status as keyof typeof ADVICE_STATUS_LABELS] ?? advice.status}
-                </Badge>
-              )}
-              {advice.is_test && (
-                <Badge variant="outline" className="text-[11px]">
-                  Test
                 </Badge>
               )}
             </div>
@@ -343,10 +351,13 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const advice = (query.data?.advice ?? []) as AdviceRow[];
+  const allAdvice = ((query.data?.advice ?? []) as AdviceRow[]).slice().sort(
+    (a, b) =>
+      new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+  );
   const counts = query.data?.counts;
-  const highlighted = advice.filter((a) => a.confidence_score >= minConfidence);
-  const rest = advice.filter((a) => a.confidence_score < minConfidence);
+  const highlighted = allAdvice.filter((a) => a.confidence_score >= minConfidence);
+  const rest = allAdvice.filter((a) => a.confidence_score < minConfidence);
 
   return (
     <Card>
@@ -377,7 +388,7 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
             message={query.data.error}
             onRetry={() => qc.invalidateQueries({ queryKey: ["ai-advice"] })}
           />
-        ) : advice.length === 0 ? (
+        ) : allAdvice.length === 0 ? (
           <AdsEmpty
             title="Nog geen adviezen"
             description="Start een analyse om voorstellen te laten genereren op basis van je Google Ads- en leaddata."
