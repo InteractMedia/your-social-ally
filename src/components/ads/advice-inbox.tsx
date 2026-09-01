@@ -151,14 +151,15 @@ function AdviceCard({
   onApprove,
   onReject,
   onExecute,
-  landingPageHref,
+  landingPageId,
   busy,
 }: {
   advice: AdviceRow;
   onApprove: () => void;
   onReject: () => void;
   onExecute?: () => void;
-  landingPageHref?: string | null;
+  landingPageId?: string | null;
+
   busy: boolean;
 }) {
   const [open, setOpen] = useState(false);
