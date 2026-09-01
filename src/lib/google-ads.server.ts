@@ -247,3 +247,109 @@ export function statusLabel(status: string | undefined): "actief" | "gepauzeerd"
       return "onbekend";
   }
 }
+
+/* ---------- campagnegezondheid (serving issues) ---------- */
+
+export type HealthSeverity = "ok" | "warn" | "error";
+
+export type CampaignHealthReason = { code: string; label: string; hint: string | null };
+
+export type CampaignHealth = {
+  primaryStatus: string | null;
+  label: string;
+  severity: HealthSeverity;
+  reasons: CampaignHealthReason[];
+};
+
+const PRIMARY_STATUS_LABELS: Record<string, { label: string; severity: HealthSeverity }> = {
+  ELIGIBLE: { label: "Actief en levert", severity: "ok" },
+  PENDING: { label: "Nog niet gestart", severity: "warn" },
+  LEARNING: { label: "Leerfase", severity: "ok" },
+  LIMITED: { label: "Beperkt — levert minder dan mogelijk", severity: "warn" },
+  MISCONFIGURED: { label: "Verkeerd ingesteld", severity: "error" },
+  NOT_ELIGIBLE: { label: "Komt niet in aanmerking om te leveren", severity: "error" },
+  PAUSED: { label: "Gepauzeerd", severity: "warn" },
+  REMOVED: { label: "Verwijderd", severity: "error" },
+  ENDED: { label: "Beëindigd", severity: "warn" },
+};
+
+const REASON_LABELS: Record<string, { label: string; hint: string | null }> = {
+  CAMPAIGN_REMOVED: { label: "Campagne is verwijderd.", hint: null },
+  CAMPAIGN_PAUSED: { label: "Campagne staat op gepauzeerd.", hint: "Activeer de campagne om te leveren." },
+  CAMPAIGN_PENDING: { label: "Campagne start later.", hint: null },
+  CAMPAIGN_ENDED: { label: "Einddatum van de campagne is verstreken.", hint: null },
+  CAMPAIGN_DRAFT: { label: "Campagne is nog een concept.", hint: null },
+  BIDDING_STRATEGY_MISCONFIGURED: { label: "Biedstrategie is verkeerd ingesteld.", hint: null },
+  BIDDING_STRATEGY_LIMITED: { label: "Biedstrategie wordt beperkt.", hint: null },
+  BIDDING_STRATEGY_LEARNING: { label: "Biedstrategie zit in de leerfase.", hint: null },
+  BIDDING_STRATEGY_CONSTRAINED: { label: "Biedstrategie wordt beperkt door de doelen.", hint: null },
+  BUDGET_CONSTRAINED: { label: "Budget beperkt de weergaven.", hint: null },
+  BUDGET_MISCONFIGURED: { label: "Budget is verkeerd ingesteld.", hint: null },
+  SEARCH_VOLUME_LIMITED: { label: "Te weinig zoekvolume.", hint: null },
+  AD_GROUPS_PAUSED: { label: "Alle advertentiegroepen staan op gepauzeerd.", hint: null },
+  NO_AD_GROUPS: { label: "Campagne heeft geen advertentiegroepen.", hint: null },
+  KEYWORDS_PAUSED: { label: "Alle keywords staan op gepauzeerd.", hint: null },
+  NO_KEYWORDS: { label: "Campagne heeft geen keywords.", hint: null },
+  AD_GROUP_ADS_PAUSED: { label: "Alle advertenties staan op gepauzeerd.", hint: null },
+  NO_AD_GROUP_ADS: { label: "Campagne heeft geen advertenties.", hint: null },
+  HAS_ADS_LIMITED_BY_POLICY: { label: "Advertenties worden beperkt door beleid.", hint: null },
+  HAS_ADS_DISAPPROVED: { label: "Advertenties zijn afgekeurd.", hint: null },
+  MOST_ADS_UNDER_REVIEW: { label: "De meeste advertenties zijn nog in beoordeling.", hint: null },
+  MISSING_LEAD_FORM_EXTENSION: { label: "Leadformulier-extensie ontbreekt.", hint: null },
+  MISSING_CALL_EXTENSION: { label: "Telefoon-extensie ontbreekt.", hint: null },
+  LEAD_FORM_EXTENSION_UNDER_REVIEW: { label: "Leadformulier is in beoordeling.", hint: null },
+  LEAD_FORM_EXTENSION_DISAPPROVED: { label: "Leadformulier is afgekeurd.", hint: null },
+  CALL_EXTENSION_UNDER_REVIEW: { label: "Telefoon-extensie is in beoordeling.", hint: null },
+  CALL_EXTENSION_DISAPPROVED: { label: "Telefoon-extensie is afgekeurd.", hint: null },
+  NO_MOBILE_APPLICATION_AD_GROUP_CRITERIA: { label: "Geen app-targeting ingesteld.", hint: null },
+  CAMPAIGN_GROUP_PAUSED: { label: "Campagnegroep staat op gepauzeerd.", hint: null },
+  CAMPAIGN_GROUP_ALL_GROUP_BUDGETS_ENDED: { label: "Alle budgetten van de campagnegroep zijn beëindigd.", hint: null },
+  APP_NOT_RELEASED: { label: "App is niet gepubliceerd.", hint: null },
+  APP_PARTIALLY_RELEASED: { label: "App is slechts deels gepubliceerd.", hint: null },
+  HAS_ASSET_GROUPS_DISAPPROVED: { label: "Assetgroepen zijn afgekeurd.", hint: null },
+  HAS_ASSET_GROUPS_LIMITED_BY_POLICY: { label: "Assetgroepen worden beperkt door beleid.", hint: null },
+  MOST_ASSET_GROUPS_UNDER_REVIEW: { label: "De meeste assetgroepen zijn in beoordeling.", hint: null },
+  NO_ASSET_GROUPS: { label: "Campagne heeft geen assetgroepen.", hint: null },
+  ASSET_GROUPS_PAUSED: { label: "Alle assetgroepen staan op gepauzeerd.", hint: null },
+};
+
+export const MISSING_PRIMARY_CONVERSION_REASON: CampaignHealthReason = {
+  code: "MISSING_PRIMARY_CONVERSION_ACTION",
+  label: "Er ontbreekt een primaire conversieactie voor uw doel.",
+  hint: "Zonder primaire (biedbare) conversieactie optimaliseert Google niet op conversies. Zet in Google Ads bij Doelen minimaal één conversieactie op primair.",
+};
+
+export function campaignHealth(
+  primaryStatus: string | undefined | null,
+  reasons: unknown,
+  extra: CampaignHealthReason[] = [],
+): CampaignHealth {
+  const key = primaryStatus ? String(primaryStatus) : null;
+  const meta = (key && PRIMARY_STATUS_LABELS[key]) || { label: key ? key.replace(/_/g, " ") : "Onbekend", severity: "warn" as HealthSeverity };
+  const list: CampaignHealthReason[] = (Array.isArray(reasons) ? reasons : [])
+    .map((r) => String(r))
+    .map((code) => ({ code, ...(REASON_LABELS[code] ?? { label: code.replace(/_/g, " ").toLowerCase(), hint: null }) }));
+  const all = [...list, ...extra];
+  let severity = meta.severity;
+  if (extra.length > 0 && severity === "ok") severity = "warn";
+  return { primaryStatus: key, label: meta.label, severity, reasons: all };
+}
+
+/**
+ * Ontbreekt er een primaire (biedbare) conversieactie in het account?
+ * Dit is precies de waarschuwing die Google Ads bij de campagne toont.
+ */
+export async function hasPrimaryConversionAction(customerId: string): Promise<boolean | null> {
+  try {
+    const rows = await gaql(
+      customerId,
+      `SELECT conversion_action.id, conversion_action.primary_for_goal, conversion_action.status
+       FROM conversion_action
+       WHERE conversion_action.status = 'ENABLED' AND conversion_action.primary_for_goal = TRUE`,
+    );
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[GoogleAds] primary conversion check failed", (err as Error).message);
+    return null;
+  }
+}
