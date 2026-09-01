@@ -207,11 +207,6 @@ function AdviceCard({
               )}
             </div>
             <div className="font-medium leading-snug">{advice.title}</div>
-            {advice.entity_name && (
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {advice.entity_type ?? "onderdeel"}: {advice.entity_name}
-              </div>
-            )}
             <p className="mt-2 text-sm text-muted-foreground">{advice.summary}</p>
           </div>
 
