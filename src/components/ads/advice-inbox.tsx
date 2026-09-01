@@ -237,17 +237,34 @@ function AdviceCard({
                 </Button>
               </div>
               <span className="max-w-[15rem] text-right text-[10px] leading-tight text-muted-foreground">
-                {write
-                  ? blocked
-                    ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
-                    : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
-                  : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
+                {isLanding
+                  ? "Landingspagina-advies: na accepteren pas je de pagina hier zelf aan."
+                  : write
+                    ? blocked
+                      ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
+                      : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
+                    : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
               </span>
             </div>
           )}
         </div>
 
-        {advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
+        {isLanding ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
+            <span>
+              {landingPageHref
+                ? "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. Je kunt de pagina direct bewerken."
+                : "Dit advies gaat over je eigen landingspagina, niet over een Google Ads-campagne. De bijbehorende pagina kon niet worden gevonden."}
+            </span>
+            {landingPageHref && (
+              <Button size="sm" asChild>
+                <Link to={landingPageHref}>
+                  <PencilLine className="mr-1 h-3.5 w-3.5" /> Landingspagina bewerken
+                </Link>
+              </Button>
+            )}
+          </div>
+        ) : advice.status === "approved" && isExecutableAdviceType(advice.advice_type) ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
             <span>
               {(advice.execution_eligibility ?? "REVIEW_ONLY") === "ALLOWED"
@@ -264,6 +281,7 @@ function AdviceCard({
             </Button>
           </div>
         ) : null}
+
 
         <GuardrailPanel advice={advice} />
 
