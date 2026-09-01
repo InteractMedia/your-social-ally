@@ -223,7 +223,12 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
       const info: any = (structure[0] as any)?.campaign ?? (base[0] as any)?.campaign;
       if (!info) throw new GoogleAdsApiError("Campagne niet gevonden in Google Ads.", 404);
 
-      const hasPrimary = await hasPrimaryConversionAction(cid);
+      const [hasPrimary, missingPerCampaign] = await Promise.all([
+        hasPrimaryConversionAction(cid),
+        campaignsMissingPrimaryConversion(cid, [campaignId]),
+      ]);
+      const missesConversion =
+        missingPerCampaign !== null ? missingPerCampaign.has(campaignId) : hasPrimary === false;
       const rawType = info.advertisingChannelType as string | undefined;
       const campaign = {
         id: String(info.id),
@@ -238,7 +243,7 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         health: campaignHealth(
           info.primaryStatus,
           info.primaryStatusReasons,
-          hasPrimary === false && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
+          missesConversion && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
         ),
         metrics: mapMetrics((base[0] as any)?.metrics),
       };
