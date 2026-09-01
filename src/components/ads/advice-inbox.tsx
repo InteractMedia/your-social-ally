@@ -186,15 +186,9 @@ function AdviceCard({
               className="ml-auto gap-1 text-[12px] font-semibold"
             >
               <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {advice.entity_type === "campaign"
-                  ? "Campagne"
-                  : advice.entity_type === "ad_group"
-                    ? "Advertentiegroep"
-                    : advice.entity_type === "keyword"
-                      ? "Zoekwoord"
-                      : advice.entity_type ?? "Onderdeel"}
-                :
+                {ENTITY_LABELS[advice.entity_type ?? ""] ?? advice.entity_type ?? "Onderdeel"}:
               </span>
+
               <span className="text-foreground">{advice.entity_name}</span>
             </Badge>
           )}
