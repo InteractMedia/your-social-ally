@@ -388,7 +388,7 @@ export function AdviceInbox({ minConfidence = 0 }: { minConfidence?: number }) {
             message={query.data.error}
             onRetry={() => qc.invalidateQueries({ queryKey: ["ai-advice"] })}
           />
-        ) : advice.length === 0 ? (
+        ) : allAdvice.length === 0 ? (
           <AdsEmpty
             title="Nog geen adviezen"
             description="Start een analyse om voorstellen te laten genereren op basis van je Google Ads- en leaddata."
