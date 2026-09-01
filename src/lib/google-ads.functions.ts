@@ -204,12 +204,14 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
       const structure = await gaql(
         cid,
         `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
-                campaign.bidding_strategy_type, campaign_budget.amount_micros
+                campaign.bidding_strategy_type, campaign.primary_status, campaign.primary_status_reasons,
+                campaign_budget.amount_micros
          FROM campaign WHERE campaign.id = ${campaignId}`,
       );
       const info: any = (structure[0] as any)?.campaign ?? (base[0] as any)?.campaign;
       if (!info) throw new GoogleAdsApiError("Campagne niet gevonden in Google Ads.", 404);
 
+      const hasPrimary = await hasPrimaryConversionAction(cid);
       const rawType = info.advertisingChannelType as string | undefined;
       const campaign = {
         id: String(info.id),
@@ -221,8 +223,14 @@ export const getGoogleAdsCampaignDetail = createServerFn({ method: "POST" })
         dailyBudget: micros(
           (structure[0] as any)?.campaignBudget?.amountMicros ?? (base[0] as any)?.campaignBudget?.amountMicros,
         ),
+        health: campaignHealth(
+          info.primaryStatus,
+          info.primaryStatusReasons,
+          hasPrimary === false && info.status !== "REMOVED" ? [MISSING_PRIMARY_CONVERSION_REASON] : [],
+        ),
         metrics: mapMetrics((base[0] as any)?.metrics),
       };
+
 
       const isSearchLike = rawType === "SEARCH" || rawType === "SHOPPING" || rawType === "DISPLAY" || rawType === "VIDEO" || rawType === "SMART";
       const isPmax = rawType === "PERFORMANCE_MAX";
