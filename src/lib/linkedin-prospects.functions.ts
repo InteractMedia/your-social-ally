@@ -203,7 +203,11 @@ export const updateProspectStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => statusInput.parse(d))
   .handler(async ({ context, data }) => {
     const now = new Date().toISOString();
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: (typeof PROSPECT_STATUSES)[number];
+      invited_at?: string | null;
+      responded_at?: string | null;
+    } = { status: data.status };
     if (data.status === "invited") patch.invited_at = now;
     if (data.status === "accepted" || data.status === "declined") patch.responded_at = now;
     if (data.status === "suggested") {
