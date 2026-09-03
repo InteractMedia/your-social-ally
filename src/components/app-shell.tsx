@@ -4,6 +4,7 @@ import {
   PenSquare,
   CalendarDays,
   Clock,
+  UserPlus,
   Users,
   Wand2,
 
@@ -121,6 +122,7 @@ const nav: NavSection[] = [
       { to: "/landingpages/evidence", label: "CRO-evidence", icon: BookOpen },
     ],
   },
+  { to: "/prospects", label: "LinkedIn Prospects", icon: UserPlus },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/settings", label: "Instellingen", icon: Settings },
 

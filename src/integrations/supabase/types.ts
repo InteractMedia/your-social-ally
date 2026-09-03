@@ -2829,6 +2829,146 @@ export type Database = {
           },
         ]
       }
+      linkedin_icp_profiles: {
+        Row: {
+          ai_company_profile: string | null
+          ai_decision_maker: string | null
+          ai_rationale: string | null
+          company_size: string | null
+          created_at: string
+          exclusions: string[]
+          id: string
+          industry: string | null
+          job_titles: string[]
+          keywords: string[]
+          name: string
+          occasion: string | null
+          region: string | null
+          search_urls: Json
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_company_profile?: string | null
+          ai_decision_maker?: string | null
+          ai_rationale?: string | null
+          company_size?: string | null
+          created_at?: string
+          exclusions?: string[]
+          id?: string
+          industry?: string | null
+          job_titles?: string[]
+          keywords?: string[]
+          name: string
+          occasion?: string | null
+          region?: string | null
+          search_urls?: Json
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          ai_company_profile?: string | null
+          ai_decision_maker?: string | null
+          ai_rationale?: string | null
+          company_size?: string | null
+          created_at?: string
+          exclusions?: string[]
+          id?: string
+          industry?: string | null
+          job_titles?: string[]
+          keywords?: string[]
+          name?: string
+          occasion?: string | null
+          region?: string | null
+          search_urls?: Json
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_icp_profiles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linkedin_prospects: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          full_name: string
+          headline: string | null
+          id: string
+          invite_message: string | null
+          invited_at: string | null
+          job_title: string | null
+          linkedin_url: string | null
+          notes: string | null
+          profile_id: string | null
+          responded_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          full_name: string
+          headline?: string | null
+          id?: string
+          invite_message?: string | null
+          invited_at?: string | null
+          job_title?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          profile_id?: string | null
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string
+          headline?: string | null
+          id?: string
+          invite_message?: string | null
+          invited_at?: string | null
+          job_title?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          profile_id?: string | null
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_prospects_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "linkedin_icp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_prospects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_connections: {
         Row: {
           app_id: string
