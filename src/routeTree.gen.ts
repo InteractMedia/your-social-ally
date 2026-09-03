@@ -13,6 +13,7 @@ import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as PocBouwRouteImport } from './routes/poc-bouw'
 import { Route as MetaRouteImport } from './routes/meta'
 import { Route as LeadsRouteImport } from './routes/leads'
@@ -73,6 +74,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProspectsRoute = ProspectsRouteImport.update({
+  id: '/prospects',
+  path: '/prospects',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PocBouwRoute = PocBouwRouteImport.update({
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof LeadsRouteWithChildren
   '/meta': typeof MetaRoute
   '/poc-bouw': typeof PocBouwRoute
+  '/prospects': typeof ProspectsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/meta': typeof MetaRoute
   '/poc-bouw': typeof PocBouwRoute
+  '/prospects': typeof ProspectsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/leads': typeof LeadsRouteWithChildren
   '/meta': typeof MetaRoute
   '/poc-bouw': typeof PocBouwRoute
+  '/prospects': typeof ProspectsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -433,6 +442,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/meta'
     | '/poc-bouw'
+    | '/prospects'
     | '/schedule'
     | '/settings'
     | '/sitemap.xml'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/meta'
     | '/poc-bouw'
+    | '/prospects'
     | '/schedule'
     | '/settings'
     | '/sitemap.xml'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/meta'
     | '/poc-bouw'
+    | '/prospects'
     | '/schedule'
     | '/settings'
     | '/sitemap.xml'
@@ -571,6 +583,7 @@ export interface RootRouteChildren {
   LeadsRoute: typeof LeadsRouteWithChildren
   MetaRoute: typeof MetaRoute
   PocBouwRoute: typeof PocBouwRoute
+  ProspectsRoute: typeof ProspectsRoute
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -619,6 +632,13 @@ declare module '@tanstack/react-router' {
       path: '/schedule'
       fullPath: '/schedule'
       preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prospects': {
+      id: '/prospects'
+      path: '/prospects'
+      fullPath: '/prospects'
+      preLoaderRoute: typeof ProspectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/poc-bouw': {
@@ -993,6 +1013,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeadsRoute: LeadsRouteWithChildren,
   MetaRoute: MetaRoute,
   PocBouwRoute: PocBouwRoute,
+  ProspectsRoute: ProspectsRoute,
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
