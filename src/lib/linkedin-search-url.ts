@@ -43,48 +43,70 @@ export function buildBooleanQuery(input: SearchUrlInput): string {
 
 export type BuiltSearchUrl = { label: string; url: string; kind: "people" | "companies" | "sales_navigator" };
 
-export function buildSearchUrls(input: SearchUrlInput): BuiltSearchUrl[] {
-  const query = buildBooleanQuery(input);
-  const peopleParams = new URLSearchParams({ keywords: query, origin: "GLOBAL_SEARCH_HEADER" });
-  const companyQuery = buildBooleanQuery({
-    jobTitles: [],
-    keywords: input.keywords,
-    industry: input.industry,
-    exclusions: input.exclusions,
-  });
-  const companyParams = new URLSearchParams({
-    keywords: companyQuery || (input.industry ?? ""),
-    origin: "GLOBAL_SEARCH_HEADER",
-  });
-  const navParams = new URLSearchParams({ keywords: query });
+function peopleUrl(keywords: string) {
+  const p = new URLSearchParams({ keywords, origin: "GLOBAL_SEARCH_HEADER" });
+  return `https://www.linkedin.com/search/results/people/?${p.toString()}`;
+}
 
-  const urls: BuiltSearchUrl[] = [
-    {
-      label: "Mensen zoeken op LinkedIn",
-      url: `https://www.linkedin.com/search/results/people/?${peopleParams.toString()}`,
-      kind: "people",
-    },
-    {
-      label: "Bedrijven zoeken op LinkedIn",
-      url: `https://www.linkedin.com/search/results/companies/?${companyParams.toString()}`,
-      kind: "companies",
-    },
-    {
-      label: "Sales Navigator (uitgebreide filters)",
-      url: `https://www.linkedin.com/sales/search/people?${navParams.toString()}`,
-      kind: "sales_navigator",
-    },
-  ];
-  if (input.region) {
-    const regional = new URLSearchParams({
-      keywords: `${query} ${quote(input.region)}`.trim(),
-      origin: "GLOBAL_SEARCH_HEADER",
-    });
-    urls.splice(1, 0, {
-      label: `Mensen in ${input.region}`,
-      url: `https://www.linkedin.com/search/results/people/?${regional.toString()}`,
+/**
+ * LinkedIn's gewone zoekfunctie ondersteunt AND/NOT niet meer en behandelt een
+ * lange booleanstring als één letterlijke zoekterm — dat levert nul resultaten.
+ * Daarom bouwen we hier korte, brede zoekopdrachten (één per functietitel,
+ * eventueel met regio) en houden we de volledige booleanstring alleen voor
+ * Sales Navigator, dat boolean wél begrijpt.
+ */
+export function buildSearchUrls(input: SearchUrlInput): BuiltSearchUrl[] {
+  const region = input.region?.trim() ? input.region.trim() : "";
+  const urls: BuiltSearchUrl[] = [];
+
+  for (const title of input.jobTitles.slice(0, 6)) {
+    const t = title.trim();
+    if (!t) continue;
+    const q = region ? `${t} ${region}` : t;
+    urls.push({
+      label: region ? `${t} · ${region}` : t,
+      url: peopleUrl(q),
       kind: "people",
     });
   }
+
+  for (const kw of input.keywords.slice(0, 4)) {
+    const k = kw.trim();
+    if (!k) continue;
+    const q = region ? `${k} ${region}` : k;
+    urls.push({
+      label: `Bedrijven: ${k}`,
+      url: `https://www.linkedin.com/search/results/companies/?${new URLSearchParams({
+        keywords: q,
+        origin: "GLOBAL_SEARCH_HEADER",
+      }).toString()}`,
+      kind: "companies",
+    });
+  }
+
+  if (input.industry?.trim()) {
+    urls.push({
+      label: `Bedrijven: ${input.industry.trim()}`,
+      url: `https://www.linkedin.com/search/results/companies/?${new URLSearchParams({
+        keywords: region ? `${input.industry.trim()} ${region}` : input.industry.trim(),
+        origin: "GLOBAL_SEARCH_HEADER",
+      }).toString()}`,
+      kind: "companies",
+    });
+  }
+
+  const boolean = buildBooleanQuery(input);
+  if (boolean) {
+    urls.push({
+      label: "Sales Navigator (boolean)",
+      url: `https://www.linkedin.com/sales/search/people?${new URLSearchParams({ keywords: boolean }).toString()}`,
+      kind: "sales_navigator",
+    });
+  }
+
+  if (urls.length === 0) {
+    urls.push({ label: "Mensen zoeken op LinkedIn", url: peopleUrl(region), kind: "people" });
+  }
   return urls;
 }
+

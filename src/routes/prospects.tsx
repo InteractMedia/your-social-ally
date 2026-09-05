@@ -31,6 +31,8 @@ import {
   type ProspectStatus,
   type QuotaSummary,
 } from "@/lib/linkedin-prospects-shared";
+import { buildSearchUrls } from "@/lib/linkedin-search-url";
+
 import {
   addProspects,
   createIcpProfile,
@@ -158,6 +160,27 @@ function QuotaBar({ quota }: { quota: QuotaSummary }) {
               ? "Let op: je nadert de veilige limiet of je acceptatiegraad zakt onder 35%. Kies selectiever."
               : `Richtlijn: max ${LINKEDIN_LIMITS.perDay} uitnodigingen per dag, ${LINKEDIN_LIMITS.perWeek} per week en nooit meer dan ${LINKEDIN_LIMITS.maxPending} openstaande verzoeken.`}
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <a
+              href="https://www.linkedin.com/mynetwork/invitation-manager/sent/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Verzonden uitnodigingen op LinkedIn <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <a href="https://www.linkedin.com/mynetwork/" target="_blank" rel="noreferrer">
+              Mijn netwerk (nieuwe connecties) <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
+        <p className="text-muted-foreground mt-2 text-xs">
+          Staat iemand niet meer in "verzonden", dan is de uitnodiging geaccepteerd (of ingetrokken)
+          — zet die persoon hier op Geaccepteerd.
+        </p>
+
       </CardContent>
     </Card>
   );
@@ -286,14 +309,37 @@ function IcpCard({ profile, onChanged }: { profile: IcpProfileRow; onChanged: ()
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {profile.search_urls.map((s) => (
-            <Button key={s.url} asChild size="sm" variant="outline">
-              <a href={s.url} target="_blank" rel="noreferrer">
-                {s.label} <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </a>
-            </Button>
+          {buildSearchUrls({
+            jobTitles: profile.job_titles ?? [],
+            keywords: profile.keywords ?? [],
+            exclusions: profile.exclusions ?? [],
+            industry: profile.industry,
+            region: profile.region,
+          }).map((s) => (
+            <div key={s.url} className="flex items-center gap-1">
+              <Button asChild size="sm" variant="outline">
+                <a href={s.url} target="_blank" rel="noreferrer">
+                  {s.label} <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  void navigator.clipboard.writeText(s.url);
+                  toast.success("Zoeklink gekopieerd");
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           ))}
         </div>
+        <p className="text-muted-foreground text-xs">
+          Elke link is één korte zoekterm — LinkedIn geeft geen resultaten op lange
+          zoekopdrachten met AND/NOT.
+        </p>
+
       </CardContent>
     </Card>
   );
