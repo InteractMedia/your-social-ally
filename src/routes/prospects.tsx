@@ -160,6 +160,27 @@ function QuotaBar({ quota }: { quota: QuotaSummary }) {
               ? "Let op: je nadert de veilige limiet of je acceptatiegraad zakt onder 35%. Kies selectiever."
               : `Richtlijn: max ${LINKEDIN_LIMITS.perDay} uitnodigingen per dag, ${LINKEDIN_LIMITS.perWeek} per week en nooit meer dan ${LINKEDIN_LIMITS.maxPending} openstaande verzoeken.`}
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <a
+              href="https://www.linkedin.com/mynetwork/invitation-manager/sent/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Verzonden uitnodigingen op LinkedIn <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <a href="https://www.linkedin.com/mynetwork/" target="_blank" rel="noreferrer">
+              Mijn netwerk (nieuwe connecties) <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
+        <p className="text-muted-foreground mt-2 text-xs">
+          Staat iemand niet meer in "verzonden", dan is de uitnodiging geaccepteerd (of ingetrokken)
+          — zet die persoon hier op Geaccepteerd.
+        </p>
+
       </CardContent>
     </Card>
   );
