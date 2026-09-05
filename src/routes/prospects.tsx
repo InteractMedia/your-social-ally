@@ -31,6 +31,8 @@ import {
   type ProspectStatus,
   type QuotaSummary,
 } from "@/lib/linkedin-prospects-shared";
+import { buildSearchUrls } from "@/lib/linkedin-search-url";
+
 import {
   addProspects,
   createIcpProfile,
