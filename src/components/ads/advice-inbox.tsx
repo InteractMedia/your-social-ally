@@ -284,7 +284,7 @@ function AdviceCard({
               onClick={onExecute}
               disabled={busy || (advice.execution_eligibility ?? "REVIEW_ONLY") !== "ALLOWED"}
             >
-              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" : <ShieldCheck className="mr-1 h-3.5 w-3.5" />}
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="mr-1 h-3.5 w-3.5" />}
               Uitvoeren in Google Ads
             </Button>
           </div>
