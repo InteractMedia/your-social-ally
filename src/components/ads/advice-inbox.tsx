@@ -276,15 +276,15 @@ function AdviceCard({
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs">
             <span>
               {(advice.execution_eligibility ?? "REVIEW_ONLY") === "ALLOWED"
-                ? "Goedgekeurd. Je kunt deze wijziging nu in Google Ads uitvoeren; alles wordt gelogd."
-                : "Goedgekeurd, maar server-side niet uitvoerbaar. Deze wijziging blijft advies."}
+                ? "✅ Stap 1 voltooid: goedgekeurd. Stap 2: klik hieronder om de wijziging écht in Google Ads door te voeren — alles wordt gelogd."
+                : "Goedgekeurd, maar server-side niet uitvoerbaar (te weinig data of onveilig). Pas de wijziging aan in Google Ads zelf."}
             </span>
             <Button
               size="sm"
               onClick={onExecute}
               disabled={busy || (advice.execution_eligibility ?? "REVIEW_ONLY") !== "ALLOWED"}
             >
-              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" : <ShieldCheck className="mr-1 h-3.5 w-3.5" />}
               Uitvoeren in Google Ads
             </Button>
           </div>
