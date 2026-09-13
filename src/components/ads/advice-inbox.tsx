@@ -231,7 +231,7 @@ function AdviceCard({
                 <Button size="sm" onClick={onApprove} disabled={busy} variant={write ? "default" : "secondary"}>
                   {write ? (
                     <>
-                      <ShieldCheck className="mr-1 h-3.5 w-3.5" /> Goedkeuren voor uitvoering
+                      <Check className="mr-1 h-3.5 w-3.5" /> Goedkeuren
                     </>
                   ) : (
                     <>
@@ -243,14 +243,14 @@ function AdviceCard({
                   <X className="mr-1 h-3.5 w-3.5" /> Afwijzen
                 </Button>
               </div>
-              <span className="max-w-[15rem] text-right text-[10px] leading-tight text-muted-foreground">
+              <span className="max-w-[16rem] text-right text-[10px] leading-tight text-muted-foreground">
                 {isLanding
-                  ? "Landingspagina-advies: na accepteren pas je de pagina hier zelf aan."
+                  ? "Landingspagina-advies. Accepteren legt je keuze vast; daarna pas je de pagina zelf aan."
                   : write
                     ? blocked
-                      ? "Uitvoering is server-side geblokkeerd. Goedkeuren legt alleen je intentie vast."
-                      : "Na goedkeuring voer je de wijziging hier zelf uit; er gebeurt nooit iets automatisch."
-                    : "Inhoudelijk advies: hier hoort geen uitvoering in Google Ads bij."}
+                      ? "Stap 1: goedkeuren legt je keuze vast. Uitvoering is server-side geblokkeerd — pas aan in Google Ads zelf."
+                      : "Stap 1: goedkeuren legt alleen je keuze vast. Stap 2: daarna op 'Uitvoeren in Google Ads' klikken om het écht door te voeren."
+                    : "Inhoudelijk advies. Accepteren legt je keuze vast; er is geen automatische uitvoering in Google Ads."}
               </span>
             </div>
           )}
