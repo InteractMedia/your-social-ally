@@ -344,7 +344,11 @@ export function LandingBlock({
     (section.block_type === "testimonials" && page.testimonials.length === 0) ||
     (section.block_type === "products" &&
       page.products.length === 0 &&
-      (c.gallery?.filter((g) => g.url).length ?? 0) === 0) ||
+      (c.gallery?.filter((g) => g.url).length ?? 0) === 0 &&
+      !c.image_url &&
+      !c.image_url_2 &&
+      !c.image_url_3 &&
+      !c.image_url_4) ||
     (itemsDependent &&
       items.length === 0 &&
       !(section.block_type === "social_proof" && socialProofHasData)) ||
