@@ -344,7 +344,11 @@ export function LandingBlock({
     (section.block_type === "testimonials" && page.testimonials.length === 0) ||
     (section.block_type === "products" &&
       page.products.length === 0 &&
-      (c.gallery?.filter((g) => g.url).length ?? 0) === 0) ||
+      (c.gallery?.filter((g) => g.url).length ?? 0) === 0 &&
+      !c.image_url &&
+      !c.image_url_2 &&
+      !c.image_url_3 &&
+      !c.image_url_4) ||
     (itemsDependent &&
       items.length === 0 &&
       !(section.block_type === "social_proof" && socialProofHasData)) ||
@@ -992,14 +996,27 @@ export function LandingBlock({
           </section>
         );
       };
-      /* V2.1 — polaroid-wand: content.gallery (of productbeelden als
-         fallback) als speelse, licht geroteerde polaroids. Data-driven. */
+      /* Losse blokbeelden (Afbeelding 1-4 in de editor) gelden als eigen
+         galerij, zodat een productblok zonder gekoppelde producten toch
+         zichtbaar is met de beelden die je zelf invult. */
+      const ownImages = [
+        { url: c.image_url, alt: c.image_alt },
+        { url: c.image_url_2, alt: c.image_alt_2 },
+        { url: c.image_url_3, alt: c.image_alt_3 },
+        { url: c.image_url_4, alt: c.image_alt_4 },
+      ]
+        .filter((g) => Boolean(g.url))
+        .map((g) => ({ url: g.url as string, alt: g.alt, caption: g.alt }));
+      /* V2.1 — polaroid-wand: content.gallery (of blokbeelden/productbeelden
+         als fallback) als speelse, licht geroteerde polaroids. Data-driven. */
       const polaroids = (
         (c.gallery ?? []).filter((g) => g.url).length > 0
           ? (c.gallery ?? []).filter((g) => g.url)
-          : page.products
-              .filter((p) => p.image_url)
-              .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
+          : ownImages.length > 0
+            ? ownImages
+            : page.products
+                .filter((p) => p.image_url)
+                .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
       ).slice(0, 10);
       const polaroidRotations = [
         "-rotate-3",
@@ -1060,6 +1077,43 @@ export function LandingBlock({
           )}
           {page.products.length === 0 && polaroids.length === 0 ? (
             <Body body={c.body} />
+          ) : page.products.length === 0 && composition !== "product_showcase_polaroids" ? (
+            /* Geen gekoppelde producten, maar wel eigen beelden in het blok:
+               toon tekst + een net beeldraster i.p.v. een leeg blok. */
+            <div>
+              <Body body={c.body} />
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {polaroids.map((g, i) => (
+                  <figure key={i} className="bg-card overflow-hidden rounded-2xl border shadow-sm">
+                    <img
+                      src={g.url}
+                      alt={g.alt ?? ""}
+                      loading="lazy"
+                      className="aspect-4/3 w-full object-cover"
+                    />
+                    {g.caption && (
+                      <figcaption className="text-muted-foreground px-4 py-3 text-sm font-medium">
+                        {g.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+              {(c.cta_label || c.secondary_cta_label) && (
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {c.cta_label && (
+                    <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                  )}
+                  {c.secondary_cta_label && (
+                    <ZbCtaGhost
+                      label={c.secondary_cta_label}
+                      url={c.secondary_cta_url}
+                      onClick={onCtaClick}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           ) : composition === "masonry_showcase" ? (
             /* V1.9C — masonry_showcase: echte asymmetrische masonry met
                wisselende tegelgroottes i.p.v. een uniform card-grid. */
