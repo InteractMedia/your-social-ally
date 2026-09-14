@@ -1077,6 +1077,43 @@ export function LandingBlock({
           )}
           {page.products.length === 0 && polaroids.length === 0 ? (
             <Body body={c.body} />
+          ) : page.products.length === 0 && composition !== "product_showcase_polaroids" ? (
+            /* Geen gekoppelde producten, maar wel eigen beelden in het blok:
+               toon tekst + een net beeldraster i.p.v. een leeg blok. */
+            <div>
+              <Body body={c.body} />
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {polaroids.map((g, i) => (
+                  <figure key={i} className="bg-card overflow-hidden rounded-2xl border shadow-sm">
+                    <img
+                      src={g.url}
+                      alt={g.alt ?? ""}
+                      loading="lazy"
+                      className="aspect-4/3 w-full object-cover"
+                    />
+                    {g.caption && (
+                      <figcaption className="text-muted-foreground px-4 py-3 text-sm font-medium">
+                        {g.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+              {(c.cta_label || c.secondary_cta_label) && (
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {c.cta_label && (
+                    <ZbCtaSolid label={c.cta_label} url={c.cta_url} onClick={onCtaClick} />
+                  )}
+                  {c.secondary_cta_label && (
+                    <ZbCtaGhost
+                      label={c.secondary_cta_label}
+                      url={c.secondary_cta_url}
+                      onClick={onCtaClick}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           ) : composition === "masonry_showcase" ? (
             /* V1.9C — masonry_showcase: echte asymmetrische masonry met
                wisselende tegelgroottes i.p.v. een uniform card-grid. */
