@@ -1005,8 +1005,8 @@ export function LandingBlock({
         { url: c.image_url_3, alt: c.image_alt_3 },
         { url: c.image_url_4, alt: c.image_alt_4 },
       ]
-        .filter((g): g is { url: string; alt?: string } => Boolean(g.url))
-        .map((g) => ({ url: g.url, alt: g.alt, caption: g.alt }));
+        .filter((g) => Boolean(g.url))
+        .map((g) => ({ url: g.url as string, alt: g.alt, caption: g.alt }));
       /* V2.1 — polaroid-wand: content.gallery (of blokbeelden/productbeelden
          als fallback) als speelse, licht geroteerde polaroids. Data-driven. */
       const polaroids = (
