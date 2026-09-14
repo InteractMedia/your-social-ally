@@ -996,14 +996,27 @@ export function LandingBlock({
           </section>
         );
       };
-      /* V2.1 — polaroid-wand: content.gallery (of productbeelden als
-         fallback) als speelse, licht geroteerde polaroids. Data-driven. */
+      /* Losse blokbeelden (Afbeelding 1-4 in de editor) gelden als eigen
+         galerij, zodat een productblok zonder gekoppelde producten toch
+         zichtbaar is met de beelden die je zelf invult. */
+      const ownImages = [
+        { url: c.image_url, alt: c.image_alt },
+        { url: c.image_url_2, alt: c.image_alt_2 },
+        { url: c.image_url_3, alt: c.image_alt_3 },
+        { url: c.image_url_4, alt: c.image_alt_4 },
+      ]
+        .filter((g): g is { url: string; alt?: string } => Boolean(g.url))
+        .map((g) => ({ url: g.url, alt: g.alt, caption: g.alt }));
+      /* V2.1 — polaroid-wand: content.gallery (of blokbeelden/productbeelden
+         als fallback) als speelse, licht geroteerde polaroids. Data-driven. */
       const polaroids = (
         (c.gallery ?? []).filter((g) => g.url).length > 0
           ? (c.gallery ?? []).filter((g) => g.url)
-          : page.products
-              .filter((p) => p.image_url)
-              .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
+          : ownImages.length > 0
+            ? ownImages
+            : page.products
+                .filter((p) => p.image_url)
+                .map((p) => ({ url: p.image_url!, alt: p.image_alt ?? p.name, caption: p.name }))
       ).slice(0, 10);
       const polaroidRotations = [
         "-rotate-3",
