@@ -28,7 +28,7 @@ import {
   LANDING_DESIGN_TOKENS as T,
   resolveSectionDesign,
 } from "@/lib/landing-design-system";
-import { paragraphs, type LandingSection } from "@/lib/landing-shared";
+import { BLOCK_LABELS, paragraphs, type BlockType, type LandingSection } from "@/lib/landing-shared";
 import {
   ASPECT_RATIO_CLASS,
   VISUAL_TYPE_LABELS,
@@ -350,8 +350,26 @@ export function LandingBlock({
       !(section.block_type === "social_proof" && socialProofHasData)) ||
     (!designedEmptyState && !itemsDependent && !hasAnyContent)
   ) {
+    /* In de preview/editor blijft een nog niet gevuld blok wél zichtbaar, zodat
+       je ziet dat het is toegevoegd. Live bezoekers zien niets. */
+    if (showVisualPlaceholders) {
+      return (
+        <section className="px-5 py-8 md:px-8">
+          <div className="border-muted-foreground/30 text-muted-foreground mx-auto w-full max-w-5xl rounded-xl border border-dashed p-6 text-center text-sm">
+            <p className="text-foreground font-medium">
+              {BLOCK_LABELS[section.block_type as BlockType] ?? section.block_type}
+            </p>
+            <p className="mt-1">
+              Dit blok is toegevoegd maar nog leeg. Vul in de editor tekst, items of een beeld in —
+              dan verschijnt het ook voor bezoekers.
+            </p>
+          </div>
+        </section>
+      );
+    }
     return null;
   }
+
 
 
 
